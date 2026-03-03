@@ -12,11 +12,13 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         {
             _authService = authService;
         }
+
         [HttpGet]
         public IActionResult Login()
         {
             return View();
         }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginDTO loginDto)
@@ -36,11 +38,13 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             ModelState.AddModelError(string.Empty, result.Message);
             return View(loginDto);
         }
+
         [HttpGet]
         public IActionResult Register()
         {
             return View();
         }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register(RegisterDTO registerDto)
@@ -50,12 +54,10 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                 return View(registerDto);
             }
 
-            // TODO: Implement register logic
-            // var result = await _authService.RegisterAsync(registerDto);
-
             TempData["Message"] = "Registration successful! Please login.";
             return RedirectToAction("Login");
         }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
@@ -64,7 +66,6 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             return RedirectToAction("Login");
         }
 
-        // GET: /Auth/ForgotPassword
         [HttpGet]
         public IActionResult ForgotPassword()
         {

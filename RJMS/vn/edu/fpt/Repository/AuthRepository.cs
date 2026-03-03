@@ -5,7 +5,8 @@ namespace RJMS.Vn.Edu.Fpt.Repository
         // Add your database context here
         // private readonly ApplicationDbContext _context;
 
-        public AuthRepository(/* ApplicationDbContext context */)
+        public AuthRepository( /* ApplicationDbContext context */
+        )
         {
             // _context = context;
         }

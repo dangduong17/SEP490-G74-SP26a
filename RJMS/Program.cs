@@ -1,3 +1,6 @@
+using RJMS.Vn.Edu.Fpt.Repository;
+using RJMS.Vn.Edu.Fpt.Service;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -18,9 +21,6 @@ app.UseRouting();
 
 app.UseAuthorization();
 
-
-app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
