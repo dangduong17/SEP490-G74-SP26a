@@ -14,9 +14,15 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> PersonalProfile(Guid? userId)
+        public async Task<IActionResult> PersonalProfile(string? userId)
         {
-            var profile = await _profileService.GetPersonalProfileAsync(userId ?? Guid.Empty);
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                ModelState.AddModelError(string.Empty, "User id is required");
+                return View("PersonalProfile", new UserProfileDTO());
+            }
+
+            var profile = await _profileService.GetPersonalProfileAsync(userId);
 
             if (profile == null)
             {

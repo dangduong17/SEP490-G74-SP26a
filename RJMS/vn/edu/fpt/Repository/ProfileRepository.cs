@@ -1,37 +1,58 @@
+using Microsoft.EntityFrameworkCore;
+using RJMS.Models;
 using RJMS.Vn.Edu.Fpt.Model.DTOs;
 
 namespace RJMS.Vn.Edu.Fpt.Repository
 {
     public class ProfileRepository : IProfileRepository
     {
-        public ProfileRepository() { }
+        private readonly G74FindingJobsContext _context;
 
-        public async Task<UserProfileDTO?> GetProfileByIdAsync(Guid userId)
+        public ProfileRepository(G74FindingJobsContext context)
         {
-            // TODO: replace with database access once available
-            await Task.CompletedTask;
+            _context = context;
+        }
 
-            if (userId == Guid.Empty)
+        public async Task<UserProfileDTO?> GetProfileByUserIdAsync(string userId)
+        {
+            if (string.IsNullOrWhiteSpace(userId))
             {
-                return new UserProfileDTO
-                {
-                    Id = Guid.NewGuid(),
-                    FullName = "Sample User",
-                    Email = "sample.user@example.com",
-                    PhoneNumber = "+84 000 000 000",
-                    AvatarUrl = string.Empty,
-                    LastUpdatedAt = DateTime.UtcNow,
-                };
+                return null;
+            }
+
+            var candidate = await _context
+                .Candidates.Include(c => c.User)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.UserId == userId);
+
+            if (candidate == null)
+            {
+                return null;
             }
 
             return new UserProfileDTO
             {
-                Id = userId,
-                FullName = "Placeholder Name",
-                Email = "placeholder@example.com",
-                PhoneNumber = "+84 111 111 111",
-                AvatarUrl = string.Empty,
-                LastUpdatedAt = DateTime.UtcNow,
+                CandidateId = candidate.Id,
+                UserId = candidate.UserId,
+                FullName = candidate.FullName ?? string.Empty,
+                Email = candidate.User?.Email ?? string.Empty,
+                Phone = candidate.Phone ?? string.Empty,
+                AvatarUrl = candidate.Avatar ?? string.Empty,
+                City = candidate.City ?? string.Empty,
+                District = candidate.District ?? string.Empty,
+                Address = candidate.Address ?? string.Empty,
+                Title = candidate.Title ?? string.Empty,
+                CurrentSalary = candidate.CurrentSalary,
+                ExpectedSalary = candidate.ExpectedSalary,
+                WorkingType = candidate.WorkingType ?? string.Empty,
+                Summary = candidate.Summary ?? string.Empty,
+                CurrentPosition = candidate.CurrentPosition ?? string.Empty,
+                YearsOfExperience = candidate.YearsOfExperience,
+                HighestDegree = candidate.HighestDegree ?? string.Empty,
+                IsLookingForJob = candidate.IsLookingForJob,
+                AllowContact = candidate.AllowContact,
+                CreatedAt = candidate.CreatedAt,
+                UpdatedAt = candidate.UpdatedAt,
             };
         }
     }
