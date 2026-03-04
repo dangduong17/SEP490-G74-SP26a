@@ -14,11 +14,15 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Index(Guid? userId)
+        public async Task<IActionResult> Index(string? userId)
         {
-            var applications = await _jobApplicationService.GetApplicationsAsync(
-                userId ?? Guid.Empty
-            );
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                ModelState.AddModelError(string.Empty, "User id is required");
+                return View("Index", Array.Empty<JobApplicationDTO>());
+            }
+
+            var applications = await _jobApplicationService.GetApplicationsAsync(userId);
             return View("Index", applications);
         }
     }

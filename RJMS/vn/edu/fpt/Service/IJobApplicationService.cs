@@ -4,6 +4,6 @@ namespace RJMS.Vn.Edu.Fpt.Service
 {
     public interface IJobApplicationService
     {
-        Task<IReadOnlyCollection<JobApplicationDTO>> GetApplicationsAsync(Guid userId);
+        Task<IReadOnlyCollection<JobApplicationDTO>> GetApplicationsAsync(string userId);
     }
 }

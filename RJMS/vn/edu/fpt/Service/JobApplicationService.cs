@@ -12,7 +12,9 @@ namespace RJMS.Vn.Edu.Fpt.Service
             _repository = repository;
         }
 
-        public async Task<IReadOnlyCollection<JobApplicationDTO>> GetApplicationsAsync(Guid userId)
+        public async Task<IReadOnlyCollection<JobApplicationDTO>> GetApplicationsAsync(
+            string userId
+        )
         {
             return await _repository.GetApplicationsAsync(userId);
         }
