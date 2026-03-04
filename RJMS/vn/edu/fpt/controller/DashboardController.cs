@@ -13,9 +13,15 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Candidate(Guid? userId)
+        public async Task<IActionResult> Candidate(string? userId)
         {
-            var dashboard = await _dashboardService.GetDashboardAsync(userId ?? Guid.Empty);
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                ModelState.AddModelError(string.Empty, "User id is required");
+                return View("Candidate", null);
+            }
+
+            var dashboard = await _dashboardService.GetDashboardAsync(userId);
             return View("Candidate", dashboard);
         }
     }

@@ -4,6 +4,6 @@ namespace RJMS.Vn.Edu.Fpt.Service
 {
     public interface ICandidateDashboardService
     {
-        Task<CandidateDashboardDTO> GetDashboardAsync(Guid userId);
+        Task<CandidateDashboardDTO> GetDashboardAsync(string userId);
     }
 }

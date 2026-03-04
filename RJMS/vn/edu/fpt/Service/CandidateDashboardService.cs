@@ -12,7 +12,7 @@ namespace RJMS.Vn.Edu.Fpt.Service
             _repository = repository;
         }
 
-        public async Task<CandidateDashboardDTO> GetDashboardAsync(Guid userId)
+        public async Task<CandidateDashboardDTO> GetDashboardAsync(string userId)
         {
             return await _repository.GetCandidateDashboardAsync(userId);
         }

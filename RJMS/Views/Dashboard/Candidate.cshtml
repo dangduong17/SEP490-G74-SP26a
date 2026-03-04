@@ -1,7 +1,54 @@
+@using System.Linq
 @model RJMS.Vn.Edu.Fpt.Model.DTOs.CandidateDashboardDTO
 
 @{
     ViewData["Title"] = "Candidate Dashboard";
 }
 
-@*  *@
+<h2 class="mb-3">Candidate Dashboard</h2>
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger">
+        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+        {
+            <div>@error.ErrorMessage</div>
+        }
+    </div>
+}
+
+@if (Model == null || string.IsNullOrWhiteSpace(Model.UserId))
+{
+    <p class="text-muted">No dashboard data.</p>
+}
+else
+{
+    <div class="row g-3">
+        <div class="col-md-4">
+            <div class="card text-bg-light">
+                <div class="card-body">
+                    <h5 class="card-title">Total Applications</h5>
+                    <p class="display-6">@Model.TotalApplications</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-bg-light">
+                <div class="card-body">
+                    <h5 class="card-title">Interviews Scheduled</h5>
+                    <p class="display-6">@Model.InterviewsScheduled</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-bg-light">
+                <div class="card-body">
+                    <h5 class="card-title">Offers Received</h5>
+                    <p class="display-6">@Model.OffersReceived</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <p class="text-muted mt-3">Last updated @Model.LastUpdatedAt.ToString("u")</p>
+}

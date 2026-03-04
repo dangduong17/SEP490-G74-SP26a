@@ -4,6 +4,6 @@ namespace RJMS.Vn.Edu.Fpt.Repository
 {
     public interface ICandidateDashboardRepository
     {
-        Task<CandidateDashboardDTO> GetCandidateDashboardAsync(Guid userId);
+        Task<CandidateDashboardDTO> GetCandidateDashboardAsync(string userId);
     }
 }
