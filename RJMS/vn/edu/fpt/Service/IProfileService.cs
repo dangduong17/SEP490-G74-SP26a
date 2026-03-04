@@ -4,6 +4,6 @@ namespace RJMS.Vn.Edu.Fpt.Service
 {
     public interface IProfileService
     {
-        Task<UserProfileDTO?> GetPersonalProfileAsync(Guid userId);
+        Task<UserProfileDTO?> GetPersonalProfileAsync(string userId);
     }
 }

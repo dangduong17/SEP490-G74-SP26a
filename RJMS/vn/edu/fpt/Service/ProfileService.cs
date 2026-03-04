@@ -12,9 +12,9 @@ namespace RJMS.Vn.Edu.Fpt.Service
             _profileRepository = profileRepository;
         }
 
-        public async Task<UserProfileDTO?> GetPersonalProfileAsync(Guid userId)
+        public async Task<UserProfileDTO?> GetPersonalProfileAsync(string userId)
         {
-            var profile = await _profileRepository.GetProfileByIdAsync(userId);
+            var profile = await _profileRepository.GetProfileByUserIdAsync(userId);
             return profile;
         }
     }

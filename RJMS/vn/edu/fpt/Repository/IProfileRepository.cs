@@ -4,6 +4,6 @@ namespace RJMS.Vn.Edu.Fpt.Repository
 {
     public interface IProfileRepository
     {
-        Task<UserProfileDTO?> GetProfileByIdAsync(Guid userId);
+        Task<UserProfileDTO?> GetProfileByUserIdAsync(string userId);
     }
 }

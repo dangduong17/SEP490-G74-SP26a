@@ -1,3 +1,83 @@
+@using System.Linq
+@model RJMS.Vn.Edu.Fpt.Model.DTOs.UserProfileDTO
+
+@{
+    ViewData["Title"] = "Personal Profile";
+}
+<h2 class="mb-3">Personal Profile</h2>
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger">
+        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+        {
+            <div>@error.ErrorMessage</div>
+        }
+    </div>
+}
+
+@if (Model == null || string.IsNullOrWhiteSpace(Model.UserId))
+{
+    <p class="text-muted">No profile loaded.</p>
+}
+else
+{
+    <div class="card mb-3">
+        <div class="card-body">
+            <h4 class="card-title">@Model.FullName</h4>
+            <p class="card-subtitle text-muted">@Model.Title</p>
+
+            <dl class="row mt-3">
+                <dt class="col-sm-3">Email</dt>
+                <dd class="col-sm-9">@Model.Email</dd>
+
+                <dt class="col-sm-3">Phone</dt>
+                <dd class="col-sm-9">@Model.Phone</dd>
+
+                <dt class="col-sm-3">Location</dt>
+                <dd class="col-sm-9">@string.Join(", ", new[]{Model.Address, Model.District, Model.City}.Where(x => !string.IsNullOrWhiteSpace(x)))</dd>
+
+                <dt class="col-sm-3">Current Position</dt>
+                <dd class="col-sm-9">@Model.CurrentPosition</dd>
+
+                <dt class="col-sm-3">Working Type</dt>
+                <dd class="col-sm-9">@Model.WorkingType</dd>
+
+                <dt class="col-sm-3">Salary</dt>
+                <dd class="col-sm-9">
+                    @if (Model.ExpectedSalary.HasValue || Model.CurrentSalary.HasValue)
+                    {
+                        <span>Current: @Model.CurrentSalary?.ToString("N0") | Expected: @Model.ExpectedSalary?.ToString("N0")</span>
+                    }
+                    else
+                    {
+                        <span>N/A</span>
+                    }
+                </dd>
+
+                <dt class="col-sm-3">Experience (years)</dt>
+                <dd class="col-sm-9">@(Model.YearsOfExperience?.ToString() ?? "N/A")</dd>
+
+                <dt class="col-sm-3">Highest Degree</dt>
+                <dd class="col-sm-9">@(!string.IsNullOrWhiteSpace(Model.HighestDegree) ? Model.HighestDegree : "N/A")</dd>
+
+                <dt class="col-sm-3">Job Seeking</dt>
+                <dd class="col-sm-9">@(Model.IsLookingForJob ? "Yes" : "No")</dd>
+
+                <dt class="col-sm-3">Allow Contact</dt>
+                <dd class="col-sm-9">@(Model.AllowContact ? "Yes" : "No")</dd>
+
+                <dt class="col-sm-3">Summary</dt>
+                <dd class="col-sm-9">@(!string.IsNullOrWhiteSpace(Model.Summary) ? Model.Summary : "No summary provided.")</dd>
+
+                <dt class="col-sm-3">Created At</dt>
+                <dd class="col-sm-9">@Model.CreatedAt.ToString("u")</dd>
+
+                <dt class="col-sm-3">Last Updated</dt>
+                <dd class="col-sm-9">@(Model.UpdatedAt?.ToString("u") ?? "N/A")</dd>
+            </dl>
+        </div>
+    </div>
+}
 @model RJMS.Vn.Edu.Fpt.Model.DTOs.UserProfileDTO
 
 @{
