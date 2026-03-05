@@ -34,54 +34,50 @@ else
                 <dd class="col-sm-9">@Model.Phone</dd>
 
                 <dt class="col-sm-3">Location</dt>
-                <dd class="col-sm-9">@string.Join(", ", new[]{Model.Address, Model.District, Model.City}.Where(x => !string.IsNullOrWhiteSpace(x)))</dd>
+                <dd class="col-sm-9">@string.Join(", ", new[]{Model.Address, Model.District, Model.City}.Where(x =>
+                                    !string.IsNullOrWhiteSpace(x)))</dd>
 
-                <dt class="col-sm-3">Current Position</dt>
-                <dd class="col-sm-9">@Model.CurrentPosition</dd>
+                    <dt class="col-sm-3">Current Position</dt>
+                    <dd class="col-sm-9">@Model.CurrentPosition</dd>
 
-                <dt class="col-sm-3">Working Type</dt>
-                <dd class="col-sm-9">@Model.WorkingType</dd>
+                    <dt class="col-sm-3">Working Type</dt>
+                    <dd class="col-sm-9">@Model.WorkingType</dd>
 
-                <dt class="col-sm-3">Salary</dt>
-                <dd class="col-sm-9">
-                    @if (Model.ExpectedSalary.HasValue || Model.CurrentSalary.HasValue)
-                    {
-                        <span>Current: @Model.CurrentSalary?.ToString("N0") | Expected: @Model.ExpectedSalary?.ToString("N0")</span>
-                    }
+                    <dt class="col-sm-3">Salary</dt>
+                    <dd class="col-sm-9">
+                        @if (Model.ExpectedSalary.HasValue || Model.CurrentSalary.HasValue)
+                        {
+                            <span>Current: @Model.CurrentSalary?.ToString("N0") | Expected:
+                                @Model.ExpectedSalary?.ToString("N0")</span>
+                            }
                     else
-                    {
-                        <span>N/A</span>
-                    }
-                </dd>
+                            {
+                                <span>N/A</span>
+                            }
+                        </dd>
 
-                <dt class="col-sm-3">Experience (years)</dt>
-                <dd class="col-sm-9">@(Model.YearsOfExperience?.ToString() ?? "N/A")</dd>
+                        <dt class="col-sm-3">Experience (years)</dt>
+                        <dd class="col-sm-9">@(Model.YearsOfExperience?.ToString() ?? "N/A")</dd>
 
-                <dt class="col-sm-3">Highest Degree</dt>
-                <dd class="col-sm-9">@(!string.IsNullOrWhiteSpace(Model.HighestDegree) ? Model.HighestDegree : "N/A")</dd>
+                        <dt class="col-sm-3">Highest Degree</dt>
+                        <dd class="col-sm-9">@(!string.IsNullOrWhiteSpace(Model.HighestDegree) ? Model.HighestDegree : "N/A")</dd>
 
-                <dt class="col-sm-3">Job Seeking</dt>
-                <dd class="col-sm-9">@(Model.IsLookingForJob ? "Yes" : "No")</dd>
+                        <dt class="col-sm-3">Job Seeking</dt>
+                        <dd class="col-sm-9">@(Model.IsLookingForJob ? "Yes" : "No")</dd>
 
-                <dt class="col-sm-3">Allow Contact</dt>
-                <dd class="col-sm-9">@(Model.AllowContact ? "Yes" : "No")</dd>
+                        <dt class="col-sm-3">Allow Contact</dt>
+                        <dd class="col-sm-9">@(Model.AllowContact ? "Yes" : "No")</dd>
 
-                <dt class="col-sm-3">Summary</dt>
-                <dd class="col-sm-9">@(!string.IsNullOrWhiteSpace(Model.Summary) ? Model.Summary : "No summary provided.")</dd>
+                        <dt class="col-sm-3">Summary</dt>
+                        <dd class="col-sm-9">@(!string.IsNullOrWhiteSpace(Model.Summary) ? Model.Summary : "No summary provided.")
+                        </dd>
 
-                <dt class="col-sm-3">Created At</dt>
-                <dd class="col-sm-9">@Model.CreatedAt.ToString("u")</dd>
+                        <dt class="col-sm-3">Created At</dt>
+                        <dd class="col-sm-9">@Model.CreatedAt.ToString("u")</dd>
 
-                <dt class="col-sm-3">Last Updated</dt>
-                <dd class="col-sm-9">@(Model.UpdatedAt?.ToString("u") ?? "N/A")</dd>
-            </dl>
-        </div>
-    </div>
-}
-@model RJMS.Vn.Edu.Fpt.Model.DTOs.UserProfileDTO
-
-@{
-    ViewData["Title"] = "Personal Profile";
-}
-
-@* *@
+                        <dt class="col-sm-3">Last Updated</dt>
+                        <dd class="col-sm-9">@(Model.UpdatedAt?.ToString("u") ?? "N/A")</dd>
+                    </dl>
+                </div>
+            </div>
+        }
