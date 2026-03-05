@@ -1,15 +1,36 @@
+using System;
+using System.Collections.Generic;
+using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using RJMS.Vn.Edu.Fpt.Model.DTOs;
+using RJMS.vn.edu.fpt.Models;
 using RJMS.Vn.Edu.Fpt.Repository;
+using BCrypt.Net;
 
 namespace RJMS.Vn.Edu.Fpt.Service
 {
     public class AuthService : IAuthService
     {
         private readonly IAuthRepository _authRepository;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IEmailService _emailService;
+        private readonly IConfiguration _configuration;
 
-        public AuthService(IAuthRepository authRepository)
+        public AuthService(
+            IAuthRepository authRepository,
+            IHttpContextAccessor httpContextAccessor,
+            IEmailService emailService,
+            IConfiguration configuration
+        )
         {
             _authRepository = authRepository;
+            _httpContextAccessor = httpContextAccessor;
+            _emailService = emailService;
+            _configuration = configuration;
         }
 
         public async Task<(bool Success, string Message)> LoginAsync(LoginDTO loginDto)
@@ -19,31 +40,323 @@ namespace RJMS.Vn.Edu.Fpt.Service
                 var userExists = await _authRepository.UserExistsAsync(loginDto.Email);
                 if (!userExists)
                 {
-                    return (false, "User not found");
+                    return (false, "Người dùng không tồn tại");
                 }
 
                 var isValid = await _authRepository.ValidateUserCredentialsAsync(
-                    loginDto.Email, 
+                    loginDto.Email,
                     loginDto.Password
                 );
 
                 if (!isValid)
                 {
-                    return (false, "Invalid credentials");
+                    return (false, "Email hoặc mật khẩu không đúng");
                 }
 
-                return (true, "Login successful");
+                var user = await _authRepository.GetUserByEmailAsync(loginDto.Email) as User;
+                if (user != null)
+                {
+                    if (!(user.EmailConfirmed ?? false))
+                    {
+                        return (false, "Email chưa được xác nhận. Vui lòng kiểm tra hộp thư.");
+                    }
+
+                    // Manual Cookie Authentication
+                    var cookieOptions = new CookieOptions
+                    {
+                        HttpOnly = true,
+                        Secure = true, // Should be true in production
+                        SameSite = SameSiteMode.Strict,
+                        Expires = loginDto.RememberMe
+                            ? DateTime.Now.AddDays(30)
+                            : DateTime.Now.AddHours(2)
+                    };
+
+                    var context = _httpContextAccessor.HttpContext;
+                    if (context != null)
+                    {
+                        var userRole = await _authRepository.GetUserRoleAsync(user.Id);
+
+                        context.Response.Cookies.Append("UserId", user.Id.ToString(), cookieOptions);
+                        context.Response.Cookies.Append("UserEmail", user.Email ?? "", cookieOptions);
+                        context.Response.Cookies.Append("UserName", user.FirstName ?? "", cookieOptions);
+                        context.Response.Cookies.Append("UserRole", userRole, cookieOptions);
+                    }
+                }
+
+                return (true, "Đăng nhập thành công");
             }
             catch (Exception ex)
             {
-                return (false, $"Error: {ex.Message}");
+                return (false, $"Lỗi: {ex.Message}");
             }
         }
 
         public async Task<bool> LogoutAsync()
         {
-            await Task.CompletedTask;
-            return true;
+            try
+            {
+                var context = _httpContextAccessor.HttpContext;
+                if (context != null)
+                {
+                    context.Response.Cookies.Delete("UserId");
+                    context.Response.Cookies.Delete("UserEmail");
+                    context.Response.Cookies.Delete("UserName");
+                    context.Response.Cookies.Delete("UserRole");
+                }
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public async Task<(bool Success, string Message)> ForgotPasswordAsync(
+            ForgotPasswordDTO forgotDto
+        )
+        {
+            try
+            {
+                var userExists = await _authRepository.UserExistsAsync(forgotDto.Email);
+                if (!userExists)
+                {
+                    return (false, "Email không tồn tại trong hệ thống");
+                }
+
+                var newPassword = GenerateStrongPassword();
+                var hashed = BCrypt.Net.BCrypt.HashPassword(newPassword);
+
+                var updated = await _authRepository.UpdatePasswordHashAsync(
+                    forgotDto.Email,
+                    hashed
+                );
+
+                if (!updated)
+                {
+                    return (false, "Không thể cập nhật mật khẩu. Vui lòng thử lại.");
+                }
+
+                var emailSent = await _emailService.SendNewPasswordEmailAsync(
+                    forgotDto.Email,
+                    newPassword
+                );
+
+                if (!emailSent)
+                {
+                    return (false, "Không thể gửi email. Vui lòng thử lại.");
+                }
+
+                return (true, "Mật khẩu mới đã được gửi về email của bạn.");
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Lỗi: {ex.Message}");
+            }
+        }
+
+        public async Task<(bool Success, string Message)> RegisterAsync(RegisterDTO registerDto)
+        {
+            try
+            {
+                var exists = await _authRepository.UserExistsAsync(registerDto.Email);
+                if (exists)
+                {
+                    return (false, "Email đã được sử dụng");
+                }
+
+                var user = new User
+                {
+                    Email = registerDto.Email,
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword(registerDto.Password),
+                    FirstName = registerDto.FirstName,
+                    LastName = registerDto.LastName,
+                    IsActive = true,
+                    EmailConfirmed = false,
+                    CreatedAt = DateTime.UtcNow,
+                };
+
+                var created = await _authRepository.CreateUserAsync(user);
+                if (created == null)
+                {
+                    return (false, "Không thể tạo tài khoản. Vui lòng thử lại.");
+                }
+
+                if (
+                    string.Equals(registerDto.Role, "Candidate", StringComparison.OrdinalIgnoreCase)
+                    || string.IsNullOrWhiteSpace(registerDto.Role)
+                )
+                {
+                    var fullName = string.IsNullOrWhiteSpace(registerDto.FullName)
+                        ? $"{registerDto.FirstName} {registerDto.LastName}".Trim()
+                        : registerDto.FullName.Trim();
+
+                    await _authRepository.CreateCandidateAsync(
+                        new Candidate
+                        {
+                            UserId = created.Id,
+                            FullName = fullName,
+                            CreatedAt = DateTime.UtcNow,
+                            IsLookingForJob = true,
+                        }
+                    );
+                }
+
+                var token = GenerateEmailToken(
+                    created.Email ?? string.Empty,
+                    TimeSpan.FromHours(24)
+                );
+                var confirmLink = BuildConfirmLink(token);
+
+                var emailSent = await _emailService.SendEmailConfirmationAsync(
+                    created.Email ?? string.Empty,
+                    confirmLink
+                );
+
+                if (!emailSent)
+                {
+                    return (
+                        false,
+                        "Đăng ký thành công nhưng gửi email xác nhận thất bại. Vui lòng thử lại."
+                    );
+                }
+
+                return (true, "Đăng ký thành công. Vui lòng kiểm tra email để xác nhận tài khoản.");
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Lỗi: {ex.Message}");
+            }
+        }
+
+        public async Task<(bool Success, string Message)> ConfirmEmailAsync(string token)
+        {
+            try
+            {
+                var email = ValidateEmailToken(token);
+                if (string.IsNullOrEmpty(email))
+                {
+                    return (false, "Token không hợp lệ hoặc đã hết hạn.");
+                }
+
+                var confirmed = await _authRepository.SetEmailConfirmedAsync(email);
+                if (!confirmed)
+                {
+                    return (false, "Không tìm thấy tài khoản để xác nhận.");
+                }
+
+                return (true, "Xác nhận email thành công. Vui lòng đăng nhập.");
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Lỗi: {ex.Message}");
+            }
+        }
+
+        private static string GenerateStrongPassword(int length = 12)
+        {
+            const string lower = "abcdefghijklmnopqrstuvwxyz";
+            const string upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            const string digits = "0123456789";
+            const string specials = "!@#$%^&*()_-+=[]{}";
+            var all = lower + upper + digits + specials;
+
+            var bytes = new byte[length];
+            RandomNumberGenerator.Fill(bytes);
+
+            var chars = new char[length];
+            for (int i = 0; i < length; i++)
+            {
+                chars[i] = all[bytes[i] % all.Length];
+            }
+
+            return new string(chars);
+        }
+
+        private string GenerateEmailToken(string email, TimeSpan lifetime)
+        {
+            var expiry = DateTimeOffset.UtcNow.Add(lifetime).Ticks;
+            var payload = $"{email}|{expiry}";
+            var signature = Sign(payload);
+            var tokenPayload = $"{payload}|{signature}";
+            return Base64UrlEncode(Encoding.UTF8.GetBytes(tokenPayload));
+        }
+
+        private string BuildConfirmLink(string token)
+        {
+            var request = _httpContextAccessor.HttpContext?.Request;
+            var scheme = request?.Scheme ?? "https";
+            var host = request?.Host.Value ?? "localhost";
+            var encodedToken = Uri.EscapeDataString(token);
+            return $"{scheme}://{host}/Auth/ConfirmEmail?token={encodedToken}";
+        }
+
+        private string ValidateEmailToken(string token)
+        {
+            try
+            {
+                var decoded = Encoding.UTF8.GetString(Base64UrlDecode(token));
+                var parts = decoded.Split('|');
+                if (parts.Length != 3)
+                {
+                    return string.Empty;
+                }
+
+                var email = parts[0];
+                if (!long.TryParse(parts[1], out var ticks))
+                {
+                    return string.Empty;
+                }
+
+                var expectedSignature = parts[2];
+                var payload = $"{email}|{ticks}";
+                var actualSignature = Sign(payload);
+
+                if (!string.Equals(expectedSignature, actualSignature, StringComparison.Ordinal))
+                {
+                    return string.Empty;
+                }
+
+                if (DateTimeOffset.UtcNow.Ticks > ticks)
+                {
+                    return string.Empty;
+                }
+
+                return email;
+            }
+            catch
+            {
+                return string.Empty;
+            }
+        }
+
+        private string Sign(string data)
+        {
+            var secret = _configuration["Jwt:Key"] ?? "fallback-secret";
+            using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secret));
+            var signatureBytes = hmac.ComputeHash(Encoding.UTF8.GetBytes(data));
+            return Base64UrlEncode(signatureBytes);
+        }
+
+        private static string Base64UrlEncode(byte[] input)
+        {
+            return Convert.ToBase64String(input).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+        }
+
+        private static byte[] Base64UrlDecode(string input)
+        {
+            var output = input.Replace('-', '+').Replace('_', '/');
+            switch (output.Length % 4)
+            {
+                case 2:
+                    output += "==";
+                    break;
+                case 3:
+                    output += "=";
+                    break;
+            }
+
+            return Convert.FromBase64String(output);
         }
     }
 }

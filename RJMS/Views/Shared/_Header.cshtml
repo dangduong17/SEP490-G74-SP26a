@@ -270,17 +270,12 @@
 
                 <!-- User Actions -->
                 <div class="d-flex align-items-center gap-2">
-                    @*
-                        TODO: Fix session-based auth later
-                        Lỗi: Microsoft.AspNetCore.Http.DefaultHttpContext.get_Session()
-                        Nguyên nhân: Session chưa được cấu hình / middleware chưa thêm vào pipeline
-
                     @{
-                        var isAuthenticated = User.Identity?.IsAuthenticated == true;
-                        var userRole = Context.Session.GetString("UserRole");
-                        var userName = Context.Session.GetString("UserName") ?? User.Identity?.Name ?? "User";
-                        var userEmail = Context.Session.GetString("UserEmail") ?? "";
-                        var userId = Context.Session.GetString("UserId") ?? "";
+                        var userId = Context.Request.Cookies["UserId"];
+                        var isAuthenticated = !string.IsNullOrEmpty(userId);
+                        var userRole = Context.Request.Cookies["UserRole"];
+                        var userName = Context.Request.Cookies["UserName"] ?? "User";
+                        var userEmail = Context.Request.Cookies["UserEmail"] ?? "";
                     }
 
                     @if (isAuthenticated)
@@ -339,6 +334,7 @@
 
                                         <div class="profile-menu-section">
                                             <form asp-controller="Auth" asp-action="Logout" method="post" id="logoutFormAdmin">
+                                                @Html.AntiForgeryToken()
                                                 <a href="javascript:void(0)" onclick="document.getElementById('logoutFormAdmin').submit()" class="profile-menu-item logout-btn">
                                                     <i class="fas fa-sign-out-alt"></i>
                                                     <span class="label">Đăng xuất</span>
@@ -355,7 +351,8 @@
                                 Recruiter Dashboard
                             </a>
                             
-                            <form asp-controller="Auth" asp-action="Logout" method="post" class="d-inline ms-2">
+                            <form asp-controller="Auth" asp-action="Logout" method="post" class="d-inline ms-2" id="logoutFormRecruiter">
+                                @Html.AntiForgeryToken()
                                 <button type="submit" class="btn btn-outline-danger">
                                     <i class="fas fa-sign-out-alt me-1"></i>Đăng xuất
                                 </button>
@@ -464,6 +461,7 @@
                                         <!-- Logout Section -->
                                         <div class="profile-menu-section">
                                             <form asp-controller="Auth" asp-action="Logout" method="post" id="logoutFormHeader">
+                                                @Html.AntiForgeryToken()
                                                 <a href="javascript:void(0)" onclick="document.getElementById('logoutFormHeader').submit()" class="profile-menu-item logout-btn">
                                                     <i class="fas fa-sign-out-alt"></i>
                                                     <span class="label">Đăng xuất</span>
@@ -484,15 +482,6 @@
                             Đăng ký
                         </a>
                     }
-                    *@
-
-                    @* Tam thoi hien thi nut Dang nhap / Dang ky khi cho fix Session *@
-                    <a class="btn btn-outline-primary me-2" asp-controller="Auth" asp-action="Login">
-                        Đăng nhập
-                    </a>
-                    <a class="btn btn-primary" asp-controller="Auth" asp-action="Register">
-                        Đăng ký
-                    </a>
                 </div>
             </div>
         </div>

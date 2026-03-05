@@ -1,14 +1,15 @@
+using System;
 using Microsoft.EntityFrameworkCore;
-using RJMS.Models;
 using RJMS.Vn.Edu.Fpt.Model.DTOs;
+using RJMS.vn.edu.fpt.Models;
 
 namespace RJMS.Vn.Edu.Fpt.Repository
 {
     public class ProfileRepository : IProfileRepository
     {
-        private readonly G74FindingJobsContext _context;
+        private readonly FindingJobsDbContext _context;
 
-        public ProfileRepository(G74FindingJobsContext context)
+        public ProfileRepository(FindingJobsDbContext context)
         {
             _context = context;
         }
@@ -20,10 +21,15 @@ namespace RJMS.Vn.Edu.Fpt.Repository
                 return null;
             }
 
+            if (!int.TryParse(userId, out var userIdValue))
+            {
+                return null;
+            }
+
             var candidate = await _context
                 .Candidates.Include(c => c.User)
                 .AsNoTracking()
-                .FirstOrDefaultAsync(c => c.UserId == userId);
+                .FirstOrDefaultAsync(c => c.UserId == userIdValue);
 
             if (candidate == null)
             {
@@ -33,26 +39,25 @@ namespace RJMS.Vn.Edu.Fpt.Repository
             return new UserProfileDTO
             {
                 CandidateId = candidate.Id,
-                UserId = candidate.UserId,
+                UserId = candidate.UserId.ToString(),
                 FullName = candidate.FullName ?? string.Empty,
                 Email = candidate.User?.Email ?? string.Empty,
                 Phone = candidate.Phone ?? string.Empty,
                 AvatarUrl = candidate.Avatar ?? string.Empty,
                 City = candidate.City ?? string.Empty,
-                District = candidate.District ?? string.Empty,
                 Address = candidate.Address ?? string.Empty,
                 Title = candidate.Title ?? string.Empty,
                 CurrentSalary = candidate.CurrentSalary,
                 ExpectedSalary = candidate.ExpectedSalary,
-                WorkingType = candidate.WorkingType ?? string.Empty,
                 Summary = candidate.Summary ?? string.Empty,
-                CurrentPosition = candidate.CurrentPosition ?? string.Empty,
                 YearsOfExperience = candidate.YearsOfExperience,
-                HighestDegree = candidate.HighestDegree ?? string.Empty,
-                IsLookingForJob = candidate.IsLookingForJob,
-                AllowContact = candidate.AllowContact,
-                CreatedAt = candidate.CreatedAt,
-                UpdatedAt = candidate.UpdatedAt,
+                WorkingType = string.Empty,
+                CurrentPosition = string.Empty,
+                HighestDegree = string.Empty,
+                IsLookingForJob = candidate.IsLookingForJob ?? false,
+                AllowContact = false,
+                CreatedAt = candidate.CreatedAt ?? DateTime.MinValue,
+                UpdatedAt = null,
             };
         }
     }
