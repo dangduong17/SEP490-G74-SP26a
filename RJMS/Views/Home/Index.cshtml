@@ -1,8 +1,323 @@
-ï»¿@{
-    ViewData["Title"] = "Home Page";
+@{
+    ViewData["Title"] = "Finding Jobs - Tìm vi?c làm, Tuy?n d?ng hi?u qu?";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<!-- Hero Banner Section -->
+<section class="hero-banner">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="hero-heading">
+                    Ti?p l?i th?<br />
+                    <span class="text-primary">N?i thành công</span>
+                </h1>
+                <p class="hero-subheading">
+                    Finding Jobs - H? sinh thái nhân s? tiên ti?n<br />
+                    Công ngh? AI hoá tuy?n d?ng & qu?n tr?
+                </p>
+
+                <!-- Search Box -->
+                <div class="search-box-wrapper">
+                    <form class="search-form">
+                        <div class="row g-2">
+                            <div class="col-md-5">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white border-end-0">
+                                        <i class="fas fa-search text-muted"></i>
+                                    </span>
+                                    <input type="text" class="form-control border-start-0" placeholder="V? trí ?ng tuy?n">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white border-end-0">
+                                        <i class="fas fa-map-marker-alt text-muted"></i>
+                                    </span>
+                                    <select class="form-select border-start-0">
+                                        <option>T?t c? d?a di?m</option>
+                                        <option>Hà N?i</option>
+                                        <option>TP. H? Chí Minh</option>
+                                        <option>Ðà N?ng</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fas fa-search me-2"></i>Tìm vi?c
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Popular Keywords -->
+                <div class="popular-keywords mt-3">
+                    <span class="text-muted me-2">T? khóa ph? bi?n:</span>
+                    <a href="#" class="keyword-tag">IT</a>
+                    <a href="#" class="keyword-tag">Marketing</a>
+                    <a href="#" class="keyword-tag">Kinh doanh</a>
+                    <a href="#" class="keyword-tag">K? toán</a>
+                </div>
+            </div>
+            <div class="col-lg-6 d-none d-lg-block">
+                <img src="https://cdn-new.topcv.vn/unsafe/https://static.topcv.vn/v4/image/welcome/hero/image-hero.png" alt="Hero" class="img-fluid">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Stats Section -->
+<section class="stats-section">
+    <div class="container">
+        <div class="row text-center">
+            <div class="col-6 col-md-3 mb-3">
+                <div class="stat-item">
+                    <h3 class="stat-number">50,000+</h3>
+                    <p class="stat-label">Nhà tuy?n d?ng</p>
+                </div>
+            </div>
+            <div class="col-6 col-md-3 mb-3">
+                <div class="stat-item">
+                    <h3 class="stat-number">100,000+</h3>
+                    <p class="stat-label">Doanh nghi?p</p>
+                </div>
+            </div>
+            <div class="col-6 col-md-3 mb-3">
+                <div class="stat-item">
+                    <h3 class="stat-number">5,000,000+</h3>
+                    <p class="stat-label">Vi?c làm k?t n?i</p>
+                </div>
+            </div>
+            <div class="col-6 col-md-3 mb-3">
+                <div class="stat-item">
+                    <h3 class="stat-number">10,000,000+</h3>
+                    <p class="stat-label">Lu?t t?i ?ng d?ng</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Jobs Section -->
+<section class="featured-jobs-section">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title">Vi?c làm t?t nh?t</h2>
+            <a asp-controller="Candidates" asp-action="JobList" class="btn btn-outline-primary">
+                Xem t?t c? <i class="fas fa-arrow-right ms-2"></i>
+            </a>
+        </div>
+
+        <div class="row">
+            @for (int i = 0; i < 6; i++)
+            {
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="job-card">
+                        <div class="job-card-header">
+                            <div class="company-logo">
+                                <i class="fas fa-building"></i>
+                            </div>
+                            <div class="job-actions">
+                                <button class="btn-save"><i class="far fa-heart"></i></button>
+                            </div>
+                        </div>
+                        <div class="job-card-body">
+                            <h3 class="job-title">
+                                <a href="#">Nhân Viên Kinh Doanh - Thu Nh?p H?p D?n</a>
+                            </h3>
+                            <p class="company-name">Công ty TNHH ABC</p>
+                            <div class="job-info">
+                                <span class="salary"><i class="fas fa-dollar-sign me-1"></i>15 - 25 tri?u</span>
+                                <span class="location"><i class="fas fa-map-marker-alt me-1"></i>Hà N?i</span>
+                            </div>
+                            <div class="job-tags">
+                                <span class="job-tag">Full-time</span>
+                                <span class="job-tag">Kinh nghi?m 2 nam</span>
+                            </div>
+                        </div>
+                        <div class="job-card-footer">
+                            <span class="job-date"><i class="far fa-clock me-1"></i>2 ngày tru?c</span>
+                            <a href="#" class="btn btn-sm btn-primary">?ng tuy?n ngay</a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+<!-- Top Companies Section -->
+<section class="top-companies-section">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title">Thuong hi?u l?n tiêu bi?u</h2>
+            <a href="#" class="view-all-link">Xem t?t c? <i class="fas fa-arrow-right ms-2"></i></a>
+        </div>
+
+        <div class="row">
+            @for (int i = 0; i < 8; i++)
+            {
+                <div class="col-6 col-md-4 col-lg-3 mb-4">
+                    <div class="company-card">
+                        <div class="company-logo-wrapper">
+                            <i class="fas fa-building fa-3x text-primary"></i>
+                        </div>
+                        <h4 class="company-card-name">Công ty ABC</h4>
+                        <p class="company-jobs-count">
+                            <i class="fas fa-briefcase me-1"></i>25 vi?c làm
+                        </p>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+<!-- CV Builder Section -->
+<section class="cv-builder-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6 mb-4 mb-lg-0">
+                <img src="https://cdn-new.topcv.vn/unsafe/https://static.topcv.vn/v4/image/welcome/feature-job-seeker/cv-builder/bg-section-cv.png" 
+                     alt="CV Builder" class="img-fluid">
+            </div>
+            <div class="col-lg-6">
+                <div class="feature-content">
+                    <h2 class="feature-title">T?o CV online mi?n phí</h2>
+                    <p class="feature-description">
+                        Công c? t?o CV chuyên nghi?p, d? dàng và nhanh chóng. 
+                        Hon 100+ m?u CV d?p, chu?n theo t?ng ngành ngh?.
+                    </p>
+                    <ul class="feature-list">
+                        <li><i class="fas fa-check-circle text-primary me-2"></i>Hon 100+ m?u CV d?p, chu?n</li>
+                        <li><i class="fas fa-check-circle text-primary me-2"></i>T?o CV nhanh chóng, d? dàng</li>
+                        <li><i class="fas fa-check-circle text-primary me-2"></i>T?i xu?ng PDF ch?t lu?ng cao</li>
+                        <li><i class="fas fa-check-circle text-primary me-2"></i>AI g?i ý n?i dung CV</li>
+                    </ul>
+                    <a asp-controller="CVs" asp-action="CVList" class="btn btn-primary btn-lg mt-3">
+                        <i class="fas fa-file-alt me-2"></i>T?o CV ngay
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Categories Section -->
+<section class="categories-section">
+    <div class="container">
+        <h2 class="section-title text-center mb-5">Top ngành ngh? n?i b?t</h2>
+        <div class="row">
+            <div class="col-6 col-md-4 col-lg-3 mb-4">
+                <a href="#" class="category-card">
+                    <div class="category-icon">
+                        <i class="fas fa-laptop-code"></i>
+                    </div>
+                    <h4 class="category-name">IT - Ph?n m?m</h4>
+                    <p class="category-jobs">12,500 vi?c làm</p>
+                </a>
+            </div>
+            <div class="col-6 col-md-4 col-lg-3 mb-4">
+                <a href="#" class="category-card">
+                    <div class="category-icon">
+                        <i class="fas fa-bullhorn"></i>
+                    </div>
+                    <h4 class="category-name">Marketing</h4>
+                    <p class="category-jobs">8,200 vi?c làm</p>
+                </a>
+            </div>
+            <div class="col-6 col-md-4 col-lg-3 mb-4">
+                <a href="#" class="category-card">
+                    <div class="category-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h4 class="category-name">Kinh doanh</h4>
+                    <p class="category-jobs">9,500 vi?c làm</p>
+                </a>
+            </div>
+            <div class="col-6 col-md-4 col-lg-3 mb-4">
+                <a href="#" class="category-card">
+                    <div class="category-icon">
+                        <i class="fas fa-calculator"></i>
+                    </div>
+                    <h4 class="category-name">K? toán</h4>
+                    <p class="category-jobs">6,300 vi?c làm</p>
+                </a>
+            </div>
+            <div class="col-6 col-md-4 col-lg-3 mb-4">
+                <a href="#" class="category-card">
+                    <div class="category-icon">
+                        <i class="fas fa-user-tie"></i>
+                    </div>
+                    <h4 class="category-name">Nhân s?</h4>
+                    <p class="category-jobs">4,800 vi?c làm</p>
+                </a>
+            </div>
+            <div class="col-6 col-md-4 col-lg-3 mb-4">
+                <a href="#" class="category-card">
+                    <div class="category-icon">
+                        <i class="fas fa-paint-brush"></i>
+                    </div>
+                    <h4 class="category-name">Thi?t k?</h4>
+                    <p class="category-jobs">5,100 vi?c làm</p>
+                </a>
+            </div>
+            <div class="col-6 col-md-4 col-lg-3 mb-4">
+                <a href="#" class="category-card">
+                    <div class="category-icon">
+                        <i class="fas fa-headset"></i>
+                    </div>
+                    <h4 class="category-name">Cham sóc KH</h4>
+                    <p class="category-jobs">7,200 vi?c làm</p>
+                </a>
+            </div>
+            <div class="col-6 col-md-4 col-lg-3 mb-4">
+                <a href="#" class="category-card">
+                    <div class="category-icon">
+                        <i class="fas fa-gavel"></i>
+                    </div>
+                    <h4 class="category-name">Pháp lý</h4>
+                    <p class="category-jobs">3,600 vi?c làm</p>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- App Download Section -->
+<section class="app-download-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h2 class="app-title">Ki?n t?o s? nghi?p c?a riêng b?n v?i ?ng d?ng Finding Jobs</h2>
+                <p class="app-description">
+                    "T?t c? trong m?t" - Tr?i nghi?m t?o CV, tìm vi?c, ?ng tuy?n và hon th? n?a - 
+                    ch? v?i m?t ?ng d?ng duy nh?t. B?t d?u ngay hôm nay!
+                </p>
+                <div class="app-download-buttons">
+                    <a href="#" class="app-btn">
+                        <i class="fab fa-apple"></i>
+                        <div>
+                            <small>Download on the</small>
+                            <strong>App Store</strong>
+                        </div>
+                    </a>
+                    <a href="#" class="app-btn">
+                        <i class="fab fa-google-play"></i>
+                        <div>
+                            <small>GET IT ON</small>
+                            <strong>Google Play</strong>
+                        </div>
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-6 text-center d-none d-lg-block">
+                <img src="https://cdn-new.topcv.vn/unsafe/https://static.topcv.vn/v4/image/welcome/download-app/phone.png" 
+                     alt="App Screenshot" class="img-fluid" style="max-width: 400px;">
+            </div>
+        </div>
+    </div>
+</section>
+
+        </div>
+    </div>
