@@ -1,8 +1,77 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
-
-Hello world
+﻿@model RJMS.Vn.Edu.Fpt.Model.DTOs.LoginDTO
 @{
-    ViewData["Title"] = "Login";
+    ViewData["Title"] = "Đăng nhập";
 }
+
+<section class="auth-section">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-7 ">
+                <div class="auth-card">
+                    <div class="auth-header">
+                        <h2 class="auth-title">Đăng nhập</h2>
+                        <p class="auth-subtitle">Chào mừng bạn trở lại Finding Jobs</p>
+                    </div>
+
+                    <form asp-action="Login" method="post" class="auth-form" novalidate id="login-form">
+                        @Html.AntiForgeryToken()
+                        <div class="mb-3">
+                            <label asp-for="Email" class="form-label">Email</label>
+                            <input asp-for="Email" class="form-control" type="email" placeholder="name@example.com" />
+                            <span asp-validation-for="Email" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Password" class="form-label">Mật khẩu</label>
+                            <input asp-for="Password" class="form-control" type="password"
+                                   placeholder="Nhập mật khẩu" />
+                            <span asp-validation-for="Password" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" asp-for="RememberMe" type="checkbox" id="rememberMe">
+                                    <label class="form-check-label" for="rememberMe">
+                                        Ghi nhớ đăng nhập
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"
+                                 id="validation-summary"></div>
+                            <button type="submit" class="btn btn-primary w-100 btn-auth">Đăng nhập</button>
+
+                            <div class="auth-divider">
+                                <span>hoặc</span>
+                            </div>
+
+                            <div class="text-center">
+                                <p class="auth-link-text">
+                                    Chưa có tài khoản? <a asp-action="Register" class="auth-link">Đăng ký người dùng</a>
+                                </p>
+                                <p class="auth-link-text">
+                                    Bạn là nhà tuyển dụng? <a asp-action="RegisterRecruiter" class="auth-link">Đăng ký tuyển
+                                    dụng</a>
+                                </p>
+                                <a asp-action="ForgotPassword" class="auth-forgot">Quên mật khẩu?</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    @section Scripts {
+        @{
+            await Html.RenderPartialAsync("_ValidationScriptsPartial");
+        }
+        <script>
+                        (function () {
+                            const summary = document.getElementById('validation-summary');
+                            if (summary && summary.textContent.trim().length > 0) {
+                                toastr.error('Vui lòng kiểm tra lại thông tin đăng nhập.');
+                            }
+                        })();
+        </script>
+    }

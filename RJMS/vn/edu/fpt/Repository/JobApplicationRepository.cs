@@ -1,16 +1,16 @@
 using System;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
-using RJMS.Models;
 using RJMS.Vn.Edu.Fpt.Model.DTOs;
+using RJMS.vn.edu.fpt.Models;
 
 namespace RJMS.Vn.Edu.Fpt.Repository
 {
     public class JobApplicationRepository : IJobApplicationRepository
     {
-        private readonly G74FindingJobsContext _context;
+        private readonly FindingJobsDbContext _context;
 
-        public JobApplicationRepository(G74FindingJobsContext context)
+        public JobApplicationRepository(FindingJobsDbContext context)
         {
             _context = context;
         }
@@ -24,8 +24,13 @@ namespace RJMS.Vn.Edu.Fpt.Repository
                 return Array.Empty<JobApplicationDTO>();
             }
 
+            if (!int.TryParse(userId, out var userIdValue))
+            {
+                return Array.Empty<JobApplicationDTO>();
+            }
+
             var candidateId = await _context
-                .Candidates.Where(c => c.UserId == userId)
+                .Candidates.Where(c => c.UserId == userIdValue)
                 .Select(c => c.Id)
                 .FirstOrDefaultAsync();
 
@@ -43,8 +48,8 @@ namespace RJMS.Vn.Edu.Fpt.Repository
                 {
                     Id = a.Id,
                     PositionTitle = a.Job.Title ?? string.Empty,
-                    Status = a.Status,
-                    AppliedAt = a.CreatedAt,
+                    Status = a.Status ?? string.Empty,
+                    AppliedAt = a.CreatedAt ?? DateTime.MinValue,
                 })
                 .ToListAsync();
 

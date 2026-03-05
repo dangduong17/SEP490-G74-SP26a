@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using RJMS.Vn.Edu.Fpt.Model.DTOs;
 using RJMS.Vn.Edu.Fpt.Service;
@@ -25,6 +26,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         {
             if (!ModelState.IsValid)
             {
+                TempData["ErrorToast"] = "Vui lòng kiểm tra lại thông tin đăng nhập.";
                 return View(loginDto);
             }
 
@@ -32,10 +34,11 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
 
             if (result.Success)
             {
+                TempData["SuccessToast"] = "Đăng nhập thành công!";
                 return RedirectToAction("Index", "Home");
             }
 
-            ModelState.AddModelError(string.Empty, result.Message);
+            TempData["ErrorToast"] = result.Message;
             return View(loginDto);
         }
 
@@ -51,10 +54,47 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         {
             if (!ModelState.IsValid)
             {
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+                foreach (var err in errors)
+                {
+                    Console.WriteLine($"VALIDATION ERROR: {err}");
+                }
+                TempData["ErrorToast"] = $"Vui lòng kiểm tra lại thông tin đăng ký. Chi tiết: {string.Join(", ", errors)}";
                 return View(registerDto);
             }
 
-            TempData["Message"] = "Registration successful! Please login.";
+            var result = await _authService.RegisterAsync(registerDto);
+
+            if (result.Success)
+            {
+                TempData["SuccessToast"] = result.Message;
+            }
+            else
+            {
+                TempData["ErrorToast"] = result.Message;
+                return View(registerDto);
+            }
+
+            return RedirectToAction("Login");
+        }
+
+        [HttpGet]
+        public IActionResult RegisterRecruiter()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult RegisterRecruiter(RecruiterRegisterViewModel registerDto)
+        {
+            if (!ModelState.IsValid)
+            {
+                TempData["ErrorToast"] = "Vui lòng kiểm tra lại thông tin đăng ký.";
+                return View(registerDto);
+            }
+
+            TempData["SuccessToast"] = "Đăng ký Nhà tuyển dụng thành công! Vui lòng đăng nhập.";
             return RedirectToAction("Login");
         }
 
@@ -63,7 +103,15 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         public async Task<IActionResult> Logout()
         {
             await _authService.LogoutAsync();
+            TempData["SuccessToast"] = "Đăng xuất thành công!";
             return RedirectToAction("Login");
+        }
+
+        [HttpGet]
+        public IActionResult AccessDenied()
+        {
+            Response.StatusCode = StatusCodes.Status403Forbidden;
+            return View();
         }
 
         [HttpGet]
@@ -78,10 +126,45 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         {
             if (!ModelState.IsValid)
             {
+                TempData["ErrorToast"] = "Vui lòng kiểm tra lại thông tin email.";
                 return View(forgotPasswordDto);
             }
 
-            TempData["Message"] = "Password reset link has been sent to your email.";
+            try
+            {
+                var result = await _authService.ForgotPasswordAsync(forgotPasswordDto);
+
+                if (result.Success)
+                {
+                    TempData["SuccessToast"] = result.Message;
+                }
+                else
+                {
+                    TempData["ErrorToast"] = result.Message;
+                }
+            }
+            catch (Exception)
+            {
+                TempData["ErrorToast"] = "Đã xảy ra lỗi. Vui lòng thử lại sau.";
+            }
+
+            return RedirectToAction("Login");
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ConfirmEmail(string token)
+        {
+            var result = await _authService.ConfirmEmailAsync(token);
+
+            if (result.Success)
+            {
+                TempData["SuccessToast"] = result.Message;
+            }
+            else
+            {
+                TempData["ErrorToast"] = result.Message;
+            }
+
             return RedirectToAction("Login");
         }
     }

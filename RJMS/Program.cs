@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using RJMS.Models;
+using RJMS.vn.edu.fpt.Models;
 using RJMS.Vn.Edu.Fpt.Repository;
 using RJMS.Vn.Edu.Fpt.Service;
 
@@ -7,11 +7,15 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-builder.Services.AddDbContext<G74FindingJobsContext>(options =>
+builder.Services.AddDbContext<FindingJobsDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DBContext"))
 );
+
+builder.Services.AddHttpContextAccessor();
+
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IProfileRepository, ProfileRepository>();
 builder.Services.AddScoped<IProfileService, ProfileService>();
 builder.Services.AddScoped<IJobApplicationRepository, JobApplicationRepository>();
