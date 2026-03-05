@@ -1,0 +1,525 @@
+<style>
+    .profile-dropdown {
+        position: relative;
+    }
+    
+    .profile-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #e0e7ff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        color: #4f46e5;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: 2px solid #e0e7ff;
+    }
+    
+    .profile-avatar:hover {
+        background: #c7d2fe;
+        border-color: #c7d2fe;
+    }
+    
+    .profile-menu {
+        position: absolute;
+        top: 120%;
+        right: 0;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        min-width: 320px;
+        z-index: 1000;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-10px);
+        transition: all 0.3s ease;
+    }
+    
+    .profile-dropdown.show .profile-menu {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+    }
+    
+    .profile-header {
+        padding: 20px;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+    }
+    
+    .profile-header-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: #e0e7ff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        color: #4f46e5;
+        font-size: 1.2rem;
+        flex-shrink: 0;
+    }
+    
+    .profile-header-info h6 {
+        margin: 0 0 4px 0;
+        font-weight: 600;
+        color: #1f2937;
+        font-size: 1rem;
+    }
+    
+    .profile-header-info .email {
+        color: #6b7280;
+        font-size: 0.875rem;
+        margin-bottom: 2px;
+    }
+    
+    .profile-header-info .user-id {
+        color: #9ca3af;
+        font-size: 0.8rem;
+    }
+    
+    .profile-verified {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: #dcfce7;
+        color: #16a34a;
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-top: 8px;
+    }
+    
+    .profile-menu-section {
+        padding: 8px 0;
+        border-bottom: 1px solid #f3f4f6;
+    }
+    
+    .profile-menu-section:last-child {
+        border-bottom: none;
+    }
+    
+    .profile-menu-item {
+        padding: 12px 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: #4b5563;
+        text-decoration: none;
+        transition: all 0.2s;
+        cursor: pointer;
+        position: relative;
+    }
+    
+    .profile-menu-item:hover {
+        background: #f9fafb;
+        color: #1f2937;
+    }
+    
+    .profile-menu-item i {
+        width: 20px;
+        font-size: 1.1rem;
+        color: #059669;
+    }
+    
+    .profile-menu-item .label {
+        flex: 1;
+        font-weight: 500;
+    }
+    
+    .profile-menu-item .arrow {
+        color: #9ca3af;
+        font-size: 0.8rem;
+    }
+    
+    .profile-submenu {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+        background: #f9fafb;
+    }
+    
+    .profile-menu-item.expanded + .profile-submenu {
+        max-height: 300px;
+    }
+    
+    .profile-submenu-item {
+        padding: 10px 20px 10px 52px;
+        color: #6b7280;
+        text-decoration: none;
+        display: block;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+    }
+    
+    .profile-submenu-item:hover {
+        background: #f3f4f6;
+        color: #1f2937;
+    }
+    
+    .notification-badge {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background: #ef4444;
+        color: white;
+        font-size: 0.7rem;
+        padding: 2px 6px;
+        border-radius: 10px;
+        font-weight: 700;
+    }
+    
+    .header-icons {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .header-icon-btn {
+        position: relative;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #f3f4f6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #6b7280;
+        transition: all 0.2s;
+        cursor: pointer;
+        border: none;
+    }
+    
+    .header-icon-btn:hover {
+        background: #e5e7eb;
+        color: #1f2937;
+    }
+    
+    .logout-btn {
+        color: #dc2626 !important;
+    }
+    
+    .logout-btn:hover {
+        background: #fee2e2 !important;
+    }
+
+    .profile-avatar-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        cursor: pointer;
+    }
+
+    .profile-avatar-wrapper .avatar-chevron {
+        font-size: 0.7rem;
+        color: #9ca3af;
+        transition: transform 0.2s;
+    }
+
+    .profile-dropdown.show .avatar-chevron {
+        transform: rotate(180deg);
+    }
+</style>
+
+<header class="site-header">
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container">
+            <!-- Logo -->
+            <a class="navbar-brand d-flex align-items-center" asp-controller="Home" asp-action="Index">
+                <div class="logo-wrapper">
+                    <span class="logo-text">Finding Jobs</span>
+                </div>
+            </a>
+
+            <!-- Mobile Toggle -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <!-- Navigation Menu -->
+            <div class="collapse navbar-collapse" id="navbarContent">
+                <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link fw-semibold" asp-controller="Candidates" asp-action="JobList">
+                            Việc làm
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link fw-semibold" asp-controller="CVs" asp-action="CVList">
+                            Hồ sơ & CV
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link fw-semibold" href="#">
+                            Công ty
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link fw-semibold" href="#">
+                            Công cụ
+                        </a>
+                    </li>
+                </ul>
+
+                <!-- User Actions -->
+                <div class="d-flex align-items-center gap-2">
+                    @*
+                        TODO: Fix session-based auth later
+                        Lỗi: Microsoft.AspNetCore.Http.DefaultHttpContext.get_Session()
+                        Nguyên nhân: Session chưa được cấu hình / middleware chưa thêm vào pipeline
+
+                    @{
+                        var isAuthenticated = User.Identity?.IsAuthenticated == true;
+                        var userRole = Context.Session.GetString("UserRole");
+                        var userName = Context.Session.GetString("UserName") ?? User.Identity?.Name ?? "User";
+                        var userEmail = Context.Session.GetString("UserEmail") ?? "";
+                        var userId = Context.Session.GetString("UserId") ?? "";
+                    }
+
+                    @if (isAuthenticated)
+                    {
+                        if (userRole == "Admin")
+                        {
+                            <div class="header-icons">
+                                <div class="profile-dropdown" id="profileDropdown">
+                                    <div class="profile-avatar-wrapper" onclick="toggleProfileMenu()">
+                                        <div class="profile-avatar">
+                                            @((userName?.Length > 0 ? userName.Substring(0, 1) : "A").ToUpper())
+                                        </div>
+                                        <i class="fas fa-chevron-down avatar-chevron"></i>
+                                    </div>
+                                    <div class="profile-menu">
+                                        <div class="profile-header">
+                                            <div class="profile-header-avatar">
+                                                @((userName?.Length > 0 ? userName.Substring(0, 1) : "A").ToUpper())
+                                            </div>
+                                            <div class="profile-header-info">
+                                                <h6>@userName</h6>
+                                                <div class="email">@userEmail</div>
+                                                @if (!string.IsNullOrEmpty(userId))
+                                                {
+                                                    <div class="user-id">ID @(userId.Length > 8 ? userId.Substring(0, 8) : userId)</div>
+                                                }
+                                                <span class="profile-verified">
+                                                    <i class="fas fa-check-circle"></i>
+                                                    Quản trị viên
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div class="profile-menu-section">
+                                            <a asp-controller="Admin" asp-action="Index" class="profile-menu-item">
+                                                <i class="fas fa-chart-line"></i>
+                                                <span class="label">Bảng điều khiển</span>
+                                            </a>
+                                            <a asp-controller="Admin" asp-action="UserList" class="profile-menu-item">
+                                                <i class="fas fa-users"></i>
+                                                <span class="label">Quản lý người dùng</span>
+                                            </a>
+                                        </div>
+
+                                        <div class="profile-menu-section">
+                                            <div class="profile-menu-item" onclick="toggleSubmenu(this)">
+                                                <i class="fas fa-user-shield"></i>
+                                                <span class="label">Cá nhân & Bảo mật</span>
+                                                <i class="fas fa-chevron-down arrow"></i>
+                                            </div>
+                                            <div class="profile-submenu">
+                                                <a asp-controller="Profile" asp-action="Info" class="profile-submenu-item">Thông tin cá nhân</a>
+                                                <a asp-controller="Profile" asp-action="ChangePassword" class="profile-submenu-item">Đổi mật khẩu</a>
+                                            </div>
+                                        </div>
+
+                                        <div class="profile-menu-section">
+                                            <form asp-controller="Auth" asp-action="Logout" method="post" id="logoutFormAdmin">
+                                                <a href="javascript:void(0)" onclick="document.getElementById('logoutFormAdmin').submit()" class="profile-menu-item logout-btn">
+                                                    <i class="fas fa-sign-out-alt"></i>
+                                                    <span class="label">Đăng xuất</span>
+                                                </a>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        else if (userRole == "Recruiter")
+                        {
+                            <a class="btn btn-success" asp-controller="Recruiter" asp-action="RecruiterDashboard">
+                                Recruiter Dashboard
+                            </a>
+                            
+                            <form asp-controller="Auth" asp-action="Logout" method="post" class="d-inline ms-2">
+                                <button type="submit" class="btn btn-outline-danger">
+                                    <i class="fas fa-sign-out-alt me-1"></i>Đăng xuất
+                                </button>
+                            </form>
+                        }
+                        else
+                        {
+                            <div class="header-icons">
+                                @if (userRole == "Candidate")
+                                {
+                                    <!-- Notification Icon -->
+                                    <button class="header-icon-btn">
+                                        <i class="fas fa-bell"></i>
+                                        <span class="notification-badge">9</span>
+                                    </button>
+                                    
+                                    <!-- Message Icon -->
+                                    <button class="header-icon-btn">
+                                        <i class="fas fa-comment-dots"></i>
+                                    </button>
+                                }
+                                
+                                <!-- Profile Dropdown -->
+                                <div class="profile-dropdown" id="profileDropdown">
+                                    <div class="profile-avatar-wrapper" onclick="toggleProfileMenu()">
+                                        <div class="profile-avatar">
+                                            @((userName?.Length > 0 ? userName.Substring(0, 1) : "U").ToUpper())
+                                        </div>
+                                        <i class="fas fa-chevron-down avatar-chevron"></i>
+                                    </div>
+
+                                    <div class="profile-menu">
+                                        <!-- Profile Header -->
+                                        <div class="profile-header">
+                                            <div class="profile-header-avatar">
+                                                @((userName?.Length > 0 ? userName.Substring(0, 1) : "U").ToUpper())
+                                            </div>
+                                            <div class="profile-header-info">
+                                                <h6>@userName</h6>
+                                                <div class="email">@userEmail</div>
+                                                @if (!string.IsNullOrEmpty(userId))
+                                                {
+                                                    <div class="user-id">ID @(userId.Length > 8 ? userId.Substring(0, 8) : userId)</div>
+                                                }
+                                                <span class="profile-verified">
+                                                    <i class="fas fa-check-circle"></i>
+                                                    Tài khoản đã xác thực
+                                                </span>
+                                            </div>
+                                        </div>
+                                        
+                                        @if (userRole == "Candidate")
+                                        {
+                                            <!-- Menu Sections -->
+                                            <div class="profile-menu-section">
+                                                <div class="profile-menu-item" onclick="toggleSubmenu(this)">
+                                                    <i class="fas fa-briefcase"></i>
+                                                    <span class="label">Quản lý tìm việc</span>
+                                                    <i class="fas fa-chevron-down arrow"></i>
+                                                </div>
+                                                <div class="profile-submenu">
+                                                    <a href="#" class="profile-submenu-item">Việc làm đã lưu</a>
+                                                    <a href="#" class="profile-submenu-item">Việc làm đã ứng tuyển</a>
+                                                    <a href="#" class="profile-submenu-item">Việc làm phù hợp với bạn</a>
+                                                    <a href="#" class="profile-submenu-item">Cài đặt gợi ý việc làm</a>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="profile-menu-section">
+                                                <div class="profile-menu-item" onclick="toggleSubmenu(this)">
+                                                    <i class="fas fa-file-alt"></i>
+                                                    <span class="label">Quản lý CV & Cover letter</span>
+                                                    <i class="fas fa-chevron-down arrow"></i>
+                                                </div>
+                                                <div class="profile-submenu">
+                                                    <a href="#" class="profile-submenu-item">CV của tôi</a>
+                                                    <a href="#" class="profile-submenu-item">Cover Letter của tôi</a>
+                                                    <a href="#" class="profile-submenu-item">Nhà tuyển dụng muốn kết nối với bạn</a>
+                                                    <a href="#" class="profile-submenu-item">Nhà tuyển dụng xem hồ sơ</a>
+                                                </div>
+                                            </div>
+                                        }
+
+                                        <div class="profile-menu-section">
+                                            <a href="#" class="profile-menu-item">
+                                                <i class="fas fa-envelope"></i>
+                                                <span class="label">Cài đặt email & thông báo</span>
+                                            </a>
+                                            
+                                            <div class="profile-menu-item" onclick="toggleSubmenu(this)">
+                                                <i class="fas fa-user-shield"></i>
+                                                <span class="label">Cá nhân & Bảo mật</span>
+                                                <i class="fas fa-chevron-down arrow"></i>
+                                            </div>
+                                            <div class="profile-submenu">
+                                                <a asp-controller="Profile" asp-action="Info" class="profile-submenu-item">Thông tin cá nhân</a>
+                                                <a asp-controller="Profile" asp-action="ChangePassword" class="profile-submenu-item">Đổi mật khẩu</a>
+                                            </div>
+                                            
+                                            <a href="#" class="profile-menu-item">
+                                                <i class="fas fa-crown"></i>
+                                                <span class="label">Nâng cấp tài khoản</span>
+                                            </a>
+                                        </div>
+
+                                        <!-- Logout Section -->
+                                        <div class="profile-menu-section">
+                                            <form asp-controller="Auth" asp-action="Logout" method="post" id="logoutFormHeader">
+                                                <a href="javascript:void(0)" onclick="document.getElementById('logoutFormHeader').submit()" class="profile-menu-item logout-btn">
+                                                    <i class="fas fa-sign-out-alt"></i>
+                                                    <span class="label">Đăng xuất</span>
+                                                </a>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <a class="btn btn-outline-primary me-2" asp-controller="Auth" asp-action="Login">
+                            Đăng nhập
+                        </a>
+                        <a class="btn btn-primary" asp-controller="Auth" asp-action="Register">
+                            Đăng ký
+                        </a>
+                    }
+                    *@
+
+                    @* Tam thoi hien thi nut Dang nhap / Dang ky khi cho fix Session *@
+                    <a class="btn btn-outline-primary me-2" asp-controller="Auth" asp-action="Login">
+                        Đăng nhập
+                    </a>
+                    <a class="btn btn-primary" asp-controller="Auth" asp-action="Register">
+                        Đăng ký
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+</header>
+
+<script>
+    function toggleProfileMenu() {
+        const dropdown = document.getElementById('profileDropdown');
+        dropdown.classList.toggle('show');
+    }
+    
+    function toggleSubmenu(element) {
+        element.classList.toggle('expanded');
+        const arrow = element.querySelector('.arrow');
+        if (element.classList.contains('expanded')) {
+            arrow.style.transform = 'rotate(180deg)';
+        } else {
+            arrow.style.transform = 'rotate(0deg)';
+        }
+    }
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(event) {
+        const dropdown = document.getElementById('profileDropdown');
+        if (dropdown && !dropdown.contains(event.target)) {
+            dropdown.classList.remove('show');
+        }
+    });
+</script>
