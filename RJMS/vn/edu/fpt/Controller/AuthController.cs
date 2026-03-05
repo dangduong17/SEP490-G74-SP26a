@@ -17,6 +17,10 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         [HttpGet]
         public IActionResult Login()
         {
+            if (Request.Cookies.ContainsKey("UserId"))
+            {
+                return RedirectToAction("Index", "Home");
+            }
             return View();
         }
 
@@ -45,6 +49,10 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         [HttpGet]
         public IActionResult Register()
         {
+            if (Request.Cookies.ContainsKey("UserId"))
+            {
+                return RedirectToAction("Index", "Home");
+            }
             return View();
         }
 
@@ -81,6 +89,10 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         [HttpGet]
         public IActionResult RegisterRecruiter()
         {
+            if (Request.Cookies.ContainsKey("UserId"))
+            {
+                return RedirectToAction("Index", "Home");
+            }
             return View();
         }
 
@@ -117,6 +129,10 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         [HttpGet]
         public IActionResult ForgotPassword()
         {
+            if (Request.Cookies.ContainsKey("UserId"))
+            {
+                return RedirectToAction("Index", "Home");
+            }
             return View();
         }
 
