@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace RJMS.Models;
+namespace RJMS.vn.edu.fpt.Models;
 
 public partial class Application
 {
@@ -15,19 +15,9 @@ public partial class Application
 
     public string? CoverLetter { get; set; }
 
-    public string Status { get; set; } = null!;
+    public string? Status { get; set; }
 
-    public DateTime? ReviewedAt { get; set; }
-
-    public int? ReviewedBy { get; set; }
-
-    public string? ReviewNotes { get; set; }
-
-    public int? Rating { get; set; }
-
-    public DateTime CreatedAt { get; set; }
-
-    public DateTime? UpdatedAt { get; set; }
+    public DateTime? CreatedAt { get; set; }
 
     public virtual Candidate Candidate { get; set; } = null!;
 

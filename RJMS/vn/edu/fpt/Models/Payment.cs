@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace RJMS.Models;
+namespace RJMS.vn.edu.fpt.Models;
 
 public partial class Payment
 {
@@ -9,13 +9,13 @@ public partial class Payment
 
     public int SubscriptionId { get; set; }
 
-    public decimal Amount { get; set; }
+    public decimal? Amount { get; set; }
 
-    public DateTime PaymentDate { get; set; }
+    public DateTime? PaymentDate { get; set; }
 
     public string? TransactionId { get; set; }
 
-    public string Status { get; set; } = null!;
+    public string? Status { get; set; }
 
     public string? PaymentMethod { get; set; }
 

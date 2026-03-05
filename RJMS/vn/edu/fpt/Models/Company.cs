@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace RJMS.Models;
+namespace RJMS.vn.edu.fpt.Models;
 
 public partial class Company
 {
@@ -29,19 +29,13 @@ public partial class Company
 
     public string? Benefits { get; set; }
 
-    public bool IsVerified { get; set; }
+    public bool? IsVerified { get; set; }
 
     public DateTime? VerifiedAt { get; set; }
 
-    public DateTime CreatedAt { get; set; }
+    public DateTime? CreatedAt { get; set; }
 
     public DateTime? UpdatedAt { get; set; }
-
-    public virtual ICollection<CompanyAddress> CompanyAddresses { get; set; } = new List<CompanyAddress>();
-
-    public virtual ICollection<CompanyImage> CompanyImages { get; set; } = new List<CompanyImage>();
-
-    public virtual ICollection<FollowedCompany> FollowedCompanies { get; set; } = new List<FollowedCompany>();
 
     public virtual ICollection<Job> Jobs { get; set; } = new List<Job>();
 
