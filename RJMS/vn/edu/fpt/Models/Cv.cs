@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace RJMS.Models;
+namespace RJMS.vn.edu.fpt.Models;
 
 public partial class Cv
 {
@@ -9,23 +9,13 @@ public partial class Cv
 
     public int CandidateId { get; set; }
 
-    public string Title { get; set; } = null!;
+    public string? Title { get; set; }
 
     public string? FilePath { get; set; }
 
-    public string? TemplateId { get; set; }
+    public int? ViewCount { get; set; }
 
-    public string? JsonData { get; set; }
-
-    public bool IsDefault { get; set; }
-
-    public int ViewCount { get; set; }
-
-    public int DownloadCount { get; set; }
-
-    public DateTime CreatedAt { get; set; }
-
-    public DateTime? UpdatedAt { get; set; }
+    public DateTime? CreatedAt { get; set; }
 
     public virtual ICollection<Application> Applications { get; set; } = new List<Application>();
 

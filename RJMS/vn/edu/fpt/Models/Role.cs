@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace RJMS.vn.edu.fpt.Models;
 
-public partial class JobCategory
+public partial class Role
 {
     public int Id { get; set; }
 
@@ -11,5 +11,7 @@ public partial class JobCategory
 
     public string? Description { get; set; }
 
-    public virtual ICollection<Job> Jobs { get; set; } = new List<Job>();
+    public DateTime? CreatedAt { get; set; }
+
+    public virtual ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
 }

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace RJMS.Models;
+namespace RJMS.vn.edu.fpt.Models;
 
 public partial class JobSkill
 {
@@ -9,7 +9,7 @@ public partial class JobSkill
 
     public int SkillId { get; set; }
 
-    public bool IsRequired { get; set; }
+    public bool? IsRequired { get; set; }
 
     public virtual Job Job { get; set; } = null!;
 
