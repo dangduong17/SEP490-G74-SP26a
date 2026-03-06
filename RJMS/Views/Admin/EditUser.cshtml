@@ -1,0 +1,135 @@
+@model AdminUpdateUserViewModel
+@{
+    ViewData["Title"] = "Cập nhật người dùng";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<form asp-action="EditUser" method="post" class="row g-3">
+    @Html.AntiForgeryToken()
+    <input asp-for="Id" type="hidden" />
+    <div asp-validation-summary="ModelOnly" class="text-danger col-12"></div>
+
+    <div class="col-md-6">
+        <label asp-for="Email" class="form-label">Email *</label>
+        <input asp-for="Email" class="form-control" type="email" />
+        <span asp-validation-for="Email" class="text-danger"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="PhoneNumber" class="form-label">Số điện thoại</label>
+        <input asp-for="PhoneNumber" class="form-control" />
+        <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="FirstName" class="form-label">Họ *</label>
+        <input asp-for="FirstName" class="form-control" />
+        <span asp-validation-for="FirstName" class="text-danger"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="LastName" class="form-label">Tên *</label>
+        <input asp-for="LastName" class="form-control" />
+        <span asp-validation-for="LastName" class="text-danger"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="Role" class="form-label">Vai trò *</label>
+        <select asp-for="Role" class="form-select" id="roleSelect">
+            <option value="Admin">Admin</option>
+            <option value="Candidate">Ứng viên</option>
+            <option value="Recruiter">Nhà tuyển dụng</option>
+        </select>
+        <span asp-validation-for="Role" class="text-danger"></span>
+    </div>
+    <div class="col-md-6 d-flex align-items-end">
+        <div class="form-check ms-1">
+            <input asp-for="IsActive" class="form-check-input" type="checkbox" />
+            <label asp-for="IsActive" class="form-check-label">Đang hoạt động</label>
+        </div>
+    </div>
+
+    <!-- Candidate fields -->
+    <div id="candidateFields" class="col-12 row g-3 @(Model.Role != "Candidate" ? "d-none" : "")">
+        <div class="col-12"><hr /><h6>Thông tin ứng viên</h6></div>
+        <div class="col-md-6">
+            <label asp-for="CandidateTitle" class="form-label">Tiêu đề hồ sơ</label>
+            <input asp-for="CandidateTitle" class="form-control" />
+        </div>
+        <div class="col-md-6">
+            <label asp-for="CandidateCity" class="form-label">Tỉnh/Thành phố</label>
+            <select id="provinceSelect" asp-for="CandidateCity" class="form-select">
+                <option value="">-- Chọn tỉnh/thành phố --</option>
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="CandidateDateOfBirth" class="form-label">Ngày sinh</label>
+            <input asp-for="CandidateDateOfBirth" class="form-control" type="date" />
+        </div>
+        <div class="col-md-6">
+            <label asp-for="CandidateGender" class="form-label">Giới tính</label>
+            <select asp-for="CandidateGender" class="form-select">
+                <option value="">Chọn giới tính</option>
+                <option value="Male">Nam</option>
+                <option value="Female">Nữ</option>
+                <option value="Other">Khác</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Recruiter fields -->
+    <div id="recruiterFields" class="col-12 row g-3 @(Model.Role != "Recruiter" ? "d-none" : "")">
+        <div class="col-12"><hr /><h6>Thông tin nhà tuyển dụng</h6></div>
+        <div class="col-md-6">
+            <label asp-for="RecruiterPosition" class="form-label">Vị trí công việc</label>
+            <input asp-for="RecruiterPosition" class="form-control" />
+        </div>
+    </div>
+
+    <div class="col-12 d-flex gap-2">
+        <button type="submit" class="btn btn-sm btn-topcv" style="width:120px">Lưu thay đổi</button>
+        <a asp-action="UserList" class="btn btn-sm btn-outline-secondary" style="width:100px">Quay lại</a>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        (function () {
+            var roleSelect = document.getElementById('roleSelect');
+            var candidateFields = document.getElementById('candidateFields');
+            var recruiterFields = document.getElementById('recruiterFields');
+
+            function updateFields() {
+                var role = roleSelect ? roleSelect.value : '';
+                if (candidateFields) candidateFields.classList.toggle('d-none', role !== 'Candidate');
+                if (recruiterFields) recruiterFields.classList.toggle('d-none', role !== 'Recruiter');
+            }
+
+            if (roleSelect) {
+                roleSelect.addEventListener('change', updateFields);
+                updateFields();
+            }
+        })();
+
+        // Province API integration for Candidate role
+        (function() {
+            var provinceSelect = document.getElementById('provinceSelect');
+            if (!provinceSelect) return;
+
+            var currentValue = provinceSelect.value;
+
+            // Load provinces
+            fetch('https://provinces.open-api.vn/api/v2/p/')
+                .then(res => res.json())
+                .then(data => {
+                    data.forEach(function(province) {
+                        var opt = document.createElement('option');
+                        opt.value = province.name;
+                        opt.textContent = province.name;
+                        if (province.name === currentValue) {
+                            opt.selected = true;
+                        }
+                        provinceSelect.appendChild(opt);
+                    });
+                })
+                .catch(err => console.error('Error loading provinces:', err));
+        })();
+    </script>
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
