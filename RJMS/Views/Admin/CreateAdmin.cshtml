@@ -1,0 +1,109 @@
+@model AdminCreateAdminViewModel
+@{
+    ViewData["Title"] = "Tạo tài khoản quản trị";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<form id="createAdminForm" asp-action="CreateAdmin" method="post" class="row g-3" novalidate>
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <div class="col-md-6">
+        <label asp-for="Email" class="form-label">Email *</label>
+        <input asp-for="Email" class="form-control" type="email" autocomplete="off" />
+        <div id="emailErr" class="text-danger small mt-1" style="min-height:18px"></div>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="Password" class="form-label">Mật khẩu *</label>
+        <input asp-for="Password" class="form-control" type="password" autocomplete="new-password" />
+        <div id="passwordErr" class="text-danger small mt-1" style="min-height:18px"></div>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="FirstName" class="form-label">Họ *</label>
+        <input asp-for="FirstName" class="form-control" />
+        <span asp-validation-for="FirstName" class="text-danger"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="LastName" class="form-label">Tên *</label>
+        <input asp-for="LastName" class="form-control" />
+        <span asp-validation-for="LastName" class="text-danger"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="PhoneNumber" class="form-label">Số điện thoại</label>
+        <input asp-for="PhoneNumber" class="form-control" />
+        <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="Department" class="form-label">Phòng ban</label>
+        <input asp-for="Department" class="form-control" />
+        <span asp-validation-for="Department" class="text-danger"></span>
+    </div>
+    <div class="col-12 d-flex gap-2">
+        <button type="submit" class="btn btn-sm btn-topcv" style="width:110px">Tạo admin</button>
+        <a asp-action="UserList" class="btn btn-sm btn-outline-secondary" style="width:100px">Quay lại</a>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        (function () {
+            // Target the specific create form by id (not document.querySelector which may hit the sidebar logout form first)
+            const form = document.getElementById('createAdminForm');
+            if (!form) return;
+
+            const emailInput = document.getElementById('Email');
+            const passwordInput = document.getElementById('Password');
+
+            function setErr(input, divId, msg) {
+                var el = document.getElementById(divId);
+                if (el) el.textContent = msg;
+                if (!input) return;
+                if (msg) { input.classList.add('is-invalid'); input.classList.remove('is-valid'); }
+                else      { input.classList.remove('is-invalid'); if (input.value) input.classList.add('is-valid'); }
+            }
+
+            function isValidEmail(v) {
+                // avoid @@ / Razor escaping issues by using indexOf
+                var at = v.indexOf('@@');
+                if (at < 1) return false;
+                var dot = v.lastIndexOf('.');
+                return dot > at + 1 && dot < v.length - 1;
+            }
+
+            function isValidPassword(v) {
+                return v.length >= 8 && /[A-Z]/.test(v) && /[0-9]/.test(v) && /[^a-zA-Z0-9]/.test(v);
+            }
+
+            function validateEmail() {
+                var v = emailInput ? emailInput.value.trim() : '';
+                if (!v) { setErr(emailInput, 'emailErr', ''); return true; }
+                var ok = isValidEmail(v);
+                setErr(emailInput, 'emailErr', ok ? '' : 'Email không đúng định dạng.');
+                return ok;
+            }
+
+            function validatePassword() {
+                var v = passwordInput ? passwordInput.value : '';
+                if (!v) { setErr(passwordInput, 'passwordErr', ''); return true; }
+                var ok = isValidPassword(v);
+                setErr(passwordInput, 'passwordErr', ok ? '' : 'Mật khẩu phải có ít nhất 8 ký tự, gồm chữ hoa, chữ số và ký tự đặc biệt.');
+                return ok;
+            }
+
+            if (emailInput) {
+                emailInput.addEventListener('input', validateEmail);
+                emailInput.addEventListener('blur', validateEmail);
+            }
+            if (passwordInput) {
+                passwordInput.addEventListener('input', validatePassword);
+                passwordInput.addEventListener('blur', validatePassword);
+            }
+
+            form.addEventListener('submit', function (e) {
+                var eOk = validateEmail();
+                var pOk = validatePassword();
+                if (!eOk || !pOk) e.preventDefault();
+            });
+        })();
+    </script>
+}
