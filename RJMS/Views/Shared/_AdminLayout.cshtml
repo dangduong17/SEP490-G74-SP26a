@@ -2,7 +2,16 @@
 @{
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
+@section Styles {
+    @await RenderSectionAsync("Styles", required: false)
+}
 <style>
+    /* Ensure main element has no extra spacing in admin layout */
+    main[role="main"] {
+        padding: 0;
+        margin: 0;
+    }
+
     /* Reduce line-height and spacing for admin area */
     body {
         line-height: 1.4;
@@ -30,27 +39,40 @@
         line-height: 1.3;
     }
 
-    /* Admin sidebar - fixed position */
+    /* ===== Admin page wrapper: flex column full height ===== */
+    .admin-page-wrapper {
+        display: flex;
+        flex-direction: column;
+        min-height: calc(100vh - 70px); /* subtract header height */
+    }
+
+    /* ===== Inner flex: sidebar + content side by side ===== */
+    .admin-body-wrapper {
+        display: flex;
+        flex: 1 0 auto; /* grow to push footer down */
+    }
+
+    /* ===== Sidebar: NOT fixed, flows in the layout ===== */
     .admin-sidebar {
-        position: fixed;
-        left: 0;
-        top: 70px;
-        width: 200px;
-        min-width: 200px;
+        width: 220px;
+        min-width: 220px;
+        flex-shrink: 0;
         border-right: 1px solid #dee2e6;
+        /* Match header background exactly so no seam */
         background: #fff;
-        height: calc(100vh - 70px);
         overflow-y: auto;
-        z-index: 999;
     }
 
     .admin-sidebar .nav-link {
         color: #343a40;
-        padding: 8px 16px;
+        padding: 9px 18px;
         border-left: 3px solid transparent;
         border-radius: 0;
         font-weight: 500;
-        font-size: 0.9rem;
+        font-size: 0.88rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
 
     .admin-sidebar .nav-link:hover {
@@ -66,26 +88,38 @@
     }
 
     .admin-sidebar .nav-section {
-        padding: 10px 16px 4px;
-        font-size: 0.7rem;
+        padding: 12px 18px 4px;
+        font-size: 0.68rem;
         text-transform: uppercase;
         color: #adb5bd;
         letter-spacing: 0.07em;
     }
 
-    /* Push header to align with sidebar */
+    /* ===== Header: full width, white, no left margin ===== */
+    /* The header is already sticky via site-header in site.css.
+       We override the admin layout's previous margin-left hack. */
     .site-header {
+        margin-left: 0 !important;
+        width: 100% !important;
+        background: #fff !important;
         position: sticky;
         top: 0;
         z-index: 1000;
     }
 
-    /* Main content - with left margin for sidebar */
+    /* ===== Footer: also full width ===== */
+    .site-footer {
+        margin-left: 0 !important;
+        width: 100% !important;
+        flex-shrink: 0;
+    }
+
+    /* ===== Main content area ===== */
     .admin-content {
-        margin-left: 200px;
+        flex: 1;
         background: #f4f6f8;
-        padding: 20px;
-        min-height: calc(100vh - 70px);
+        padding: 24px;
+        min-width: 0; /* prevent flex overflow */
     }
 
     .admin-page-title {
@@ -122,47 +156,63 @@
         margin-bottom: 1rem;
     }
 
-    /* Make header and footer respect sidebar */
-    .site-header {
-        margin-left: 200px;
-        width: calc(100% - 200px);
-    }
-
-    .site-footer {
-        margin-left: 200px;
-        width: calc(100% - 200px);
+    /* Sidebar logo area */
+    .admin-sidebar-logo {
+        padding: 14px 18px;
+        border-bottom: 1px solid #dee2e6;
+        font-weight: 700;
+        font-size: 0.85rem;
+        color: #6c757d;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
     }
 </style>
 
-<!-- Sidebar -->
-<aside class="admin-sidebar">
-    <nav class="nav flex-column pt-2">
-        <span class="nav-section">Tổng quan</span>
-        <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Index" ? "active" : "")"
-           asp-controller="Admin" asp-action="Index">
-            Bảng điều khiển
-        </a>
-        <span class="nav-section">Quản lý</span>
-        <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() is "UserList" or "EditUser" or "CreateAdmin" or "CreateCandidate" or "CreateRecruiter" ? "active" : "")"
-           asp-controller="Admin" asp-action="UserList">
-            Người dùng
-        </a>
-    </nav>
-</aside>
+<!-- Wrapper for the whole admin area (below header, above footer) -->
+<div class="admin-page-wrapper">
+    <div class="admin-body-wrapper">
 
-<!-- Main content -->
-<div class="admin-content">
-    <div class="admin-page-title">@ViewData["Title"]</div>
-    @if (TempData["Success"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            @TempData["Success"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <!-- Sidebar -->
+        <aside class="admin-sidebar">
+            <div class="admin-sidebar-logo">
+                <i class="fas fa-shield-alt me-2 text-success"></i>Admin Panel
+            </div>
+            <nav class="nav flex-column pt-1">
+                <span class="nav-section">Tổng quan</span>
+                <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Index" ? "active" : "")"
+                   asp-controller="Admin" asp-action="Index">
+                    <i class="fas fa-chart-pie fa-sm"></i> Bảng điều khiển
+                </a>
+                <span class="nav-section">Quản lý</span>
+                <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() is "UserList" or "EditUser" or "CreateAdmin" or "CreateCandidate" or "CreateRecruiter" ? "active" : "")"
+                   asp-controller="Admin" asp-action="UserList">
+                    <i class="fas fa-users fa-sm"></i> Người dùng
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main content -->
+        <div class="admin-content">
+            @if (ViewData["HidePageTitle"] == null || !(bool)ViewData["HidePageTitle"]!)
+            {
+                <div class="admin-page-title">@ViewData["Title"]</div>
+            }
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    @TempData["Success"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+            <div class="admin-card">
+                @RenderBody()
+            </div>
         </div>
-    }
-    <div class="admin-card">
-        @RenderBody()
+
     </div>
 </div>
 
-@await RenderSectionAsync("Scripts", required: false)
+@section Scripts {
+    @await RenderSectionAsync("Scripts", required: false)
+}
+
