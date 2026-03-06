@@ -1,0 +1,54 @@
+@model AdminDashboardViewModel
+@{
+    ViewData["Title"] = "Bảng điều khiển quản trị";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="row g-3">
+    <div class="col-md-4">
+        <div class="p-3 border rounded-3 bg-light h-100">
+            <div class="text-muted small">Tổng người dùng</div>
+            <h3 class="fw-bold text-success mb-1">@Model.TotalUsers</h3>
+            <div class="small">Tất cả tài khoản đã đăng ký</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="p-3 border rounded-3 bg-light h-100">
+            <div class="text-muted small">Đang hoạt động</div>
+            <h3 class="fw-bold text-primary mb-1">@Model.ActiveUsers</h3>
+            <div class="small">Trạng thái hiện tại</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="p-3 border rounded-3 bg-light h-100">
+            <div class="text-muted small">Ngưng hoạt động</div>
+            <h3 class="fw-bold text-danger mb-1">@Model.InactiveUsers</h3>
+            <div class="small">Người dùng đã khóa mềm</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mt-1">
+    <div class="col-md-4">
+        <div class="p-3 border rounded-3 h-100">
+            <div class="small text-muted">Quản trị viên</div>
+            <h4 class="fw-bold mb-0">@Model.TotalAdmins</h4>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="p-3 border rounded-3 h-100">
+            <div class="small text-muted">Ứng viên</div>
+            <h4 class="fw-bold mb-0">@Model.TotalCandidates</h4>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="p-3 border rounded-3 h-100">
+            <div class="small text-muted">Nhà tuyển dụng</div>
+            <h4 class="fw-bold mb-0">@Model.TotalRecruiters</h4>
+        </div>
+    </div>
+</div>
+
+<div class="mt-4">
+    <a asp-action="UserList" class="btn btn-sm btn-topcv" style="width:170px">Quản lý người dùng</a>
+</div>
