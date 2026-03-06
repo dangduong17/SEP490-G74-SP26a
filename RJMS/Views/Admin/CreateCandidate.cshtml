@@ -1,0 +1,190 @@
+@model AdminCreateCandidateViewModel
+@{
+    ViewData["Title"] = "Tạo ứng viên";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<form id="createCandidateForm" asp-action="CreateCandidate" method="post" class="row g-3" novalidate>
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <div class="col-md-6">
+        <label asp-for="Email" class="form-label">Email *</label>
+        <input asp-for="Email" class="form-control" type="email" autocomplete="off" />
+        <div id="emailErr" class="text-danger small mt-1" style="min-height:18px"></div>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="Password" class="form-label">Mật khẩu *</label>
+        <input asp-for="Password" class="form-control" type="password" autocomplete="new-password" />
+        <div id="passwordErr" class="text-danger small mt-1" style="min-height:18px"></div>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="FirstName" class="form-label">Họ *</label>
+        <input asp-for="FirstName" class="form-control" />
+        <span asp-validation-for="FirstName" class="text-danger"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="LastName" class="form-label">Tên *</label>
+        <input asp-for="LastName" class="form-control" />
+        <span asp-validation-for="LastName" class="text-danger"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="PhoneNumber" class="form-label">Số điện thoại *</label>
+        <input asp-for="PhoneNumber" class="form-control" />
+        <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="Title" class="form-label">Tiêu đề hồ sơ</label>
+        <input asp-for="Title" class="form-control" />
+        <span asp-validation-for="Title" class="text-danger"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="DateOfBirth" class="form-label">Ngày sinh *</label>
+        <input asp-for="DateOfBirth" class="form-control" type="date" />
+        <span asp-validation-for="DateOfBirth" class="text-danger"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="Gender" class="form-label">Giới tính *</label>
+        <select asp-for="Gender" class="form-select">
+            <option value="">Chọn giới tính</option>
+            <option value="Male">Nam</option>
+            <option value="Female">Nữ</option>
+            <option value="Other">Khác</option>
+        </select>
+        <span asp-validation-for="Gender" class="text-danger"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="City" class="form-label">Tỉnh/Thành phố</label>
+        <select id="provinceSelect" asp-for="City" class="form-select">
+            <option value="">-- Chọn tỉnh/thành phố --</option>
+        </select>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="District" class="form-label">Phường/Xã</label>
+        <select id="wardSelect" asp-for="District" class="form-select" disabled>
+            <option value="">-- Chọn phường/xã --</option>
+        </select>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="CurrentPosition" class="form-label">Vị trí hiện tại</label>
+        <input asp-for="CurrentPosition" class="form-control" />
+    </div>
+    <div class="col-md-6">
+        <label asp-for="YearsOfExperience" class="form-label">Số năm kinh nghiệm</label>
+        <input asp-for="YearsOfExperience" class="form-control" type="number" min="0" />
+    </div>
+    <div class="col-12">
+        <label asp-for="Address" class="form-label">Địa chỉ</label>
+        <input asp-for="Address" class="form-control" />
+    </div>
+    <div class="col-12 d-flex gap-2">
+        <button type="submit" class="btn btn-sm btn-topcv" style="width:140px">Tạo ứng viên</button>
+        <a asp-action="UserList" class="btn btn-sm btn-outline-secondary" style="width:100px">Quay lại</a>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        (function () {
+            var form = document.getElementById('createCandidateForm');
+            if (!form) return;
+
+            var emailInput = document.getElementById('Email');
+            var passwordInput = document.getElementById('Password');
+
+            function setErr(input, divId, msg) {
+                var el = document.getElementById(divId);
+                if (el) el.textContent = msg;
+                if (!input) return;
+                if (msg) { input.classList.add('is-invalid'); input.classList.remove('is-valid'); }
+                else      { input.classList.remove('is-invalid'); if (input.value) input.classList.add('is-valid'); }
+            }
+
+            function isValidEmail(v) {
+                var at = v.indexOf('@@');
+                if (at < 1) return false;
+                var dot = v.lastIndexOf('.');
+                return dot > at + 1 && dot < v.length - 1;
+            }
+
+            function isValidPassword(v) {
+                return v.length >= 8 && /[A-Z]/.test(v) && /[0-9]/.test(v) && /[^a-zA-Z0-9]/.test(v);
+            }
+
+            function validateEmail() {
+                var v = emailInput ? emailInput.value.trim() : '';
+                if (!v) { setErr(emailInput, 'emailErr', ''); return true; }
+                var ok = isValidEmail(v);
+                setErr(emailInput, 'emailErr', ok ? '' : 'Email không đúng định dạng.');
+                return ok;
+            }
+
+            function validatePassword() {
+                var v = passwordInput ? passwordInput.value : '';
+                if (!v) { setErr(passwordInput, 'passwordErr', ''); return true; }
+                var ok = isValidPassword(v);
+                setErr(passwordInput, 'passwordErr', ok ? '' : 'Mật khẩu phải có ít nhất 8 ký tự, gồm chữ hoa, chữ số và ký tự đặc biệt.');
+                return ok;
+            }
+
+            if (emailInput) {
+                emailInput.addEventListener('input', validateEmail);
+                emailInput.addEventListener('blur', validateEmail);
+            }
+            if (passwordInput) {
+                passwordInput.addEventListener('input', validatePassword);
+                passwordInput.addEventListener('blur', validatePassword);
+            }
+
+            form.addEventListener('submit', function (e) {
+                var eOk = validateEmail();
+                var pOk = validatePassword();
+                if (!eOk || !pOk) e.preventDefault();
+            });
+        })();
+
+        // Province & Ward API integration
+        (function() {
+            var provinceSelect = document.getElementById('provinceSelect');
+            var wardSelect = document.getElementById('wardSelect');
+            if (!provinceSelect || !wardSelect) return;
+
+            // Load provinces
+            fetch('https://provinces.open-api.vn/api/v2/p/')
+                .then(res => res.json())
+                .then(data => {
+                    data.forEach(function(province) {
+                        var opt = document.createElement('option');
+                        opt.value = province.name;
+                        opt.textContent = province.name;
+                        opt.dataset.code = province.code;
+                        provinceSelect.appendChild(opt);
+                    });
+                })
+                .catch(err => console.error('Error loading provinces:', err));
+
+            // Load wards when province changes
+            provinceSelect.addEventListener('change', function() {
+                var selectedOption = provinceSelect.options[provinceSelect.selectedIndex];
+                var provinceCode = selectedOption ? selectedOption.dataset.code : null;
+                
+                wardSelect.innerHTML = '<option value="">-- Chọn phường/xã --</option>';
+                wardSelect.disabled = !provinceCode;
+                
+                if (provinceCode) {
+                    fetch('https://provinces.open-api.vn/api/v2/w/?province=' + provinceCode)
+                        .then(res => res.json())
+                        .then(data => {
+                            data.forEach(function(ward) {
+                                var opt = document.createElement('option');
+                                opt.value = ward.name;
+                                opt.textContent = ward.name;
+                                wardSelect.appendChild(opt);
+                            });
+                        })
+                        .catch(err => console.error('Error loading wards:', err));
+                }
+            });
+        })();
+    </script>
+}
