@@ -188,6 +188,10 @@
                    asp-controller="Admin" asp-action="UserList">
                     <i class="fas fa-users fa-sm"></i> Người dùng
                 </a>
+                <a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Subscription" ? "active" : "")"
+                   asp-controller="Subscription" asp-action="ManageSubscription">
+                    <i class="fas fa-credit-card fa-sm"></i> Gói đăng ký
+                </a>
             </nav>
         </aside>
 
