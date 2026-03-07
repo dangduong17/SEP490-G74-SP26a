@@ -1,0 +1,321 @@
+﻿@model RJMS.vn.edu.fpt.Models.DTOs.RecruiterProfileUpdateViewModel
+@{
+    ViewData["Title"] = "Chỉnh sửa hồ sơ nhà tuyển dụng";
+    Layout = "~/Views/Shared/_RecruiterLayout.cshtml";
+}
+
+@section Styles {
+<style>
+    .ep-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 28px 32px;
+        margin-bottom: 24px;
+    }
+    .ep-section-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 18px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #f3f4f6;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .ep-section-title i { color: #00b14f; font-size: 1rem; }
+    .form-label {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 5px;
+    }
+    .form-control, .form-select {
+        font-size: 0.875rem;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        padding: 9px 13px;
+        transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #00b14f;
+        box-shadow: 0 0 0 3px rgba(0,177,79,0.12);
+        outline: none;
+    }
+    .ep-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        margin-top: 4px;
+    }
+    .btn-cancel {
+        background: #f3f4f6;
+        color: #374151;
+        border: none;
+        border-radius: 8px;
+        padding: 10px 24px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: background 0.15s;
+    }
+    .btn-cancel:hover { background: #e5e7eb; color: #111827; }
+    .btn-save {
+        background: #00b14f;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        padding: 10px 28px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        transition: background 0.15s;
+    }
+    .btn-save:hover { background: #009744; }
+    .text-danger { font-size: 0.78rem; margin-top: 3px; }
+</style>
+}
+
+<!-- Page Header -->
+<div class="rpage-header">
+    <div>
+        <h1>Chỉnh sửa hồ sơ</h1>
+        <p>Cập nhật thông tin cá nhân và thông tin công ty của bạn.</p>
+    </div>
+</div>
+
+<form asp-controller="Profile" asp-action="EditProfile" method="post">
+    @Html.AntiForgeryToken()
+    <input asp-for="RecruiterId" type="hidden" />
+    <input asp-for="CompanyId"   type="hidden" />
+
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-3 py-2 px-3" style="font-size:0.85rem;border-radius:8px;"></div>
+
+    <!-- ── Thông tin cá nhân ── -->
+    <div class="ep-card">
+        <div class="ep-section-title">
+            <i class="fas fa-user"></i> Thông tin cá nhân
+        </div>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label asp-for="FirstName" class="form-label">Họ *</label>
+                <input asp-for="FirstName" class="form-control" placeholder="Nguyễn" />
+                <span asp-validation-for="FirstName" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="LastName" class="form-label">Tên *</label>
+                <input asp-for="LastName" class="form-control" placeholder="Văn A" />
+                <span asp-validation-for="LastName" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="Phone" class="form-label">Số điện thoại *</label>
+                <input asp-for="Phone" class="form-control" placeholder="0912 345 678" />
+                <span asp-validation-for="Phone" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="Position" class="form-label">Vị trí công việc *</label>
+                <input asp-for="Position" class="form-control" placeholder="HR Manager" />
+                <span asp-validation-for="Position" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="Department" class="form-label">Phòng ban</label>
+                <input asp-for="Department" class="form-control" placeholder="Human Resources" />
+                <span asp-validation-for="Department" class="text-danger"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Thông tin công ty ── -->
+    <div class="ep-card">
+        <div class="ep-section-title">
+            <i class="fas fa-building"></i> Thông tin công ty
+        </div>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label asp-for="CompanyName" class="form-label">Tên công ty *</label>
+                <input asp-for="CompanyName" class="form-control" placeholder="Công ty TNHH ABC" />
+                <span asp-validation-for="CompanyName" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="CompanyTaxCode" class="form-label">Mã số thuế</label>
+                <input asp-for="CompanyTaxCode" class="form-control" placeholder="0123456789" />
+                <span asp-validation-for="CompanyTaxCode" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="CompanySize" class="form-label">Quy mô</label>
+                <select asp-for="CompanySize" class="form-select">
+                    <option value="">-- Chọn quy mô --</option>
+                    <option value="1-10">1 – 10 nhân viên</option>
+                    <option value="11-50">11 – 50 nhân viên</option>
+                    <option value="51-200">51 – 200 nhân viên</option>
+                    <option value="201-500">201 – 500 nhân viên</option>
+                    <option value="501-1000">501 – 1000 nhân viên</option>
+                    <option value="1000+">Trên 1000 nhân viên</option>
+                </select>
+                <span asp-validation-for="CompanySize" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="CompanyIndustry" class="form-label">Lĩnh vực</label>
+                <input asp-for="CompanyIndustry" class="form-control" placeholder="Công nghệ thông tin" />
+                <span asp-validation-for="CompanyIndustry" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="CompanyWebsite" class="form-label">Website</label>
+                <input asp-for="CompanyWebsite" class="form-control" placeholder="https://company.vn" />
+                <span asp-validation-for="CompanyWebsite" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="CompanyEmail" class="form-label">Email công ty</label>
+                <input asp-for="CompanyEmail" class="form-control" placeholder="contact@company.vn" />
+                <span asp-validation-for="CompanyEmail" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="CompanyPhone" class="form-label">Số điện thoại công ty</label>
+                <input asp-for="CompanyPhone" class="form-control" placeholder="028 1234 5678" />
+                <span asp-validation-for="CompanyPhone" class="text-danger"></span>
+            </div>
+            <div class="col-12">
+                <label asp-for="CompanyDescription" class="form-label">Mô tả công ty</label>
+                <textarea asp-for="CompanyDescription" class="form-control" rows="4"
+                          placeholder="Mô tả ngắn về công ty, văn hóa và môi trường làm việc..."></textarea>
+                <span asp-validation-for="CompanyDescription" class="text-danger"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Địa chỉ làm việc ── -->
+    <div class="ep-card">
+        <div class="ep-section-title">
+            <i class="fas fa-map-marker-alt"></i> Địa chỉ làm việc
+        </div>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">Tỉnh / Thành phố</label>
+                <select id="provinceSelect" class="form-select">
+                    <option value="">Chọn tỉnh / thành phố</option>
+                </select>
+                <input asp-for="ProvinceCode" type="hidden" id="provinceCodeInput" />
+                <input asp-for="ProvinceName" type="hidden" id="provinceNameInput" />
+                <span asp-validation-for="ProvinceCode" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Phường / Xã</label>
+                <select id="wardSelect" class="form-select" disabled>
+                    <option value="">Chọn phường / xã</option>
+                </select>
+                <input asp-for="WardCode" type="hidden" id="wardCodeInput" />
+                <input asp-for="WardName" type="hidden" id="wardNameInput" />
+                <span asp-validation-for="WardCode" class="text-danger"></span>
+            </div>
+            <div class="col-md-8">
+                <label asp-for="WorkAddress" class="form-label">Địa chỉ chi tiết</label>
+                <input asp-for="WorkAddress" class="form-control" placeholder="Số 1 Đường ABC, Quận XYZ" />
+                <span asp-validation-for="WorkAddress" class="text-danger"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Actions ── -->
+    <div class="ep-actions">
+        <a asp-controller="Recruiter" asp-action="RecruiterDashboard" class="btn-cancel">
+            <i class="fas fa-arrow-left"></i> Quay lại
+        </a>
+        <button type="submit" class="btn-save">
+            <i class="fas fa-save"></i> Lưu thay đổi
+        </button>
+    </div>
+</form>
+
+@section Scripts {
+<partial name="_ValidationScriptsPartial" />
+<script>
+    (function () {
+        const provinceSelect     = document.getElementById('provinceSelect');
+        const wardSelect         = document.getElementById('wardSelect');
+        const provinceCodeInput  = document.getElementById('provinceCodeInput');
+        const provinceNameInput  = document.getElementById('provinceNameInput');
+        const wardCodeInput      = document.getElementById('wardCodeInput');
+        const wardNameInput      = document.getElementById('wardNameInput');
+
+        async function loadProvinces() {
+            try {
+                const res       = await fetch('/Location/Provinces');
+                const provinces = await res.json();
+                provinces.forEach(p => {
+                    const opt      = document.createElement('option');
+                    opt.value      = p.code;
+                    opt.textContent = p.name;
+                    provinceSelect.appendChild(opt);
+                });
+
+                // Pre-select saved value
+                if (provinceNameInput.value) {
+                    const matched = Array.from(provinceSelect.options)
+                        .find(o => o.text === provinceNameInput.value);
+                    if (matched) {
+                        provinceSelect.value     = matched.value;
+                        provinceCodeInput.value  = matched.value;
+                        await loadWards(matched.value, wardNameInput.value);
+                    }
+                }
+            } catch (e) {
+                console.warn('Không thể tải danh sách tỉnh/thành:', e);
+            }
+        }
+
+        async function loadWards(provinceCode, preselectWardName) {
+            wardSelect.innerHTML = '<option value="">Chọn phường / xã</option>';
+            wardSelect.disabled  = true;
+            wardCodeInput.value  = '';
+            if (!provinceCode) return;
+
+            try {
+                const res   = await fetch(`/Location/Wards?provinceCode=${provinceCode}`);
+                const wards = await res.json();
+                wards.forEach(w => {
+                    const opt       = document.createElement('option');
+                    opt.value       = w.code;
+                    opt.textContent = w.name;
+                    wardSelect.appendChild(opt);
+                });
+                wardSelect.disabled = false;
+
+                if (preselectWardName) {
+                    const matched = Array.from(wardSelect.options)
+                        .find(o => o.text === preselectWardName);
+                    if (matched) {
+                        wardSelect.value    = matched.value;
+                        wardCodeInput.value = matched.value;
+                        wardNameInput.value = matched.text;
+                    }
+                }
+            } catch (e) {
+                console.warn('Không thể tải danh sách phường/xã:', e);
+            }
+        }
+
+        provinceSelect.addEventListener('change', async function () {
+            const sel              = this.options[this.selectedIndex];
+            provinceCodeInput.value = sel.value || '';
+            provinceNameInput.value = (sel.value && sel.text) ? sel.text : '';
+            wardNameInput.value     = '';
+            await loadWards(sel.value, '');
+        });
+
+        wardSelect.addEventListener('change', function () {
+            const sel           = this.options[this.selectedIndex];
+            wardCodeInput.value = sel.value || '';
+            wardNameInput.value = (sel.value && sel.text) ? sel.text : '';
+        });
+
+        loadProvinces();
+    })();
+</script>
+}

@@ -1,3 +1,4 @@
+using RJMS.vn.edu.fpt.Models.DTOs;
 using RJMS.Vn.Edu.Fpt.Model.DTOs;
 using RJMS.Vn.Edu.Fpt.Repository;
 using BCrypt.Net;
@@ -13,10 +14,21 @@ namespace RJMS.Vn.Edu.Fpt.Service
             _profileRepository = profileRepository;
         }
 
+        // ── Candidate ──────────────────────────────────────────────────────────
         public async Task<UserProfileDTO?> GetPersonalProfileAsync(string userId)
         {
-            var profile = await _profileRepository.GetProfileByUserIdAsync(userId);
-            return profile;
+            return await _profileRepository.GetProfileByUserIdAsync(userId);
+        }
+
+        // ── Recruiter ──────────────────────────────────────────────────────────
+        public async Task<RecruiterProfileUpdateViewModel?> GetRecruiterProfileAsync(int userId)
+        {
+            return await _profileRepository.GetRecruiterProfileAsync(userId);
+        }
+
+        public async Task<bool> UpdateRecruiterProfileAsync(int userId, RecruiterProfileUpdateViewModel model)
+        {
+            return await _profileRepository.UpdateRecruiterProfileAsync(userId, model);
         }
 
         public async Task<(bool Success, string Message)> ChangePasswordAsync(int userId, string currentPassword, string newPassword)
