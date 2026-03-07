@@ -1,0 +1,634 @@
+@model SubscriptionListViewModel
+@using RJMS.vn.edu.fpt.Models.DTOs
+@{
+    ViewData["Title"] = "Quản lý gói đăng ký";
+    ViewData["HidePageTitle"] = true;
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+<style>
+    /* ===== Page header toolbar ===== */
+    .sub-toolbar {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        margin-bottom: 24px;
+        gap: 16px;
+    }
+    .sub-toolbar h1 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #111827;
+        margin: 0 0 4px;
+    }
+    .sub-toolbar p { font-size: 0.84rem; color: #6b7280; margin: 0; }
+
+    .btn-create {
+        background: #00b14f;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        padding: 10px 20px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        white-space: nowrap;
+        cursor: pointer;
+        transition: background 0.2s;
+        text-decoration: none;
+        flex-shrink: 0;
+    }
+    .btn-create:hover { background: #009744; color: #fff; }
+
+    /* ===== Summary cards ===== */
+    .sub-summary {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+    .sum-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 18px 22px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .sum-card-left small {
+        font-size: 0.78rem;
+        color: #9ca3af;
+        display: block;
+        margin-bottom: 4px;
+    }
+    .sum-card-left strong { font-size: 1.75rem; font-weight: 700; color: #111827; }
+    .sum-card-left span { font-size: 0.78rem; color: #00b14f; margin-top: 2px; display: block; }
+    .sum-icon {
+        width: 46px; height: 46px; border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.2rem;
+    }
+
+    /* ===== Filter bar ===== */
+    .sub-filterbar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+    .sub-search {
+        position: relative;
+        flex: 1;
+        min-width: 200px;
+        max-width: 340px;
+    }
+    .sub-search i {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #9ca3af;
+        font-size: 0.85rem;
+    }
+    .sub-search input {
+        padding-left: 34px;
+        border-radius: 8px;
+        border: 1px solid #d1d5db;
+        font-size: 0.85rem;
+        height: 38px;
+        width: 100%;
+    }
+    .sub-search input:focus { border-color: #00b14f; outline: none; box-shadow: 0 0 0 3px rgba(0,177,79,0.12); }
+    .sub-filterbar .form-select {
+        border-radius: 8px;
+        border: 1px solid #d1d5db;
+        font-size: 0.85rem;
+        height: 38px;
+        min-width: 130px;
+    }
+    .btn-filter-icon {
+        width: 38px; height: 38px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        background: #fff;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer; color: #6b7280; flex-shrink: 0;
+    }
+    .btn-filter-icon:hover { background: #f3f4f6; }
+
+    /* ===== Table ===== */
+    .sub-table-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        overflow: hidden;
+        margin-bottom: 16px;
+    }
+    .sub-table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+    .sub-table thead tr { border-bottom: 1px solid #f3f4f6; }
+    .sub-table th {
+        padding: 12px 14px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        white-space: nowrap;
+        background: #fafafa;
+    }
+    .sub-table td {
+        padding: 14px;
+        border-bottom: 1px solid #f9fafb;
+        vertical-align: middle;
+        color: #374151;
+    }
+    .sub-table tr:last-child td { border-bottom: none; }
+    .sub-table tr:hover td { background: #f9fafb; }
+
+    .plan-name { font-weight: 700; color: #111827; }
+    .plan-code { font-size: 0.72rem; color: #9ca3af; margin-top: 2px; }
+
+    /* Plan type badges */
+    .pt-badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; }
+    .pt-basic    { background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
+    .pt-standard { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+    .pt-premium  { background: #fdf4ff; color: #7c3aed; border: 1px solid #e9d5ff; }
+
+    /* Status */
+    .st-active   { background: #dcfce7; color: #15803d; padding: 3px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+    .st-inactive { background: #f3f4f6; color: #6b7280; padding: 3px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+
+    /* Feature cell */
+    .feat-on  { color: #00b14f; font-size: 0.8rem; font-weight: 600; }
+    .feat-off { color: #9ca3af; font-size: 0.8rem; }
+
+    /* Action buttons */
+    .act-btn {
+        width: 30px; height: 30px;
+        display: inline-flex; align-items: center; justify-content: center;
+        border-radius: 6px;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        font-size: 0.85rem;
+        transition: background 0.15s;
+        text-decoration: none;
+    }
+    .act-btn:hover { background: #f3f4f6; }
+    .act-view   { color: #6b7280; }
+    .act-edit   { color: #6b7280; }
+    .act-toggle { color: #6b7280; }
+    .act-delete { color: #ef4444; }
+    .act-delete:hover { background: #fee2e2; }
+
+    /* ===== Pagination ===== */
+    .sub-pagination {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 14px;
+        font-size: 0.82rem;
+        color: #6b7280;
+        border-top: 1px solid #f3f4f6;
+        background: #fff;
+        border-radius: 0 0 12px 12px;
+        margin-top: -16px;
+    }
+    .pg-btn {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 32px; height: 32px;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        font-size: 0.82rem;
+        color: #374151;
+        text-decoration: none;
+        background: #fff;
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+    .pg-btn:hover { border-color: #00b14f; color: #00b14f; }
+    .pg-btn.active { background: #00b14f; border-color: #00b14f; color: #fff; }
+    .pg-btn-text {
+        padding: 0 14px; height: 32px; border: 1px solid #e5e7eb;
+        border-radius: 6px; font-size: 0.82rem; color: #374151;
+        display: inline-flex; align-items: center;
+        text-decoration: none; background: #fff;
+        cursor: pointer; transition: all 0.15s;
+    }
+    .pg-btn-text:hover { border-color: #00b14f; color: #00b14f; }
+
+    /* ===== Alert info bar ===== */
+    .sub-alerts {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-top: 4px;
+    }
+    .sub-alert-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 14px 18px;
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+    }
+    .sub-alert-icon { font-size: 1.1rem; flex-shrink: 0; padding-top: 2px; }
+    .sub-alert-title { font-size: 0.85rem; font-weight: 600; color: #111827; margin-bottom: 4px; }
+    .sub-alert-desc  { font-size: 0.78rem; color: #6b7280; line-height: 1.5; }
+
+    /* ===== Modal ===== */
+    .modal-header-custom {
+        background: linear-gradient(135deg, #00b14f, #009744);
+        color: #fff;
+        border-radius: 12px 12px 0 0;
+        padding: 18px 24px;
+    }
+    .modal-content { border-radius: 12px; border: none; box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
+    .form-label-sm { font-size: 0.8rem; font-weight: 600; color: #374151; margin-bottom: 4px; }
+    .form-control-sm2 {
+        font-size: 0.85rem; border: 1px solid #d1d5db;
+        border-radius: 7px; padding: 8px 12px;
+        transition: border-color 0.15s;
+    }
+    .form-control-sm2:focus { border-color: #00b14f; outline: none; box-shadow: 0 0 0 3px rgba(0,177,79,0.1); }
+</style>
+}
+
+<!-- Toolbar -->
+<div class="sub-toolbar">
+    <div>
+        <div style="font-size:0.8rem;color:#9ca3af;margin-bottom:6px;">
+            TRANG CHỦ &nbsp;›&nbsp; ADMIN &nbsp;›&nbsp; <strong style="color:#374151;">SUBSCRIPTIONS</strong>
+        </div>
+        <h1>Subscription Management</h1>
+        <p>Quản lý các gói dịch vụ dành cho nhà tuyển dụng trên nền tảng Finding Jobs.</p>
+    </div>
+    <button class="btn-create" data-bs-toggle="modal" data-bs-target="#modalCreatePlan">
+        <i class="fas fa-plus"></i> Create New Subscription
+    </button>
+</div>
+
+<!-- Summary cards -->
+<div class="sub-summary">
+    <div class="sum-card">
+        <div class="sum-card-left">
+            <small>Total Plans</small>
+            <strong>@Model.TotalPlans</strong>
+            <span>↗ 2 gói mới tháng này</span>
+        </div>
+        <div class="sum-icon" style="background:#ecfdf5;color:#00b14f;"><i class="fas fa-layer-group"></i></div>
+    </div>
+    <div class="sum-card">
+        <div class="sum-card-left">
+            <small>Active Plans</small>
+            <strong>@Model.ActivePlans.ToString("D2")</strong>
+            <span>↗ Chiếm @((int)((double)Model.ActivePlans/Model.TotalPlans*100))% tổng số</span>
+        </div>
+        <div class="sum-icon" style="background:#f0fdf4;color:#16a34a;"><i class="fas fa-circle-check"></i></div>
+    </div>
+    <div class="sum-card">
+        <div class="sum-card-left">
+            <small>Recruiters Using</small>
+            <strong>@Model.RecruitersUsing.ToString("N0")</strong>
+            <span>↗ Tăng 12% so với quý trước</span>
+        </div>
+        <div class="sum-icon" style="background:#eff6ff;color:#3b82f6;"><i class="fas fa-user-tie"></i></div>
+    </div>
+</div>
+
+<!-- Filter bar -->
+<form method="get" asp-action="ManageSubscription">
+    <div class="sub-filterbar">
+        <div class="sub-search">
+            <i class="fas fa-search"></i>
+            <input name="keyword" value="@Model.SearchKeyword" placeholder="Search subscription name..." />
+        </div>
+
+        <span style="font-size:0.83rem;color:#374151;font-weight:500;white-space:nowrap;">Status:</span>
+        <select name="status" class="form-select" style="width:130px;">
+            <option value="" selected="@(string.IsNullOrEmpty(Model.StatusFilter))">All Status</option>
+            <option value="active"   selected="@(Model.StatusFilter == "active"  )">Active</option>
+            <option value="inactive" selected="@(Model.StatusFilter == "inactive")">Inactive</option>
+        </select>
+
+        <span style="font-size:0.83rem;color:#374151;font-weight:500;white-space:nowrap;">Plan Type:</span>
+        <select name="type" class="form-select" style="width:130px;">
+            <option value="" selected="@(string.IsNullOrEmpty(Model.TypeFilter))">All Type</option>
+            <option value="Basic"    selected="@(Model.TypeFilter == "Basic"   )">Basic</option>
+            <option value="Standard" selected="@(Model.TypeFilter == "Standard")">Standard</option>
+            <option value="Premium"  selected="@(Model.TypeFilter == "Premium" )">Premium</option>
+        </select>
+
+        <button type="submit" class="btn-filter-icon" title="Lọc">
+            <i class="fas fa-filter"></i>
+        </button>
+    </div>
+</form>
+
+<!-- Table -->
+<div class="sub-table-card">
+    <table class="sub-table">
+        <thead>
+            <tr>
+                <th>Subscription Name</th>
+                <th>Plan Type</th>
+                <th>Monthly Price</th>
+                <th>Job Limit</th>
+                <th>CV AI Filter</th>
+                <th>Duration</th>
+                <th>Status</th>
+                <th>Created Date</th>
+                <th style="text-align:right;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (!Model.Plans.Any())
+            {
+                <tr><td colspan="9" class="text-center text-muted py-5">Không có dữ liệu</td></tr>
+            }
+            @foreach (var p in Model.Plans)
+            {
+                <tr>
+                    <td>
+                        <div class="plan-name">@p.Name</div>
+                        <div class="plan-code">@p.Code</div>
+                    </td>
+                    <td>
+                        @{
+                            var ptCls = p.PlanType switch
+                            {
+                                "Standard" => "pt-standard",
+                                "Premium"  => "pt-premium",
+                                _          => "pt-basic"
+                            };
+                        }
+                        <span class="pt-badge @ptCls">@p.PlanType</span>
+                    </td>
+                    <td>
+                        @if (p.Price == 0)
+                        { <span>0 VND</span> }
+                        else
+                        { <span>@p.Price.ToString("N0") VND</span> }
+                    </td>
+                    <td>
+                        @if (p.JobLimit.HasValue)
+                        { <span>@p.JobLimit tin/tháng</span> }
+                        else
+                        { <span class="feat-off">Không giới hạn</span> }
+                    </td>
+                    <td>
+                        @if (p.CvAiLimit.HasValue)
+                        {
+                            <span class="feat-on"><i class="fas fa-check me-1"></i>@p.CvAiLimit CV/tháng</span>
+                        }
+                        else if (p.PlanType == "Premium")
+                        {
+                            <span class="feat-on"><i class="fas fa-check me-1"></i>Lọc AI vô hạn</span>
+                        }
+                        else
+                        {
+                            <span class="feat-off">—</span>
+                        }
+                    </td>
+                    <td>
+                        @if (p.DurationDays == 0)
+                        { <span><i class="far fa-clock me-1" style="color:#9ca3af;"></i>Vĩnh viễn</span> }
+                        else
+                        { <span><i class="far fa-clock me-1" style="color:#9ca3af;"></i>@p.DurationDays ngày</span> }
+                    </td>
+                    <td>
+                        @if (p.IsActive)
+                        { <span class="st-active">Active</span> }
+                        else
+                        { <span class="st-inactive">Inactive</span> }
+                    </td>
+                    <td style="font-size:0.8rem;color:#6b7280;">
+                        @(p.CreatedAt?.ToString("dd/MM/yyyy") ?? "—")
+                    </td>
+                    <td style="text-align:right;white-space:nowrap;">
+                        <!-- View detail -->
+                        <button class="act-btn act-view" title="Xem chi tiết"
+                                onclick="viewDetail(@p.Id)">
+                            <i class="fas fa-eye"></i>
+                        </button>
+
+                        <!-- Edit -->
+                        <a class="act-btn act-edit" title="Sửa"
+                           asp-controller="Subscription" asp-action="EditPlan" asp-route-id="@p.Id">
+                            <i class="fas fa-pen"></i>
+                        </a>
+
+                        <!-- Toggle status -->
+                        <form asp-controller="Subscription" asp-action="ToggleStatus"
+                              asp-route-id="@p.Id" method="post" class="d-inline confirm-toggle">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="act-btn act-toggle" title="Toggle status">
+                                <i class="fas fa-power-off"></i>
+                            </button>
+                        </form>
+
+                        <!-- Delete -->
+                        <form asp-controller="Subscription" asp-action="DeletePlan"
+                              asp-route-id="@p.Id" method="post" class="d-inline confirm-delete"
+                              data-name="@p.Name">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="act-btn act-delete" title="Xóa">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <!-- Pagination -->
+    <div class="sub-pagination">
+        <span>Hiển thị <strong>@((Model.Page-1)*Model.PageSize+1)–@Math.Min(Model.Page*Model.PageSize,Model.TotalItems)</strong> trong tổng số <strong>@Model.TotalItems</strong> gói</span>
+        <div style="display:flex;gap:6px;align-items:center;">
+            @if (Model.Page > 1)
+            {
+                <a class="pg-btn-text" asp-action="ManageSubscription"
+                   asp-route-keyword="@Model.SearchKeyword"
+                   asp-route-status="@Model.StatusFilter"
+                   asp-route-type="@Model.TypeFilter"
+                   asp-route-page="@(Model.Page-1)">Previous</a>
+            }
+            else
+            {
+                <span class="pg-btn-text" style="opacity:.4;cursor:not-allowed;">Previous</span>
+            }
+
+            @for (int pg = 1; pg <= Math.Min(Model.TotalPages, 5); pg++)
+            {
+                <a class="pg-btn @(pg == Model.Page ? "active" : "")"
+                   asp-action="ManageSubscription"
+                   asp-route-keyword="@Model.SearchKeyword"
+                   asp-route-status="@Model.StatusFilter"
+                   asp-route-type="@Model.TypeFilter"
+                   asp-route-page="@pg">@pg</a>
+            }
+
+            @if (Model.Page < Model.TotalPages)
+            {
+                <a class="pg-btn-text" asp-action="ManageSubscription"
+                   asp-route-keyword="@Model.SearchKeyword"
+                   asp-route-status="@Model.StatusFilter"
+                   asp-route-type="@Model.TypeFilter"
+                   asp-route-page="@(Model.Page+1)">Next</a>
+            }
+            else
+            {
+                <span class="pg-btn-text" style="opacity:.4;cursor:not-allowed;">Next</span>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Alert info -->
+<div class="sub-alerts">
+    <div class="sub-alert-card">
+        <div class="sub-alert-icon" style="color:#f97316;"><i class="fas fa-clock"></i></div>
+        <div>
+            <div class="sub-alert-title" style="color:#f97316;">Gói sắp hết hạn</div>
+            <div class="sub-alert-desc">Có 3 nhà tuyển dụng sắp hết hạn gói Enterprise vào tuần tới. Đề xuất gửi email nhắc nhở gia hạn tự động.</div>
+        </div>
+    </div>
+    <div class="sub-alert-card">
+        <div class="sub-alert-icon" style="color:#6b7280;"><i class="fas fa-pen-to-square"></i></div>
+        <div>
+            <div class="sub-alert-title">Thay đổi gần đây</div>
+            <div class="sub-alert-desc">Admin đã cập nhật mức phí gói "Premium Enterprise" tăng 10% vào ngày 10/03/2024.</div>
+        </div>
+    </div>
+</div>
+
+<!-- ====== Modal: Create Plan ====== -->
+<div class="modal fade" id="modalCreatePlan" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header-custom">
+                <h5 class="modal-title fw-700 mb-0"><i class="fas fa-plus-circle me-2"></i>Tạo gói đăng ký mới</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-controller="Subscription" asp-action="CreatePlan" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label-sm">Tên gói *</label>
+                            <input name="Name" class="form-control form-control-sm2" placeholder="VD: Premium Enterprise" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label-sm">Loại gói *</label>
+                            <select name="PlanType" class="form-select form-control-sm2">
+                                <option value="Basic">Basic</option>
+                                <option value="Standard">Standard</option>
+                                <option value="Premium">Premium</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label-sm">Giá / tháng (VND) *</label>
+                            <input name="Price" type="number" min="0" class="form-control form-control-sm2" placeholder="0" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label-sm">Giới hạn tin đăng</label>
+                            <input name="JobLimit" type="number" min="1" class="form-control form-control-sm2" placeholder="Để trống = không giới hạn" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label-sm">Lọc CV AI / tháng</label>
+                            <input name="CvAiLimit" type="number" min="1" class="form-control form-control-sm2" placeholder="Để trống = không giới hạn" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label-sm">Thời hạn (ngày) *</label>
+                            <input name="DurationDays" type="number" min="1" value="30" class="form-control form-control-sm2" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label-sm">Trạng thái</label>
+                            <select name="IsActive" class="form-select form-control-sm2">
+                                <option value="true">Active</option>
+                                <option value="false">Inactive</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label-sm">Mô tả</label>
+                            <textarea name="Description" class="form-control form-control-sm2" rows="3"
+                                      placeholder="Mô tả nội dung và quyền lợi của gói..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0 pb-4 px-4 gap-2">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Huỷ</button>
+                    <button type="submit" class="btn-create">
+                        <i class="fas fa-save"></i> Tạo gói
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ====== Modal: View Detail ====== -->
+<div class="modal fade" id="modalViewDetail" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header-custom">
+                <h5 class="modal-title fw-700 mb-0"><i class="fas fa-eye me-2"></i>Chi tiết gói đăng ký</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4" id="detailContent">
+                <div class="text-center py-4"><div class="spinner-border text-success"></div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    // ===== View detail modal =====
+    async function viewDetail(id) {
+        const modal   = new bootstrap.Modal(document.getElementById('modalViewDetail'));
+        const content = document.getElementById('detailContent');
+        content.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-success"></div></div>';
+        modal.show();
+
+        try {
+            const res  = await fetch(`/Subscription/PlanDetail?id=${id}`);
+            const data = await res.json();
+
+            content.innerHTML = `
+                <table class="table table-sm mb-0">
+                    <tr><th style="width:40%">Tên gói</th><td><strong>${data.name}</strong></td></tr>
+                    <tr><th>Loại gói</th><td>${data.planType}</td></tr>
+                    <tr><th>Giá / tháng</th><td>${data.price === 0 ? '0 VND' : data.price.toLocaleString('vi-VN') + ' VND'}</td></tr>
+                    <tr><th>Giới hạn tin</th><td>${data.jobLimit ?? 'Không giới hạn'}</td></tr>
+                    <tr><th>CV AI Filter</th><td>${data.cvAiLimit ?? 'Không giới hạn'}</td></tr>
+                    <tr><th>Thời hạn</th><td>${data.durationDays === 0 ? 'Vĩnh viễn' : data.durationDays + ' ngày'}</td></tr>
+                    <tr><th>Trạng thái</th><td>${data.isActive ? '<span class="badge bg-success">Active</span>' : '<span class="badge bg-secondary">Inactive</span>'}</td></tr>
+                    <tr><th>Nhà tuyển dụng</th><td>${data.recruiterCount ?? 0} người đang dùng</td></tr>
+                    <tr><th>Mô tả</th><td>${data.description ?? '—'}</td></tr>
+                </table>`;
+        } catch (e) {
+            content.innerHTML = '<p class="text-danger text-center py-3">Không thể tải dữ liệu.</p>';
+        }
+    }
+    // ===== Confirm dialogs =====
+    document.querySelectorAll('.confirm-toggle').forEach(f => {
+        f.addEventListener('submit', e => {
+            if (!confirm('Thay đổi trạng thái gói này?')) e.preventDefault();
+        });
+    });
+    document.querySelectorAll('.confirm-delete').forEach(f => {
+        f.addEventListener('submit', e => {
+            const name = f.dataset.name || '';
+            if (!confirm('Xác nhận xóa gói "' + name + '"?')) e.preventDefault();
+        });
+    });
+</script>
+}
