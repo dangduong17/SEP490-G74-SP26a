@@ -2,6 +2,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using RJMS.Vn.Edu.Fpt.Model.DTOs;
 using RJMS.vn.edu.fpt.Models;
+using vn.edu.fpt.Utilities;
 
 namespace RJMS.Vn.Edu.Fpt.Repository
 {
@@ -59,6 +60,28 @@ namespace RJMS.Vn.Edu.Fpt.Repository
                 CreatedAt = candidate.CreatedAt ?? DateTime.MinValue,
                 UpdatedAt = null,
             };
+        }
+
+        public async Task<User?> GetUserByIdAsync(int userId)
+        {
+            return await _context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Id == userId);
+        }
+
+        public async Task<bool> UpdateUserPasswordAsync(int userId, string newPasswordHash)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null)
+            {
+                return false;
+            }
+
+            user.PasswordHash = newPasswordHash;
+            user.UpdatedAt = DateTimeHelper.NowVietnam;
+
+            await _context.SaveChangesAsync();
+            return true;
         }
     }
 }
