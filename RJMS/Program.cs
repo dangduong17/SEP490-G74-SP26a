@@ -4,6 +4,7 @@ using RJMS.vn.edu.fpt.Models;
 using RJMS.Vn.Edu.Fpt.Repository;
 using RJMS.Vn.Edu.Fpt.Service;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -25,6 +26,8 @@ builder.Services.AddScoped<ICandidateDashboardRepository, CandidateDashboardRepo
 builder.Services.AddScoped<ICandidateDashboardService, CandidateDashboardService>();
 builder.Services.AddScoped<IAdminRepository, AdminRepository>();
 builder.Services.AddScoped<IAdminService, AdminService>();
+builder.Services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
+builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
 
 var app = builder.Build();
 
