@@ -35,7 +35,15 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             if (result.Success)
             {
                 TempData["SuccessToast"] = "Đăng nhập thành công!";
-                return RedirectToAction("Index", "Home");
+
+                // Redirect theo role (cookie đã được AuthService set trước đó)
+                var role = Request.Cookies["UserRole"];
+                return role switch
+                {
+                    "Admin"     => RedirectToAction("Index",              "Admin"),
+                    "Recruiter" => RedirectToAction("RecruiterDashboard", "Recruiter"),
+                    _           => RedirectToAction("Index",              "Home"),
+                };
             }
 
             TempData["ErrorToast"] = result.Message;
