@@ -15,7 +15,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             _profileService = profileService;
         }
 
-        // ── Helper: đọc UserId từ cookie ──────────────────────────────────────
+        // ── Helpers ───────────────────────────────────────────────────────────
         private int? GetCurrentUserId()
         {
             var raw = Request.Cookies["UserId"];
@@ -30,7 +30,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             return null;
         }
 
-        // ── Candidate profile (giữ nguyên) ────────────────────────────────────
+        // ── Candidate: Xem hồ sơ ─────────────────────────────────────────────
         [HttpGet]
         public async Task<IActionResult> PersonalProfile(string? userId)
         {
@@ -50,11 +50,10 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             return View("PersonalProfile", profile);
         }
 
-<<<<<<< Updated upstream
+        // ── Đổi mật khẩu (GET) ───────────────────────────────────────────────
         [HttpGet]
         public IActionResult ChangePassword()
         {
-            // Check if user is logged in
             var userIdStr = HttpContext.Request.Cookies["UserId"];
             if (string.IsNullOrWhiteSpace(userIdStr))
             {
@@ -62,14 +61,15 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                 return RedirectToAction("Login", "Auth");
             }
 
+            ViewData["Title"] = "Đổi mật khẩu";
             return View(new ChangePasswordViewModel());
         }
 
+        // ── Đổi mật khẩu (POST) ──────────────────────────────────────────────
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
         {
-            // Check if user is logged in
             var userIdStr = HttpContext.Request.Cookies["UserId"];
             if (string.IsNullOrWhiteSpace(userIdStr) || !int.TryParse(userIdStr, out var userId))
             {
@@ -77,12 +77,13 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                 return RedirectToAction("Login", "Auth");
             }
 
-            if (!ModelState.IsValid)
-            {
-                return View(model);
-            }
+            ViewData["Title"] = "Đổi mật khẩu";
 
-            var (success, message) = await _profileService.ChangePasswordAsync(userId, model.CurrentPassword, model.NewPassword);
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var (success, message) = await _profileService.ChangePasswordAsync(
+                userId, model.CurrentPassword, model.NewPassword);
 
             if (success)
             {
@@ -92,8 +93,9 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
 
             ModelState.AddModelError(string.Empty, message);
             return View(model);
-=======
-        // ── Recruiter – Chỉnh sửa hồ sơ (GET) ────────────────────────────────
+        }
+
+        // ── Recruiter: Chỉnh sửa hồ sơ (GET) ────────────────────────────────
         [HttpGet]
         public async Task<IActionResult> EditProfile()
         {
@@ -103,18 +105,14 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             if (userId == null)
                 return RedirectToAction("Login", "Auth");
 
-            var model = await _profileService.GetRecruiterProfileAsync(userId.Value);
-            if (model == null)
-            {
-                // Recruiter chưa có profile đầy đủ — trả về form trống
-                model = new RecruiterProfileUpdateViewModel();
-            }
+            var model = await _profileService.GetRecruiterProfileAsync(userId.Value)
+                        ?? new RecruiterProfileUpdateViewModel();
 
             ViewData["Title"] = "Chỉnh sửa hồ sơ nhà tuyển dụng";
             return View("~/Views/Recruiter/EditProfile.cshtml", model);
         }
 
-        // ── Recruiter – Chỉnh sửa hồ sơ (POST) ───────────────────────────────
+        // ── Recruiter: Chỉnh sửa hồ sơ (POST) ───────────────────────────────
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditProfile(RecruiterProfileUpdateViewModel model)
@@ -137,7 +135,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                 return View("~/Views/Recruiter/EditProfile.cshtml", model);
             }
 
-            // Cập nhật lại cookie UserName để header hiển thị đúng
+            // Đồng bộ cookie UserName
             var fullName = $"{model.FirstName} {model.LastName}".Trim();
             Response.Cookies.Append("UserName", fullName, new CookieOptions
             {
@@ -151,27 +149,16 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             return RedirectToAction("RecruiterDashboard", "Recruiter");
         }
 
-        // ── Stub: Info (dùng cho link trong header) ────────────────────────────
+        // ── Redirect thông minh theo role ─────────────────────────────────────
         [HttpGet]
         public IActionResult Info()
         {
             var role = Request.Cookies["UserRole"];
-            // Recruiter → trang sửa hồ sơ recruiter
             if (role == "Recruiter")
                 return RedirectToAction(nameof(EditProfile));
 
-            // Candidate / others → trang profile cũ
             var userId = Request.Cookies["UserId"];
             return RedirectToAction(nameof(PersonalProfile), new { userId });
-        }
-
-        // ── Stub: ChangePassword ───────────────────────────────────────────────
-        [HttpGet]
-        public IActionResult ChangePassword()
-        {
-            ViewData["Title"] = "Đổi mật khẩu";
-            return View();
->>>>>>> Stashed changes
         }
     }
 }

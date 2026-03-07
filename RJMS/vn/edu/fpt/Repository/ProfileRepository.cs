@@ -1,11 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using RJMS.vn.edu.fpt.Models;
-<<<<<<< Updated upstream
-using vn.edu.fpt.Utilities;
-=======
 using RJMS.vn.edu.fpt.Models.DTOs;
 using RJMS.Vn.Edu.Fpt.Model.DTOs;
->>>>>>> Stashed changes
+using vn.edu.fpt.Utilities;
 
 namespace RJMS.Vn.Edu.Fpt.Repository
 {
@@ -33,30 +30,30 @@ namespace RJMS.Vn.Edu.Fpt.Repository
 
             return new UserProfileDTO
             {
-                CandidateId        = candidate.Id,
-                UserId             = candidate.UserId.ToString(),
-                FullName           = candidate.FullName ?? string.Empty,
-                Email              = candidate.User?.Email ?? string.Empty,
-                Phone              = candidate.Phone ?? string.Empty,
-                AvatarUrl          = candidate.Avatar ?? string.Empty,
-                City               = candidate.City ?? string.Empty,
-                Address            = candidate.Address ?? string.Empty,
-                Title              = candidate.Title ?? string.Empty,
-                CurrentSalary      = candidate.CurrentSalary,
-                ExpectedSalary     = candidate.ExpectedSalary,
-                Summary            = candidate.Summary ?? string.Empty,
-                YearsOfExperience  = candidate.YearsOfExperience,
-                WorkingType        = string.Empty,
-                CurrentPosition    = string.Empty,
-                HighestDegree      = string.Empty,
-                IsLookingForJob    = candidate.IsLookingForJob ?? false,
-                AllowContact       = false,
-                CreatedAt          = candidate.CreatedAt ?? DateTime.MinValue,
-                UpdatedAt          = null,
+                CandidateId       = candidate.Id,
+                UserId            = candidate.UserId.ToString(),
+                FullName          = candidate.FullName ?? string.Empty,
+                Email             = candidate.User?.Email ?? string.Empty,
+                Phone             = candidate.Phone ?? string.Empty,
+                AvatarUrl         = candidate.Avatar ?? string.Empty,
+                City              = candidate.City ?? string.Empty,
+                Address           = candidate.Address ?? string.Empty,
+                Title             = candidate.Title ?? string.Empty,
+                CurrentSalary     = candidate.CurrentSalary,
+                ExpectedSalary    = candidate.ExpectedSalary,
+                Summary           = candidate.Summary ?? string.Empty,
+                YearsOfExperience = candidate.YearsOfExperience,
+                WorkingType       = string.Empty,
+                CurrentPosition   = string.Empty,
+                HighestDegree     = string.Empty,
+                IsLookingForJob   = candidate.IsLookingForJob ?? false,
+                AllowContact      = false,
+                CreatedAt         = candidate.CreatedAt ?? DateTime.MinValue,
+                UpdatedAt         = null,
             };
         }
 
-<<<<<<< Updated upstream
+        // ── Password ───────────────────────────────────────────────────────────
         public async Task<User?> GetUserByIdAsync(int userId)
         {
             return await _context.Users
@@ -67,14 +64,15 @@ namespace RJMS.Vn.Edu.Fpt.Repository
         public async Task<bool> UpdateUserPasswordAsync(int userId, string newPasswordHash)
         {
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
-            if (user == null)
-            {
-                return false;
-            }
+            if (user == null) return false;
 
             user.PasswordHash = newPasswordHash;
-            user.UpdatedAt = DateTimeHelper.NowVietnam;
-=======
+            user.UpdatedAt    = DateTimeHelper.NowVietnam;
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
         // ── Recruiter profile ──────────────────────────────────────────────────
         public async Task<RecruiterProfileUpdateViewModel?> GetRecruiterProfileAsync(int userId)
         {
@@ -89,17 +87,15 @@ namespace RJMS.Vn.Edu.Fpt.Repository
             var user    = recruiter.User;
             var company = recruiter.Company;
 
-            // Parse saved city string into ProvinceName / ProvinceName (stored as "ProvinceName|WardName" or plain)
-            // Current schema saves city as plain text — we store ProvinceName there for simplicity
             return new RecruiterProfileUpdateViewModel
             {
-                RecruiterId      = recruiter.Id,
-                CompanyId        = recruiter.CompanyId,
-                FirstName        = user?.FirstName ?? string.Empty,
-                LastName         = user?.LastName  ?? string.Empty,
-                Phone            = recruiter.Phone ?? string.Empty,
-                Position         = recruiter.Position ?? string.Empty,
-                Department       = null,
+                RecruiterId        = recruiter.Id,
+                CompanyId          = recruiter.CompanyId,
+                FirstName          = user?.FirstName ?? string.Empty,
+                LastName           = user?.LastName  ?? string.Empty,
+                Phone              = recruiter.Phone    ?? string.Empty,
+                Position           = recruiter.Position ?? string.Empty,
+                Department         = null,
 
                 CompanyName        = company?.Name        ?? string.Empty,
                 CompanyTaxCode     = company?.TaxCode,
@@ -110,7 +106,6 @@ namespace RJMS.Vn.Edu.Fpt.Repository
                 CompanyPhone       = company?.Phone,
                 CompanyDescription = company?.Description,
 
-                // Location: ProvinceName is stored in Company.Description prefix or we leave blank for now
                 ProvinceName = null,
                 WardName     = null,
                 WorkAddress  = null,
@@ -119,13 +114,13 @@ namespace RJMS.Vn.Edu.Fpt.Repository
 
         public async Task<bool> UpdateRecruiterProfileAsync(int userId, RecruiterProfileUpdateViewModel model)
         {
-            // 1. Update User (FirstName, LastName)
+            // 1. Update User
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
             if (user == null) return false;
 
             user.FirstName = model.FirstName;
             user.LastName  = model.LastName;
-            user.UpdatedAt = DateTime.UtcNow;
+            user.UpdatedAt = DateTimeHelper.NowVietnam;
 
             // 2. Update Recruiter row
             var recruiter = await _context.Recruiters.FirstOrDefaultAsync(r => r.UserId == userId);
@@ -136,25 +131,15 @@ namespace RJMS.Vn.Edu.Fpt.Repository
             recruiter.Position = model.Position;
 
             // 3. Upsert Company
-            Company? company;
-            if (recruiter.CompanyId.HasValue)
-            {
-                company = await _context.Companies.FirstOrDefaultAsync(c => c.Id == recruiter.CompanyId.Value);
-            }
-            else
-            {
-                company = null;
-            }
+            Company? company = recruiter.CompanyId.HasValue
+                ? await _context.Companies.FirstOrDefaultAsync(c => c.Id == recruiter.CompanyId.Value)
+                : null;
 
             if (company == null)
             {
-                // Create new company and link to recruiter
-                company = new Company
-                {
-                    CreatedAt = DateTime.UtcNow,
-                };
+                company = new Company { CreatedAt = DateTimeHelper.NowVietnam };
                 _context.Companies.Add(company);
-                await _context.SaveChangesAsync();          // get new company Id
+                await _context.SaveChangesAsync();   // flush to get new Id
                 recruiter.CompanyId = company.Id;
             }
 
@@ -166,8 +151,7 @@ namespace RJMS.Vn.Edu.Fpt.Repository
             company.Email       = model.CompanyEmail;
             company.Phone       = model.CompanyPhone;
             company.Description = model.CompanyDescription;
-            company.UpdatedAt   = DateTime.UtcNow;
->>>>>>> Stashed changes
+            company.UpdatedAt   = DateTimeHelper.NowVietnam;
 
             await _context.SaveChangesAsync();
             return true;
