@@ -13,6 +13,29 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             _subscriptionService = subscriptionService;
         }
 
+        // ── Subscription Plans Page for Recruiter (GET /Subscription or /Subscription/Index) ──
+        [HttpGet]
+        public IActionResult Index()
+        {
+            // Check if user is logged in and is recruiter
+            var userRole = HttpContext.Request.Cookies["UserRole"];
+            
+            if (string.IsNullOrWhiteSpace(userRole))
+            {
+                TempData["ErrorToast"] = "Vui lòng đăng nhập để xem gói dịch vụ";
+                return RedirectToAction("Login", "Auth");
+            }
+
+            if (userRole != "Recruiter")
+            {
+                TempData["ErrorToast"] = "Tính năng này chỉ dành cho nhà tuyển dụng";
+                return RedirectToAction("Index", "Home");
+            }
+
+            ViewData["Title"] = "Chọn gói dịch vụ";
+            return View();
+        }
+
         // ── Auth guard ────────────────────────────────────────────────────────
         private IActionResult? RequireAdmin()
         {

@@ -1,63 +1,24 @@
 @using Microsoft.AspNetCore.Http
 @{
     Layout = "~/Views/Shared/_Layout.cshtml";
-    var userName   = Context.Request.Cookies["UserName"]  ?? "Recruiter";
-    var userEmail  = Context.Request.Cookies["UserEmail"] ?? "";
-    var currentAction = ViewContext.RouteData.Values["Action"]?.ToString() ?? "";
 }
+
 @section Styles {
     <style>
-        /* ===== Remove main padding for recruiter layout ===== */
+        /* Remove default main padding */
         main[role="main"] {
             padding: 0;
             margin: 0;
         }
 
-        /* ===== Top recruiter nav bar (below site-header) ===== */
-        .recruiter-topnav {
-            background: #fff;
-            border-bottom: 1px solid #e5e7eb;
-            padding: 0 32px;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            position: sticky;
-            top: 70px;          /* same as header height */
-            z-index: 990;
-        }
-
-        .recruiter-topnav a {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 14px 16px;
-            font-size: 0.875rem;
-            font-weight: 500;
-            color: #6b7280;
-            text-decoration: none;
-            border-bottom: 2px solid transparent;
-            transition: all 0.15s;
-            white-space: nowrap;
-        }
-
-        .recruiter-topnav a:hover {
-            color: #00b14f;
-        }
-
-        .recruiter-topnav a.active {
-            color: #00b14f;
-            border-bottom-color: #00b14f;
-            font-weight: 600;
-        }
-
-        /* ===== Recruiter page content area ===== */
+        /* Page content area */
         .recruiter-content {
             background: #f7f8fa;
-            min-height: calc(100vh - 115px); /* header + topnav */
+            min-height: calc(100vh - 70px);
             padding: 28px 32px;
         }
 
-        /* ===== Page headline area ===== */
+        /* Page headline area */
         .rpage-header {
             display: flex;
             align-items: flex-start;
@@ -100,7 +61,7 @@
             color: #fff;
         }
 
-        /* ===== Breadcrumb ===== */
+        /* Breadcrumb */
         .rpage-breadcrumb {
             margin-bottom: 12px;
             font-size: 0.8rem;
@@ -111,7 +72,7 @@
         .rpage-breadcrumb a:hover { color: #00b14f; }
         .rpage-breadcrumb .sep { margin: 0 6px; }
 
-        /* ===== Alert spacing ===== */
+        /* Alert spacing */
         .alert {
             padding: 0.75rem 1rem;
             margin-bottom: 1rem;
@@ -119,30 +80,6 @@
     </style>
     @await RenderSectionAsync("Styles", required: false)
 }
-
-<!-- Recruiter top nav -->
-<nav class="recruiter-topnav">
-    <a class="@(currentAction == "RecruiterDashboard" ? "active" : "")"
-       asp-controller="Recruiter" asp-action="RecruiterDashboard">
-        <i class="fas fa-chart-pie fa-xs"></i> Dashboard
-    </a>
-    <a class="@(currentAction == "JobPostingList" ? "active" : "")"
-       asp-controller="Recruiter" asp-action="JobPostingList">
-        <i class="fas fa-briefcase fa-xs"></i> Job Posts
-    </a>
-    <a class="@(currentAction == "Applications" ? "active" : "")"
-       asp-controller="Recruiter" asp-action="Applications">
-        <i class="fas fa-file-alt fa-xs"></i> Applications
-    </a>
-    <a class="@(currentAction == "Candidates" ? "active" : "")"
-       asp-controller="Recruiter" asp-action="Candidates">
-        <i class="fas fa-users fa-xs"></i> Candidates
-    </a>
-    <a class="@(currentAction == "Messages" ? "active" : "")"
-       asp-controller="Recruiter" asp-action="Messages">
-        <i class="fas fa-comment-dots fa-xs"></i> Messages
-    </a>
-</nav>
 
 <!-- Page content -->
 <div class="recruiter-content">
