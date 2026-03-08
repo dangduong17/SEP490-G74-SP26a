@@ -347,16 +347,92 @@
                         }
                         else if (userRole == "Recruiter")
                         {
-                            <a class="btn btn-success" asp-controller="Recruiter" asp-action="RecruiterDashboard">
-                                Recruiter Dashboard
-                            </a>
-                            
-                            <form asp-controller="Auth" asp-action="Logout" method="post" class="d-inline ms-2" id="logoutFormRecruiter">
-                                @Html.AntiForgeryToken()
-                                <button type="submit" class="btn btn-outline-danger">
-                                    <i class="fas fa-sign-out-alt me-1"></i>Đăng xuất
+                            <div class="header-icons">
+                                <!-- Notification Icon -->
+                                <button class="header-icon-btn" title="Thông báo">
+                                    <i class="fas fa-bell"></i>
+                                    <span class="notification-badge">3</span>
                                 </button>
-                            </form>
+
+                                <!-- Message Icon -->
+                                <button class="header-icon-btn" title="Tin nhắn">
+                                    <i class="fas fa-comment-dots"></i>
+                                </button>
+
+                                <div class="profile-dropdown" id="profileDropdown">
+                                    <div class="profile-avatar-wrapper" onclick="toggleProfileMenu()">
+                                        <div class="profile-avatar" style="background:#dcfce7;color:#16a34a;border-color:#dcfce7;">
+                                            @((userName?.Length > 0 ? userName.Substring(0, 1) : "R").ToUpper())
+                                        </div>
+                                        <i class="fas fa-chevron-down avatar-chevron"></i>
+                                    </div>
+
+                                    <div class="profile-menu">
+                                        <!-- Profile Header -->
+                                        <div class="profile-header">
+                                            <div class="profile-header-avatar" style="background:#dcfce7;color:#16a34a;">
+                                                @((userName?.Length > 0 ? userName.Substring(0, 1) : "R").ToUpper())
+                                            </div>
+                                            <div class="profile-header-info">
+                                                <h6>@userName</h6>
+                                                <div class="email">@userEmail</div>
+                                                @if (!string.IsNullOrEmpty(userId))
+                                                {
+                                                    <div class="user-id">ID @(userId.Length > 8 ? userId.Substring(0, 8) : userId)</div>
+                                                }
+                                                <span class="profile-verified" style="background:#dcfce7;color:#16a34a;">
+                                                    <i class="fas fa-briefcase"></i>
+                                                    Nhà tuyển dụng
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Recruiter quick links -->
+                                        <div class="profile-menu-section">
+                                            <a asp-controller="Recruiter" asp-action="RecruiterDashboard" class="profile-menu-item">
+                                                <i class="fas fa-chart-bar"></i>
+                                                <span class="label">Dashboard</span>
+                                            </a>
+                                            <a asp-controller="Recruiter" asp-action="JobPostingList" class="profile-menu-item">
+                                                <i class="fas fa-file-alt"></i>
+                                                <span class="label">Quản lý tin đăng</span>
+                                            </a>
+                                            <a asp-controller="Subscription" asp-action="Index" class="profile-menu-item">
+                                                <i class="fas fa-crown"></i>
+                                                <span class="label">Gói dịch vụ</span>
+                                            </a>
+                                            <a asp-controller="Recruiter" asp-action="Applications" class="profile-menu-item">
+                                                <i class="fas fa-inbox"></i>
+                                                <span class="label">Hồ sơ ứng tuyển</span>
+                                            </a>
+                                        </div>
+
+                                        <!-- Account -->
+                                        <div class="profile-menu-section">
+                                            <div class="profile-menu-item" onclick="toggleSubmenu(this)">
+                                                <i class="fas fa-user-shield"></i>
+                                                <span class="label">Cá nhân &amp; Bảo mật</span>
+                                                <i class="fas fa-chevron-down arrow"></i>
+                                            </div>
+                                            <div class="profile-submenu">
+                                                <a asp-controller="Profile" asp-action="EditProfile" class="profile-submenu-item">Thông tin cá nhân</a>
+                                                <a asp-controller="Profile" asp-action="ChangePassword" class="profile-submenu-item">Đổi mật khẩu</a>
+                                            </div>
+                                        </div>
+
+                                        <!-- Logout -->
+                                        <div class="profile-menu-section">
+                                            <form asp-controller="Auth" asp-action="Logout" method="post" id="logoutFormRecruiter">
+                                                @Html.AntiForgeryToken()
+                                                <a href="javascript:void(0)" onclick="document.getElementById('logoutFormRecruiter').submit()" class="profile-menu-item logout-btn">
+                                                    <i class="fas fa-sign-out-alt"></i>
+                                                    <span class="label">Đăng xuất</span>
+                                                </a>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         }
                         else
                         {

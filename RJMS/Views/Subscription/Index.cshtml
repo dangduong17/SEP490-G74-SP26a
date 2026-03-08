@@ -1,0 +1,408 @@
+@{
+    ViewData["Title"] = "Chọn gói dịch vụ";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    .pricing-hero {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        padding: 60px 0 40px;
+    }
+
+    .pricing-card {
+        border: 2px solid #e9ecef;
+        border-radius: 12px;
+        padding: 30px;
+        background: white;
+        transition: all 0.3s ease;
+        height: 100%;
+        position: relative;
+    }
+
+    .pricing-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+
+    .pricing-card.featured {
+        border-color: #00b14f;
+        transform: scale(1.05);
+    }
+
+    .pricing-badge {
+        position: absolute;
+        top: -12px;
+        right: 20px;
+        background: #00b14f;
+        color: white;
+        padding: 4px 16px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .pricing-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+
+    .pricing-subtitle {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-bottom: 24px;
+    }
+
+    .pricing-price {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: #212529;
+        margin-bottom: 8px;
+    }
+
+    .pricing-price small {
+        font-size: 1rem;
+        font-weight: 400;
+        color: #6c757d;
+    }
+
+    .pricing-period {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-bottom: 8px;
+    }
+
+    .pricing-vat {
+        font-size: 0.85rem;
+        color: #868e96;
+        margin-bottom: 20px;
+    }
+
+    .pricing-features {
+        list-style: none;
+        padding: 0;
+        margin: 24px 0;
+    }
+
+    .pricing-features li {
+        padding: 10px 0;
+        display: flex;
+        align-items: start;
+        gap: 10px;
+        font-size: 0.95rem;
+    }
+
+    .pricing-features li i {
+        color: #00b14f;
+        margin-top: 2px;
+        flex-shrink: 0;
+    }
+
+    .btn-pricing {
+        width: 100%;
+        padding: 12px;
+        border-radius: 8px;
+        font-weight: 600;
+        margin-top: 20px;
+    }
+
+    .btn-pricing-primary {
+        background: #00b14f;
+        border-color: #00b14f;
+        color: white;
+    }
+
+    .btn-pricing-primary:hover {
+        background: #009744;
+        border-color: #009744;
+    }
+
+    .btn-pricing-outline {
+        border: 2px solid #00b14f;
+        color: #00b14f;
+        background: white;
+    }
+
+    .btn-pricing-outline:hover {
+        background: #f0fdf4;
+    }
+
+    .comparison-table {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .comparison-table th {
+        background: #f8f9fa;
+        padding: 16px;
+        font-weight: 600;
+    }
+
+    .comparison-table td {
+        padding: 16px;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .comparison-table .featured-col {
+        background: #f0fdf4;
+    }
+
+    .faq-section {
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+    }
+
+    .faq-item {
+        border-bottom: 1px solid #e9ecef;
+        padding: 20px 0;
+    }
+
+    .faq-item:last-child {
+        border-bottom: none;
+    }
+
+    .faq-question {
+        font-weight: 600;
+        font-size: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        color: #212529;
+    }
+
+    .promo-banner {
+        background: linear-gradient(135deg, #00b14f 0%, #009744 100%);
+        color: white;
+        padding: 12px 0;
+        text-align: center;
+        font-weight: 600;
+    }
+</style>
+
+<!-- Promo Banner -->
+<div class="promo-banner">
+    <div class="container">
+        🎉 Khuyến mãi đặc biệt: Giảm 10% cho gói Pro khi đăng ký hôm nay!
+    </div>
+</div>
+
+<!-- Hero Section -->
+<div class="pricing-hero">
+    <div class="container text-center">
+        <nav aria-label="breadcrumb" class="mb-4">
+            <ol class="breadcrumb justify-content-center bg-transparent mb-2">
+                <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+                <li class="breadcrumb-item"><a href="#">Nhà tuyển dụng</a></li>
+                <li class="breadcrumb-item active">Chọn gói dịch vụ</li>
+            </ol>
+        </nav>
+        <h1 class="display-5 fw-bold mb-3">Chọn gói dịch vụ</h1>
+        <p class="lead text-muted mb-4">Chọn gói phù hợp để đăng tin tuyển dụng và quản lý ứng viên.</p>
+        <div class="btn-group" role="group">
+            <button type="button" class="btn btn-outline-secondary active">Theo tháng</button>
+            <button type="button" class="btn btn-outline-secondary">Theo năm</button>
+        </div>
+    </div>
+</div>
+
+<!-- Pricing Cards -->
+<div class="container my-5">
+    <div class="row g-4">
+        <!-- Basic Plan -->
+        <div class="col-lg-4">
+            <div class="pricing-card">
+                <h3 class="pricing-title">Basic</h3>
+                <p class="pricing-subtitle">Dành cho doanh nghiệp nhỏ</p>
+                <div class="pricing-price">1,990,000 <small>đ</small></div>
+                <p class="pricing-period">/ tháng</p>
+                <p class="pricing-vat">Thanh toán hết cho suất thời hạn</p>
+                
+                <ul class="pricing-features">
+                    <li><i class="fas fa-check-circle"></i> 10 tin đăng / tháng</li>
+                    <li><i class="fas fa-check-circle"></i> 100 lượt xem CV / tháng</li>
+                    <li><i class="fas fa-check-circle"></i> 50 lượt tải CV</li>
+                    <li><i class="fas fa-check-circle"></i> 1 tài khoản HR</li>
+                    <li><i class="fas fa-check-circle"></i> Hiển thị đến 30 ngày</li>
+                </ul>
+
+                <div style="border-top: 1px solid #e9ecef; padding-top: 20px;">
+                    <div class="mb-2"><i class="fas fa-check-circle text-success"></i> Template tin tuyển dụng</div>
+                    <div class="mb-2"><i class="fas fa-check-circle text-success"></i> Quản lý ứng viên theo pipeline</div>
+                    <div class="mb-2"><i class="fas fa-check-circle text-success"></i> Lọc CV theo từ khóa</div>
+                    <div class="mb-2"><i class="fas fa-check-circle text-success"></i> Gửi mail đến ứng viên</div>
+                </div>
+
+                <button class="btn btn-pricing btn-pricing-outline">Chọn gói</button>
+            </div>
+        </div>
+
+        <!-- Pro Plan (Featured) -->
+        <div class="col-lg-4">
+            <div class="pricing-card featured">
+                <span class="pricing-badge">Phổ biến</span>
+                <h3 class="pricing-title">Pro</h3>
+                <p class="pricing-subtitle">Dành cho doanh nghiệp trung bình và lớn</p>
+                <div class="pricing-price">4,990,000 <small>đ</small></div>
+                <p class="pricing-period">/ tháng</p>
+                <p class="pricing-vat">Thanh toán hết cho suất thời hạn</p>
+                
+                <ul class="pricing-features">
+                    <li><i class="fas fa-check-circle"></i> 30 tin đăng / tháng</li>
+                    <li><i class="fas fa-check-circle"></i> 500 lượt xem CV / tháng</li>
+                    <li><i class="fas fa-check-circle"></i> 200 lượt tải CV</li>
+                    <li><i class="fas fa-check-circle"></i> 3 tài khoản HR</li>
+                    <li><i class="fas fa-check-circle"></i> Hiển thị đến 30 ngày</li>
+                </ul>
+
+                <div style="border-top: 1px solid #e9ecef; padding-top: 20px;">
+                    <div class="mb-2"><i class="fas fa-check-circle text-success"></i> Template tin tuyển dụng</div>
+                    <div class="mb-2"><i class="fas fa-check-circle text-success"></i> Quản lý ứng viên theo pipeline</div>
+                    <div class="mb-2"><i class="fas fa-check-circle text-success"></i> Lọc CV theo từ khóa</div>
+                    <div class="mb-2"><i class="fas fa-check-circle text-success"></i> Gửi mail đến ứng viên</div>
+                    <div class="mb-2"><i class="fas fa-check-circle text-success"></i> Hỗ trợ ưu tiên</div>
+                </div>
+
+                <button class="btn btn-pricing btn-pricing-primary">Chọn gói</button>
+            </div>
+        </div>
+
+        <!-- Enterprise Plan -->
+        <div class="col-lg-4">
+            <div class="pricing-card">
+                <h3 class="pricing-title">Enterprise</h3>
+                <p class="pricing-subtitle">Dành cho doanh nghiệp quy mô lớn</p>
+                <div class="pricing-price">9,990,000 <small>đ</small></div>
+                <p class="pricing-period">/ tháng</p>
+                <p class="pricing-vat">Thanh toán hết cho suất thời hạn</p>
+                
+                <ul class="pricing-features">
+                    <li><i class="fas fa-check-circle"></i> Không giới hạn tin đăng</li>
+                    <li><i class="fas fa-check-circle"></i> Không giới hạn lượt xem CV</li>
+                    <li><i class="fas fa-check-circle"></i> Không giới hạn lượt tải CV</li>
+                    <li><i class="fas fa-check-circle"></i> 10 tài khoản HR</li>
+                    <li><i class="fas fa-check-circle"></i> Hiển thị đến 30 ngày</li>
+                </ul>
+
+                <div style="border-top: 1px solid #e9ecef; padding-top: 20px;">
+                    <div class="mb-2"><i class="fas fa-check-circle text-success"></i> Không giới hạn tin đăng</div>
+                    <div class="mb-2"><i class="fas fa-check-circle text-success"></i> Quản lý ứng viên theo pipeline</div>
+                    <div class="mb-2"><i class="fas fa-check-circle text-success"></i> Lọc CV theo từ khóa</div>
+                    <div class="mb-2"><i class="fas fa-check-circle text-success"></i> Gửn mail đến ứng viên</div>
+                    <div class="mb-2"><i class="fas fa-check-circle text-success"></i> Hỗ trợ ưu tiên</div>
+                    <div class="mb-2"><i class="fas fa-check-circle text-success"></i> Branding công ty</div>
+                </div>
+
+                <button class="btn btn-pricing btn-pricing-outline">Liên hệ tư vấn</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Comparison Table -->
+<div class="container my-5">
+    <h2 class="text-center fw-bold mb-4">So sánh gói</h2>
+    <div class="comparison-table">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th style="width: 40%">Tính năng</th>
+                    <th class="text-center">Basic</th>
+                    <th class="text-center featured-col">Pro</th>
+                    <th class="text-center">Enterprise</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="fw-semibold">Tin đăng / tháng</td>
+                    <td class="text-center">10</td>
+                    <td class="text-center featured-col">30</td>
+                    <td class="text-center">Không giới hạn</td>
+                </tr>
+                <tr>
+                    <td class="fw-semibold">Lượt xem CV / tháng</td>
+                    <td class="text-center">100</td>
+                    <td class="text-center featured-col">500</td>
+                    <td class="text-center">Không giới hạn</td>
+                </tr>
+                <tr>
+                    <td class="fw-semibold">Lượt tải CV</td>
+                    <td class="text-center">50</td>
+                    <td class="text-center featured-col">200</td>
+                    <td class="text-center">Không giới hạn</td>
+                </tr>
+                <tr>
+                    <td class="fw-semibold">Tài khoản HR</td>
+                    <td class="text-center">1</td>
+                    <td class="text-center featured-col">3</td>
+                    <td class="text-center">10</td>
+                </tr>
+                <tr>
+                    <td class="fw-semibold">Lọc CV theo từ khóa</td>
+                    <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                    <td class="text-center featured-col"><i class="fas fa-check text-success"></i></td>
+                    <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                </tr>
+                <tr>
+                    <td class="fw-semibold">Hỗ trợ ưu tiên</td>
+                    <td class="text-center"><i class="fas fa-times text-secondary"></i></td>
+                    <td class="text-center featured-col"><i class="fas fa-check text-success"></i></td>
+                    <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                </tr>
+                <tr>
+                    <td class="fw-semibold">Branding công ty</td>
+                    <td class="text-center"><i class="fas fa-times text-secondary"></i></td>
+                    <td class="text-center featured-col"><i class="fas fa-times text-secondary"></i></td>
+                    <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- FAQ Section -->
+<div class="container my-5">
+    <h2 class="text-center fw-bold mb-4">Câu hỏi thường gặp</h2>
+    <div class="faq-section">
+        <div class="faq-item">
+            <div class="faq-question">
+                <span>Gói cơ bản khác gì so với gói Pro?</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+        </div>
+        <div class="faq-item">
+            <div class="faq-question">
+                <span>Có xuất hóa đơn VAT không?</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+        </div>
+        <div class="faq-item">
+            <div class="faq-question">
+                <span>Nâng cấp gói giữa kỳ có được không?</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+        </div>
+        <div class="faq-item">
+            <div class="faq-question">
+                <span>Hoàn tiền khi hủy gói như thế nào?</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    // FAQ accordion
+    document.querySelectorAll('.faq-question').forEach(item => {
+        item.addEventListener('click', function() {
+            const icon = this.querySelector('i');
+            icon.classList.toggle('fa-chevron-down');
+            icon.classList.toggle('fa-chevron-up');
+        });
+    });
+</script>
+}
