@@ -247,7 +247,7 @@
             <div class="collapse navbar-collapse" id="navbarContent">
                 <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
                     <li class="nav-item">
-                        <a class="nav-link fw-semibold" asp-controller="Candidates" asp-action="JobList">
+                        <a class="nav-link fw-semibold" asp-controller="Job" asp-action="Index">
                             Việc làm
                         </a>
                     </li>
@@ -257,12 +257,12 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link fw-semibold" href="#">
+                        <a class="nav-link fw-semibold" asp-controller="Home" asp-action="Index">
                             Công ty
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link fw-semibold" href="#">
+                        <a class="nav-link fw-semibold" asp-controller="Home" asp-action="Index">
                             Công cụ
                         </a>
                     </li>
@@ -317,6 +317,10 @@
                                             <a asp-controller="Admin" asp-action="UserList" class="profile-menu-item">
                                                 <i class="fas fa-users"></i>
                                                 <span class="label">Quản lý người dùng</span>
+                                            </a>
+                                            <a asp-controller="Subscription" asp-action="ManageSubscription" class="profile-menu-item">
+                                                <i class="fas fa-crown"></i>
+                                                <span class="label">Quản lý gói dịch vụ</span>
                                             </a>
                                         </div>
 
@@ -490,10 +494,9 @@
                                                     <i class="fas fa-chevron-down arrow"></i>
                                                 </div>
                                                 <div class="profile-submenu">
-                                                    <a href="#" class="profile-submenu-item">Việc làm đã lưu</a>
-                                                    <a href="#" class="profile-submenu-item">Việc làm đã ứng tuyển</a>
-                                                    <a href="#" class="profile-submenu-item">Việc làm phù hợp với bạn</a>
-                                                    <a href="#" class="profile-submenu-item">Cài đặt gợi ý việc làm</a>
+                                                    <a asp-controller="Job" asp-action="Index" class="profile-submenu-item">Tìm việc làm</a>
+                                                    <a asp-controller="Application" asp-action="Index" class="profile-submenu-item">Việc làm đã ứng tuyển</a>
+                                                    <a asp-controller="Dashboard" asp-action="CandidateDashboard" class="profile-submenu-item">Dashboard của tôi</a>
                                                 </div>
                                             </div>
                                             
@@ -504,34 +507,22 @@
                                                     <i class="fas fa-chevron-down arrow"></i>
                                                 </div>
                                                 <div class="profile-submenu">
-                                                    <a href="#" class="profile-submenu-item">CV của tôi</a>
-                                                    <a href="#" class="profile-submenu-item">Cover Letter của tôi</a>
-                                                    <a href="#" class="profile-submenu-item">Nhà tuyển dụng muốn kết nối với bạn</a>
-                                                    <a href="#" class="profile-submenu-item">Nhà tuyển dụng xem hồ sơ</a>
+                                                    <a asp-controller="CVs" asp-action="CVList" class="profile-submenu-item">CV của tôi</a>
+                                                    <a asp-controller="Profile" asp-action="PersonalProfile" class="profile-submenu-item">Hồ sơ cá nhân</a>
                                                 </div>
                                             </div>
                                         }
 
                                         <div class="profile-menu-section">
-                                            <a href="#" class="profile-menu-item">
-                                                <i class="fas fa-envelope"></i>
-                                                <span class="label">Cài đặt email & thông báo</span>
-                                            </a>
-                                            
                                             <div class="profile-menu-item" onclick="toggleSubmenu(this)">
                                                 <i class="fas fa-user-shield"></i>
                                                 <span class="label">Cá nhân & Bảo mật</span>
                                                 <i class="fas fa-chevron-down arrow"></i>
                                             </div>
                                             <div class="profile-submenu">
-                                                <a asp-controller="Profile" asp-action="Info" class="profile-submenu-item">Thông tin cá nhân</a>
+                                                <a asp-controller="Profile" asp-action="PersonalProfile" class="profile-submenu-item">Thông tin cá nhân</a>
                                                 <a asp-controller="Profile" asp-action="ChangePassword" class="profile-submenu-item">Đổi mật khẩu</a>
                                             </div>
-                                            
-                                            <a href="#" class="profile-menu-item">
-                                                <i class="fas fa-crown"></i>
-                                                <span class="label">Nâng cấp tài khoản</span>
-                                            </a>
                                         </div>
 
                                         <!-- Logout Section -->
