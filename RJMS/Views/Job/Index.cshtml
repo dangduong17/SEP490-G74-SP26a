@@ -1,0 +1,674 @@
+@{
+    ViewData["Title"] = "Danh sách việc làm";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+<style>
+    /* ===== Page container ===== */
+    .job-list-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 32px 20px;
+    }
+
+    /* ===== Page header ===== */
+    .page-header {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+    .page-header h1 {
+        font-size: 2.25rem;
+        font-weight: 700;
+        color: #111827;
+        margin: 0 0 12px;
+    }
+    .page-header p {
+        font-size: 1rem;
+        color: #6b7280;
+        margin: 0;
+    }
+
+    /* ===== Search bar ===== */
+    .search-section {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        padding: 28px;
+        margin-bottom: 32px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .search-form {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 1fr auto;
+        gap: 12px;
+        align-items: end;
+    }
+
+    .form-group-search {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .form-group-search label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #374151;
+    }
+    .form-group-search input,
+    .form-group-search select {
+        padding: 11px 14px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        transition: border-color 0.15s;
+    }
+    .form-group-search input:focus,
+    .form-group-search select:focus {
+        border-color: #00b14f;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(0,177,79,0.1);
+    }
+
+    .btn-search {
+        background: #00b14f;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        padding: 11px 28px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+        white-space: nowrap;
+        height: 44px;
+    }
+    .btn-search:hover {
+        background: #009744;
+    }
+
+    /* ===== Stats bar ===== */
+    .stats-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    .stats-text {
+        font-size: 0.875rem;
+        color: #6b7280;
+    }
+    .stats-text strong {
+        color: #111827;
+        font-weight: 700;
+    }
+    .sort-select {
+        padding: 8px 32px 8px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        color: #374151;
+        background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 8px center;
+        appearance: none;
+        cursor: pointer;
+    }
+
+    /* ===== Job cards ===== */
+    .job-list {
+        display: grid;
+        gap: 16px;
+        margin-bottom: 32px;
+    }
+
+    .job-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 24px;
+        display: grid;
+        grid-template-columns: 80px 1fr auto;
+        gap: 20px;
+        align-items: start;
+        transition: all 0.2s;
+        text-decoration: none;
+        color: inherit;
+    }
+    .job-card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        border-color: #00b14f;
+        transform: translateY(-2px);
+    }
+
+    .job-logo {
+        width: 80px;
+        height: 80px;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f9fafb;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+    .job-logo img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .job-logo-placeholder {
+        font-size: 1.5rem;
+        color: #9ca3af;
+    }
+
+    .job-info {
+        flex: 1;
+        min-width: 0;
+    }
+    .job-title {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #111827;
+        margin: 0 0 8px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    .job-company {
+        font-size: 0.9rem;
+        color: #6b7280;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .job-company i {
+        color: #9ca3af;
+    }
+
+    .job-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        font-size: 0.85rem;
+        color: #6b7280;
+        margin-bottom: 12px;
+    }
+    .job-meta-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .job-meta-item i {
+        color: #9ca3af;
+        font-size: 0.8rem;
+    }
+
+    .job-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .job-tag {
+        display: inline-block;
+        padding: 4px 12px;
+        background: #f3f4f6;
+        color: #374151;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+
+    .job-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-end;
+        flex-shrink: 0;
+    }
+    .job-salary {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #00b14f;
+        white-space: nowrap;
+    }
+    .job-deadline {
+        font-size: 0.8rem;
+        color: #ef4444;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .job-deadline i {
+        font-size: 0.75rem;
+    }
+    .btn-apply {
+        background: #00b14f;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        padding: 8px 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+    .btn-apply:hover {
+        background: #009744;
+        color: #fff;
+    }
+    .btn-save {
+        background: #fff;
+        color: #6b7280;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        padding: 8px 16px;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .btn-save:hover {
+        background: #f9fafb;
+        border-color: #00b14f;
+        color: #00b14f;
+    }
+
+    /* ===== Empty state ===== */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+    }
+    .empty-state i {
+        font-size: 4rem;
+        color: #d1d5db;
+        margin-bottom: 16px;
+    }
+    .empty-state h3 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 8px;
+    }
+    .empty-state p {
+        font-size: 0.9rem;
+        color: #6b7280;
+    }
+
+    /* ===== Pagination ===== */
+    .pagination-wrapper {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+    }
+    .page-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 40px;
+        height: 40px;
+        padding: 0 12px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        color: #374151;
+        text-decoration: none;
+        background: #fff;
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+    .page-btn:hover {
+        border-color: #00b14f;
+        color: #00b14f;
+    }
+    .page-btn.active {
+        background: #00b14f;
+        border-color: #00b14f;
+        color: #fff;
+    }
+    .page-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
+    /* ===== Responsive ===== */
+    @@media (max-width: 992px) {
+        .search-form {
+            grid-template-columns: 1fr;
+        }
+        .job-card {
+            grid-template-columns: 60px 1fr;
+            gap: 16px;
+        }
+        .job-logo {
+            width: 60px;
+            height: 60px;
+        }
+        .job-actions {
+            grid-column: 2;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+        }
+    }
+</style>
+}
+
+<div class="job-list-container">
+    <!-- Page header -->
+    <div class="page-header">
+        <h1><i class="fas fa-briefcase" style="color:#00b14f;"></i> Tìm việc làm</h1>
+        <p>Khám phá hàng ngàn cơ hội nghề nghiệp từ các công ty hàng đầu</p>
+    </div>
+
+    <!-- Search section -->
+    <div class="search-section">
+        <form method="get" asp-action="Index" class="search-form">
+            <div class="form-group-search">
+                <label><i class="fas fa-search"></i> Từ khóa</label>
+                <input type="text" name="keyword" placeholder="Vị trí, công ty, kỹ năng..." />
+            </div>
+            <div class="form-group-search">
+                <label><i class="fas fa-list"></i> Danh mục</label>
+                <select name="category">
+                    <option value="">Tất cả danh mục</option>
+                    <option value="1">Công nghệ thông tin</option>
+                    <option value="2">Marketing</option>
+                    <option value="3">Kinh doanh</option>
+                    <option value="4">Kế toán</option>
+                    <option value="5">Nhân sự</option>
+                </select>
+            </div>
+            <div class="form-group-search">
+                <label><i class="fas fa-map-marker-alt"></i> Địa điểm</label>
+                <select name="location">
+                    <option value="">Tất cả địa điểm</option>
+                    <option value="1">Hà Nội</option>
+                    <option value="2">Hồ Chí Minh</option>
+                    <option value="3">Đà Nẵng</option>
+                    <option value="4">Lạng Sơn</option>
+                </select>
+            </div>
+            <div class="form-group-search">
+                <label><i class="fas fa-clock"></i> Loại hình</label>
+                <select name="jobType">
+                    <option value="">Tất cả</option>
+                    <option value="fulltime">Full-time</option>
+                    <option value="parttime">Part-time</option>
+                    <option value="remote">Remote</option>
+                    <option value="intern">Thực tập</option>
+                </select>
+            </div>
+            <button type="submit" class="btn-search">
+                <i class="fas fa-search"></i> Tìm kiếm
+            </button>
+        </form>
+    </div>
+
+    <!-- Stats and sort -->
+    <div class="stats-bar">
+        <div class="stats-text">
+            Hiển thị <strong>1-10</strong> trong <strong>234</strong> việc làm
+        </div>
+        <select class="sort-select">
+            <option>Mới nhất</option>
+            <option>Lương cao nhất</option>
+            <option>Sắp hết hạn</option>
+            <option>Phù hợp nhất</option>
+        </select>
+    </div>
+
+    <!-- Job list -->
+    <div class="job-list">
+        <!-- Sample Job Card 1 -->
+        <a href="@Url.Action("Detail", "Job", new { id = 1 })" class="job-card">
+            <div class="job-logo">
+                <div class="job-logo-placeholder">
+                    <i class="fas fa-building"></i>
+                </div>
+            </div>
+            <div class="job-info">
+                <h3 class="job-title">Senior Front-End Developer (ReactJS, NextJS)</h3>
+                <div class="job-company">
+                    <i class="fas fa-building"></i>
+                    <span>FPT Software</span>
+                </div>
+                <div class="job-meta">
+                    <div class="job-meta-item">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>Hà Nội, Hồ Chí Minh</span>
+                    </div>
+                    <div class="job-meta-item">
+                        <i class="fas fa-briefcase"></i>
+                        <span>Full-time</span>
+                    </div>
+                    <div class="job-meta-item">
+                        <i class="fas fa-clock"></i>
+                        <span>Đăng 2 ngày trước</span>
+                    </div>
+                </div>
+                <div class="job-tags">
+                    <span class="job-tag">ReactJS</span>
+                    <span class="job-tag">NextJS</span>
+                    <span class="job-tag">TypeScript</span>
+                </div>
+            </div>
+            <div class="job-actions">
+                <div class="job-salary">25-40 triệu</div>
+                <div class="job-deadline">
+                    <i class="fas fa-clock"></i>
+                    <span>Còn 15 ngày</span>
+                </div>
+                <button class="btn-apply" onclick="event.preventDefault(); event.stopPropagation(); alert('Chức năng ứng tuyển');">
+                    <i class="fas fa-paper-plane"></i> Ứng tuyển
+                </button>
+            </div>
+        </a>
+
+        <!-- Sample Job Card 2 -->
+        <a href="@Url.Action("Detail", "Job", new { id = 2 })" class="job-card">
+            <div class="job-logo">
+                <div class="job-logo-placeholder">
+                    <i class="fas fa-building"></i>
+                </div>
+            </div>
+            <div class="job-info">
+                <h3 class="job-title">Marketing Manager - Digital Marketing</h3>
+                <div class="job-company">
+                    <i class="fas fa-building"></i>
+                    <span>Viettel Group</span>
+                </div>
+                <div class="job-meta">
+                    <div class="job-meta-item">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>Hà Nội</span>
+                    </div>
+                    <div class="job-meta-item">
+                        <i class="fas fa-briefcase"></i>
+                        <span>Full-time</span>
+                    </div>
+                    <div class="job-meta-item">
+                        <i class="fas fa-clock"></i>
+                        <span>Đăng 5 ngày trước</span>
+                    </div>
+                </div>
+                <div class="job-tags">
+                    <span class="job-tag">Digital Marketing</span>
+                    <span class="job-tag">SEO/SEM</span>
+                    <span class="job-tag">Facebook Ads</span>
+                </div>
+            </div>
+            <div class="job-actions">
+                <div class="job-salary">20-30 triệu</div>
+                <div class="job-deadline">
+                    <i class="fas fa-clock"></i>
+                    <span>Còn 8 ngày</span>
+                </div>
+                <button class="btn-apply" onclick="event.preventDefault(); event.stopPropagation(); alert('Chức năng ứng tuyển');">
+                    <i class="fas fa-paper-plane"></i> Ứng tuyển
+                </button>
+            </div>
+        </a>
+
+        <!-- Sample Job Card 3 -->
+        <a href="@Url.Action("Detail", "Job", new { id = 3 })" class="job-card">
+            <div class="job-logo">
+                <div class="job-logo-placeholder">
+                    <i class="fas fa-building"></i>
+                </div>
+            </div>
+            <div class="job-info">
+                <h3 class="job-title">Full-Stack Developer (.NET Core + Angular)</h3>
+                <div class="job-company">
+                    <i class="fas fa-building"></i>
+                    <span>TMA Solutions</span>
+                </div>
+                <div class="job-meta">
+                    <div class="job-meta-item">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>Hồ Chí Minh</span>
+                    </div>
+                    <div class="job-meta-item">
+                        <i class="fas fa-briefcase"></i>
+                        <span>Full-time</span>
+                    </div>
+                    <div class="job-meta-item">
+                        <i class="fas fa-clock"></i>
+                        <span>Đăng 1 tuần trước</span>
+                    </div>
+                </div>
+                <div class="job-tags">
+                    <span class="job-tag">.NET Core</span>
+                    <span class="job-tag">Angular</span>
+                    <span class="job-tag">SQL Server</span>
+                </div>
+            </div>
+            <div class="job-actions">
+                <div class="job-salary">18-35 triệu</div>
+                <div class="job-deadline">
+                    <i class="fas fa-clock"></i>
+                    <span>Còn 20 ngày</span>
+                </div>
+                <button class="btn-apply" onclick="event.preventDefault(); event.stopPropagation(); alert('Chức năng ứng tuyển');">
+                    <i class="fas fa-paper-plane"></i> Ứng tuyển
+                </button>
+            </div>
+        </a>
+
+        <!-- Sample Job Card 4 -->
+        <a href="@Url.Action("Detail", "Job", new { id = 4 })" class="job-card">
+            <div class="job-logo">
+                <div class="job-logo-placeholder">
+                    <i class="fas fa-building"></i>
+                </div>
+            </div>
+            <div class="job-info">
+                <h3 class="job-title">Business Analyst - Banking Domain</h3>
+                <div class="job-company">
+                    <i class="fas fa-building"></i>
+                    <span>Techcombank</span>
+                </div>
+                <div class="job-meta">
+                    <div class="job-meta-item">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>Hà Nội, Hồ Chí Minh</span>
+                    </div>
+                    <div class="job-meta-item">
+                        <i class="fas fa-briefcase"></i>
+                        <span>Full-time</span>
+                    </div>
+                    <div class="job-meta-item">
+                        <i class="fas fa-clock"></i>
+                        <span>Đăng 3 ngày trước</span>
+                    </div>
+                </div>
+                <div class="job-tags">
+                    <span class="job-tag">Business Analysis</span>
+                    <span class="job-tag">Banking</span>
+                    <span class="job-tag">SQL</span>
+                </div>
+            </div>
+            <div class="job-actions">
+                <div class="job-salary">22-35 triệu</div>
+                <div class="job-deadline">
+                    <i class="fas fa-clock"></i>
+                    <span>Còn 12 ngày</span>
+                </div>
+                <button class="btn-apply" onclick="event.preventDefault(); event.stopPropagation(); alert('Chức năng ứng tuyển');">
+                    <i class="fas fa-paper-plane"></i> Ứng tuyển
+                </button>
+            </div>
+        </a>
+
+        <!-- Sample Job Card 5 -->
+        <a href="@Url.Action("Detail", "Job", new { id = 5 })" class="job-card">
+            <div class="job-logo">
+                <div class="job-logo-placeholder">
+                    <i class="fas fa-building"></i>
+                </div>
+            </div>
+            <div class="job-info">
+                <h3 class="job-title">UI/UX Designer - Mobile App Design</h3>
+                <div class="job-company">
+                    <i class="fas fa-building"></i>
+                    <span>Grab Vietnam</span>
+                </div>
+                <div class="job-meta">
+                    <div class="job-meta-item">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>Hồ Chí Minh</span>
+                    </div>
+                    <div class="job-meta-item">
+                        <i class="fas fa-briefcase"></i>
+                        <span>Full-time</span>
+                    </div>
+                    <div class="job-meta-item">
+                        <i class="fas fa-clock"></i>
+                        <span>Đăng 4 ngày trước</span>
+                    </div>
+                </div>
+                <div class="job-tags">
+                    <span class="job-tag">UI/UX Design</span>
+                    <span class="job-tag">Figma</span>
+                    <span class="job-tag">Mobile Design</span>
+                </div>
+            </div>
+            <div class="job-actions">
+                <div class="job-salary">20-30 triệu</div>
+                <div class="job-deadline">
+                    <i class="fas fa-clock"></i>
+                    <span>Còn 18 ngày</span>
+                </div>
+                <button class="btn-apply" onclick="event.preventDefault(); event.stopPropagation(); alert('Chức năng ứng tuyển');">
+                    <i class="fas fa-paper-plane"></i> Ứng tuyển
+                </button>
+            </div>
+        </a>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination-wrapper">
+        <button class="page-btn" disabled>
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        <a href="#" class="page-btn active">1</a>
+        <a href="#" class="page-btn">2</a>
+        <a href="#" class="page-btn">3</a>
+        <a href="#" class="page-btn">4</a>
+        <a href="#" class="page-btn">5</a>
+        <span style="padding:0 8px;color:#9ca3af;">...</span>
+        <a href="#" class="page-btn">24</a>
+        <button class="page-btn">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+    </div>
+</div>
