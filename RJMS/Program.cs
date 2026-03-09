@@ -88,6 +88,40 @@ using (var scope = app.Services.CreateScope())
             db.SaveChanges();
         }
     }
+
+    // Seed Free Subscription Plan for Recruiters
+    const string freePlanName = "Gói Miễn Phí";
+    if (!db.SubscriptionPlans.Any(sp => sp.Name == freePlanName))
+    {
+        var freePlan = new SubscriptionPlan
+        {
+            Name = freePlanName,
+            Price = 0,
+            DurationDays = 30,
+            Description = "Gói miễn phí dành cho nhà tuyển dụng mới. Cho phép đăng 3 tin tuyển dụng mỗi tháng, không bao gồm tính năng lọc CV bằng AI.",
+            IsActive = true,
+            BillingCycle = "Monthly",
+            Version = 1,
+            CreatedAt = DateTime.UtcNow
+        };
+        db.SubscriptionPlans.Add(freePlan);
+        db.SaveChanges();
+
+        // Add plan features
+        db.PlanFeatures.Add(new PlanFeature
+        {
+            PlanId = freePlan.Id,
+            FeatureCode = "JOB_POSTING",
+            FeatureLimit = 3 // 3 bài đăng mỗi tháng
+        });
+        db.PlanFeatures.Add(new PlanFeature
+        {
+            PlanId = freePlan.Id,
+            FeatureCode = "CV_AI_FILTER",
+            FeatureLimit = 0 // Không được lọc CV bằng AI
+        });
+        db.SaveChanges();
+    }
 }
 
 // Configure the HTTP request pipeline.
