@@ -131,12 +131,8 @@ namespace RJMS.Vn.Edu.Fpt.Service
                 UserId = user.Id,
                 FullName = $"{model.FirstName} {model.LastName}".Trim(),
                 Phone = model.PhoneNumber,
-                Title = model.CurrentPosition ?? model.Title,
                 DateOfBirth = model.DateOfBirth,
                 Gender = model.Gender,
-                City = model.City,
-                Address = model.Address,
-                YearsOfExperience = model.YearsOfExperience,
                 IsLookingForJob = true,
                 CreatedAt = DateTimeHelper.NowVietnam
             };
