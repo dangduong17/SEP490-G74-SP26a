@@ -348,3 +348,95 @@ CREATE TABLE Payments
 
     FOREIGN KEY (SubscriptionId) REFERENCES Subscriptions(Id)
 )
+
+
+
+/* =====================================================
+UPDATE TABLE: SubscriptionPlans
+===================================================== */
+
+ALTER TABLE SubscriptionPlans
+ADD BillingCycle NVARCHAR(20) DEFAULT 'MONTH'
+GO
+
+ALTER TABLE SubscriptionPlans
+ADD Version INT DEFAULT 1
+GO
+
+ALTER TABLE SubscriptionPlans
+ADD CreatedAt DATETIME2 DEFAULT GETDATE()
+GO
+
+
+
+/* =====================================================
+UPDATE TABLE: Subscriptions
+===================================================== */
+
+ALTER TABLE Subscriptions
+ADD AutoRenew BIT DEFAULT 1
+GO
+
+
+
+/* =====================================================
+CREATE TABLE: PlanFeatures
+===================================================== */
+
+CREATE TABLE PlanFeatures
+(
+    Id INT IDENTITY PRIMARY KEY,
+
+    PlanId INT NOT NULL,
+
+    FeatureCode NVARCHAR(100) NOT NULL,
+
+    FeatureLimit INT NOT NULL,
+
+    FOREIGN KEY (PlanId) REFERENCES SubscriptionPlans(Id)
+)
+GO
+
+
+
+/* =====================================================
+CREATE TABLE: SubscriptionPeriods
+===================================================== */
+
+CREATE TABLE SubscriptionPeriods
+(
+    Id INT IDENTITY PRIMARY KEY,
+
+    SubscriptionId INT NOT NULL,
+
+    PlanId INT NOT NULL,
+
+    PeriodStart DATETIME2 NOT NULL,
+
+    PeriodEnd DATETIME2 NOT NULL,
+
+    FOREIGN KEY (SubscriptionId) REFERENCES Subscriptions(Id),
+
+    FOREIGN KEY (PlanId) REFERENCES SubscriptionPlans(Id)
+)
+GO
+
+
+
+/* =====================================================
+CREATE TABLE: SubscriptionUsage
+===================================================== */
+
+CREATE TABLE SubscriptionUsage
+(
+    Id INT IDENTITY PRIMARY KEY,
+
+    PeriodId INT NOT NULL,
+
+    FeatureCode NVARCHAR(100) NOT NULL,
+
+    UsedCount INT DEFAULT 0,
+
+    FOREIGN KEY (PeriodId) REFERENCES SubscriptionPeriods(Id)
+)
+GO
