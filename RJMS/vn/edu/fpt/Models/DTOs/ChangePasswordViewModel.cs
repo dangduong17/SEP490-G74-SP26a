@@ -11,7 +11,7 @@ namespace vn.edu.fpt.dto
 
         [Required(ErrorMessage = "Vui lòng nhập mật khẩu mới")]
         [DataType(DataType.Password)]
-        [MinLength(8, ErrorMessage = "Mật khẩu phải có ít nhất 8 ký tự")]
+        [MinLength(8, ErrorMessage = "Mật khẩu phải có ít nhất 8 ký tự, gồm chữ hoa, chữ số và ký tự đặc biệt")]
         [Display(Name = "Mật khẩu mới")]
         public string NewPassword { get; set; } = string.Empty;
 
