@@ -17,5 +17,15 @@ public partial class SubscriptionPlan
 
     public bool? IsActive { get; set; }
 
+    public string? BillingCycle { get; set; }
+
+    public int? Version { get; set; }
+
+    public DateTime? CreatedAt { get; set; }
+
     public virtual ICollection<Subscription> Subscriptions { get; set; } = new List<Subscription>();
+
+    public virtual ICollection<PlanFeature> PlanFeatures { get; set; } = new List<PlanFeature>();
+
+    public virtual ICollection<SubscriptionPeriod> SubscriptionPeriods { get; set; } = new List<SubscriptionPeriod>();
 }

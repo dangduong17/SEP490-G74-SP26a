@@ -34,6 +34,8 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
         public int? JobLimit { get; set; }                     // null = unlimited
         public int? CvAiLimit { get; set; }                    // null = unlimited
         public int DurationDays { get; set; }
+        public string? BillingCycle { get; set; }              // Monthly | Yearly | Custom
+        public int? Version { get; set; }
         public bool IsActive { get; set; }
         public DateTime? CreatedAt { get; set; }
         public int RecruiterCount { get; set; }
@@ -62,6 +64,11 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
         [Range(1, 3650, ErrorMessage = "Thời hạn từ 1–3650 ngày")]
         public int DurationDays { get; set; } = 30;
 
+        [MaxLength(20)]
+        public string? BillingCycle { get; set; } = "Monthly";   // Monthly | Yearly | Custom
+
+        public int Version { get; set; } = 1;
+
         public string? Description { get; set; }
         public bool IsActive { get; set; } = true;
     }
@@ -76,6 +83,8 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
         public int? JobLimit { get; set; }
         public int? CvAiLimit { get; set; }
         public int DurationDays { get; set; }
+        public string? BillingCycle { get; set; }
+        public int? Version { get; set; }
         public string? Description { get; set; }
         public bool IsActive { get; set; }
         public DateTime? CreatedAt { get; set; }

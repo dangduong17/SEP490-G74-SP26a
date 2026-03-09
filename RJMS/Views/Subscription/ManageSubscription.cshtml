@@ -263,22 +263,19 @@
 <!-- Toolbar -->
 <div class="sub-toolbar">
     <div>
-        <div style="font-size:0.8rem;color:#9ca3af;margin-bottom:6px;">
-            TRANG CHỦ &nbsp;›&nbsp; ADMIN &nbsp;›&nbsp; <strong style="color:#374151;">SUBSCRIPTIONS</strong>
-        </div>
-        <h1>Subscription Management</h1>
+        <h1>Quản lý gói đăng ký</h1>
         <p>Quản lý các gói dịch vụ dành cho nhà tuyển dụng trên nền tảng Finding Jobs.</p>
     </div>
-    <button class="btn-create" data-bs-toggle="modal" data-bs-target="#modalCreatePlan">
-        <i class="fas fa-plus"></i> Create New Subscription
-    </button>
+    <a asp-action="CreatePlan" class="btn-create">
+        Tạo gói đăng ký mới
+    </a>
 </div>
 
 <!-- Summary cards -->
 <div class="sub-summary">
     <div class="sum-card">
         <div class="sum-card-left">
-            <small>Total Plans</small>
+            <small>Tổng số gói</small>
             <strong>@Model.TotalPlans</strong>
             <span>↗ 2 gói mới tháng này</span>
         </div>
@@ -286,7 +283,7 @@
     </div>
     <div class="sum-card">
         <div class="sum-card-left">
-            <small>Active Plans</small>
+            <small>Gói hoạt động</small>
             <strong>@Model.ActivePlans.ToString("D2")</strong>
             <span>↗ Chiếm @((int)((double)Model.ActivePlans/Model.TotalPlans*100))% tổng số</span>
         </div>
@@ -294,7 +291,7 @@
     </div>
     <div class="sum-card">
         <div class="sum-card-left">
-            <small>Recruiters Using</small>
+            <small>Nhà tuyển dụng sử dụng</small>
             <strong>@Model.RecruitersUsing.ToString("N0")</strong>
             <span>↗ Tăng 12% so với quý trước</span>
         </div>
@@ -307,26 +304,26 @@
     <div class="sub-filterbar">
         <div class="sub-search">
             <i class="fas fa-search"></i>
-            <input name="keyword" value="@Model.SearchKeyword" placeholder="Search subscription name..." />
+            <input name="keyword" value="@Model.SearchKeyword" placeholder="Tìm kiếm tên gói..." />
         </div>
 
-        <span style="font-size:0.83rem;color:#374151;font-weight:500;white-space:nowrap;">Status:</span>
-        <select name="status" class="form-select" style="width:130px;">
-            <option value="" selected="@(string.IsNullOrEmpty(Model.StatusFilter))">All Status</option>
-            <option value="active"   selected="@(Model.StatusFilter == "active"  )">Active</option>
-            <option value="inactive" selected="@(Model.StatusFilter == "inactive")">Inactive</option>
+        <span style="font-size:0.83rem;color:#374151;font-weight:500;white-space:nowrap;">Trạng thái:</span>
+        <select name="status" class="form-select" style="width:150px;">
+            <option value="" selected="@(string.IsNullOrEmpty(Model.StatusFilter))">Tất cả</option>
+            <option value="active"   selected="@(Model.StatusFilter == "active"  )">Hoạt động</option>
+            <option value="inactive" selected="@(Model.StatusFilter == "inactive")">Ngừng hoạt động</option>
         </select>
 
-        <span style="font-size:0.83rem;color:#374151;font-weight:500;white-space:nowrap;">Plan Type:</span>
+        <span style="font-size:0.83rem;color:#374151;font-weight:500;white-space:nowrap;">Loại gói:</span>
         <select name="type" class="form-select" style="width:130px;">
-            <option value="" selected="@(string.IsNullOrEmpty(Model.TypeFilter))">All Type</option>
+            <option value="" selected="@(string.IsNullOrEmpty(Model.TypeFilter))">Tất cả</option>
             <option value="Basic"    selected="@(Model.TypeFilter == "Basic"   )">Basic</option>
             <option value="Standard" selected="@(Model.TypeFilter == "Standard")">Standard</option>
             <option value="Premium"  selected="@(Model.TypeFilter == "Premium" )">Premium</option>
         </select>
 
         <button type="submit" class="btn-filter-icon" title="Lọc">
-            <i class="fas fa-filter"></i>
+            Lọc
         </button>
     </div>
 </form>
@@ -336,15 +333,15 @@
     <table class="sub-table">
         <thead>
             <tr>
-                <th>Subscription Name</th>
-                <th>Plan Type</th>
-                <th>Monthly Price</th>
-                <th>Job Limit</th>
-                <th>CV AI Filter</th>
-                <th>Duration</th>
-                <th>Status</th>
-                <th>Created Date</th>
-                <th style="text-align:right;">Actions</th>
+                <th>Tên gói đăng ký</th>
+                <th>Loại gói</th>
+                <th>Giá hàng tháng</th>
+                <th>Giới hạn tin</th>
+                <th>Lọc CV AI</th>
+                <th>Thời hạn</th>
+                <th>Trạng thái</th>
+                <th>Ngày tạo</th>
+                <th style="text-align:right;">Thao tác</th>
             </tr>
         </thead>
         <tbody>
@@ -385,51 +382,52 @@
                     <td>
                         @if (p.CvAiLimit.HasValue)
                         {
-                            <span class="feat-on"><i class="fas fa-check me-1"></i>@p.CvAiLimit CV/tháng</span>
+                            @if (p.CvAiLimit.Value > 0)
+                            {
+                                <span class="feat-on">@p.CvAiLimit CV/tháng</span>
+                            }
+                            else
+                            {
+                                <span class="feat-off">@p.CvAiLimit CV/tháng</span>
+                            }
                         }
                         else if (p.PlanType == "Premium")
                         {
-                            <span class="feat-on"><i class="fas fa-check me-1"></i>Lọc AI vô hạn</span>
+                            <span class="feat-on">Không giới hạn</span>
                         }
                         else
                         {
-                            <span class="feat-off">—</span>
+                            <span class="feat-off">Không giới hạn</span>
                         }
                     </td>
                     <td>
                         @if (p.DurationDays == 0)
-                        { <span><i class="far fa-clock me-1" style="color:#9ca3af;"></i>Vĩnh viễn</span> }
+                        { <span>Vĩnh viễn</span> }
                         else
-                        { <span><i class="far fa-clock me-1" style="color:#9ca3af;"></i>@p.DurationDays ngày</span> }
+                        { <span>@p.DurationDays ngày</span> }
                     </td>
                     <td>
                         @if (p.IsActive)
-                        { <span class="st-active">Active</span> }
+                        { <span class="st-active">Hoạt động</span> }
                         else
-                        { <span class="st-inactive">Inactive</span> }
+                        { <span class="st-inactive">Ngừng hoạt động</span> }
                     </td>
                     <td style="font-size:0.8rem;color:#6b7280;">
                         @(p.CreatedAt?.ToString("dd/MM/yyyy") ?? "—")
                     </td>
                     <td style="text-align:right;white-space:nowrap;">
-                        <!-- View detail -->
-                        <button class="act-btn act-view" title="Xem chi tiết"
-                                onclick="viewDetail(@p.Id)">
-                            <i class="fas fa-eye"></i>
-                        </button>
-
                         <!-- Edit -->
                         <a class="act-btn act-edit" title="Sửa"
                            asp-controller="Subscription" asp-action="EditPlan" asp-route-id="@p.Id">
-                            <i class="fas fa-pen"></i>
+                            Sửa
                         </a>
 
                         <!-- Toggle status -->
                         <form asp-controller="Subscription" asp-action="ToggleStatus"
                               asp-route-id="@p.Id" method="post" class="d-inline confirm-toggle">
                             @Html.AntiForgeryToken()
-                            <button type="submit" class="act-btn act-toggle" title="Toggle status">
-                                <i class="fas fa-power-off"></i>
+                            <button type="submit" class="act-btn act-toggle" title="Chuyển trạng thái">
+                                Bật/Tắt
                             </button>
                         </form>
 
@@ -439,7 +437,7 @@
                               data-name="@p.Name">
                             @Html.AntiForgeryToken()
                             <button type="submit" class="act-btn act-delete" title="Xóa">
-                                <i class="fas fa-trash-alt"></i>
+                                Xóa
                             </button>
                         </form>
                     </td>
@@ -458,11 +456,11 @@
                    asp-route-keyword="@Model.SearchKeyword"
                    asp-route-status="@Model.StatusFilter"
                    asp-route-type="@Model.TypeFilter"
-                   asp-route-page="@(Model.Page-1)">Previous</a>
+                   asp-route-page="@(Model.Page-1)">Trước</a>
             }
             else
             {
-                <span class="pg-btn-text" style="opacity:.4;cursor:not-allowed;">Previous</span>
+                <span class="pg-btn-text" style="opacity:.4;cursor:not-allowed;">Trước</span>
             }
 
             @for (int pg = 1; pg <= Math.Min(Model.TotalPages, 5); pg++)
@@ -481,11 +479,11 @@
                    asp-route-keyword="@Model.SearchKeyword"
                    asp-route-status="@Model.StatusFilter"
                    asp-route-type="@Model.TypeFilter"
-                   asp-route-page="@(Model.Page+1)">Next</a>
+                   asp-route-page="@(Model.Page+1)">Sau</a>
             }
             else
             {
-                <span class="pg-btn-text" style="opacity:.4;cursor:not-allowed;">Next</span>
+                <span class="pg-btn-text" style="opacity:.4;cursor:not-allowed;">Sau</span>
             }
         </div>
     </div>
@@ -509,115 +507,10 @@
     </div>
 </div>
 
-<!-- ====== Modal: Create Plan ====== -->
-<div class="modal fade" id="modalCreatePlan" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header-custom">
-                <h5 class="modal-title fw-700 mb-0"><i class="fas fa-plus-circle me-2"></i>Tạo gói đăng ký mới</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <form asp-controller="Subscription" asp-action="CreatePlan" method="post">
-                @Html.AntiForgeryToken()
-                <div class="modal-body p-4">
-                    <div class="row g-3">
-                        <div class="col-md-8">
-                            <label class="form-label-sm">Tên gói *</label>
-                            <input name="Name" class="form-control form-control-sm2" placeholder="VD: Premium Enterprise" required />
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label-sm">Loại gói *</label>
-                            <select name="PlanType" class="form-select form-control-sm2">
-                                <option value="Basic">Basic</option>
-                                <option value="Standard">Standard</option>
-                                <option value="Premium">Premium</option>
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label-sm">Giá / tháng (VND) *</label>
-                            <input name="Price" type="number" min="0" class="form-control form-control-sm2" placeholder="0" required />
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label-sm">Giới hạn tin đăng</label>
-                            <input name="JobLimit" type="number" min="1" class="form-control form-control-sm2" placeholder="Để trống = không giới hạn" />
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label-sm">Lọc CV AI / tháng</label>
-                            <input name="CvAiLimit" type="number" min="1" class="form-control form-control-sm2" placeholder="Để trống = không giới hạn" />
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label-sm">Thời hạn (ngày) *</label>
-                            <input name="DurationDays" type="number" min="1" value="30" class="form-control form-control-sm2" required />
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label-sm">Trạng thái</label>
-                            <select name="IsActive" class="form-select form-control-sm2">
-                                <option value="true">Active</option>
-                                <option value="false">Inactive</option>
-                            </select>
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label-sm">Mô tả</label>
-                            <textarea name="Description" class="form-control form-control-sm2" rows="3"
-                                      placeholder="Mô tả nội dung và quyền lợi của gói..."></textarea>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer border-0 pt-0 pb-4 px-4 gap-2">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Huỷ</button>
-                    <button type="submit" class="btn-create">
-                        <i class="fas fa-save"></i> Tạo gói
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 
-<!-- ====== Modal: View Detail ====== -->
-<div class="modal fade" id="modalViewDetail" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header-custom">
-                <h5 class="modal-title fw-700 mb-0"><i class="fas fa-eye me-2"></i>Chi tiết gói đăng ký</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body p-4" id="detailContent">
-                <div class="text-center py-4"><div class="spinner-border text-success"></div></div>
-            </div>
-        </div>
-    </div>
-</div>
 
 @section Scripts {
 <script>
-    // ===== View detail modal =====
-    async function viewDetail(id) {
-        const modal   = new bootstrap.Modal(document.getElementById('modalViewDetail'));
-        const content = document.getElementById('detailContent');
-        content.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-success"></div></div>';
-        modal.show();
-
-        try {
-            const res  = await fetch(`/Subscription/PlanDetail?id=${id}`);
-            const data = await res.json();
-
-            content.innerHTML = `
-                <table class="table table-sm mb-0">
-                    <tr><th style="width:40%">Tên gói</th><td><strong>${data.name}</strong></td></tr>
-                    <tr><th>Loại gói</th><td>${data.planType}</td></tr>
-                    <tr><th>Giá / tháng</th><td>${data.price === 0 ? '0 VND' : data.price.toLocaleString('vi-VN') + ' VND'}</td></tr>
-                    <tr><th>Giới hạn tin</th><td>${data.jobLimit ?? 'Không giới hạn'}</td></tr>
-                    <tr><th>CV AI Filter</th><td>${data.cvAiLimit ?? 'Không giới hạn'}</td></tr>
-                    <tr><th>Thời hạn</th><td>${data.durationDays === 0 ? 'Vĩnh viễn' : data.durationDays + ' ngày'}</td></tr>
-                    <tr><th>Trạng thái</th><td>${data.isActive ? '<span class="badge bg-success">Active</span>' : '<span class="badge bg-secondary">Inactive</span>'}</td></tr>
-                    <tr><th>Nhà tuyển dụng</th><td>${data.recruiterCount ?? 0} người đang dùng</td></tr>
-                    <tr><th>Mô tả</th><td>${data.description ?? '—'}</td></tr>
-                </table>`;
-        } catch (e) {
-            content.innerHTML = '<p class="text-danger text-center py-3">Không thể tải dữ liệu.</p>';
-        }
-    }
     // ===== Confirm dialogs =====
     document.querySelectorAll('.confirm-toggle').forEach(f => {
         f.addEventListener('submit', e => {
