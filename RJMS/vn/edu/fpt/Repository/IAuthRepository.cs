@@ -12,5 +12,6 @@ namespace RJMS.Vn.Edu.Fpt.Repository
         Task<bool> SetEmailConfirmedAsync(string email);
         Task<Candidate?> CreateCandidateAsync(Candidate candidate);
         Task<string> GetUserRoleAsync(int userId);
+        Task<bool> AssignFreeSubscriptionIfRecruiterAsync(string email);
     }
 }

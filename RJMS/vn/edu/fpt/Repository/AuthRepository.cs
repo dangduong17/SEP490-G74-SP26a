@@ -89,5 +89,70 @@ namespace RJMS.Vn.Edu.Fpt.Repository
             
             return userRole?.Role?.Name ?? "Candidate";
         }
+
+        public async Task<bool> AssignFreeSubscriptionIfRecruiterAsync(string email)
+        {
+            try
+            {
+                // Find user by email
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+                if (user == null)
+                {
+                    return false;
+                }
+
+                // Check if user is a Recruiter
+                var userRole = await _context.UserRoles
+                    .Include(ur => ur.Role)
+                    .FirstOrDefaultAsync(ur => ur.UserId == user.Id);
+
+                if (userRole?.Role?.Name != "Recruiter")
+                {
+                    return false; // Not a recruiter, no subscription needed
+                }
+
+                // Check if user already has a subscription
+                var existingSubscription = await _context.Subscriptions
+                    .FirstOrDefaultAsync(s => s.UserId == user.Id);
+
+                if (existingSubscription != null)
+                {
+                    return false; // Already has a subscription
+                }
+
+                // Find the free plan
+                var freePlan = await _context.SubscriptionPlans
+                    .FirstOrDefaultAsync(sp => sp.Name == "Gói Miễn Phí" && sp.IsActive == true);
+
+                if (freePlan == null)
+                {
+                    return false; // Free plan not found
+                }
+
+                // Create subscription
+                var startDate = DateTime.UtcNow;
+                var endDate = startDate.AddDays(freePlan.DurationDays ?? 30);
+
+                var subscription = new Subscription
+                {
+                    UserId = user.Id,
+                    PlanId = freePlan.Id,
+                    StartDate = startDate,
+                    EndDate = endDate,
+                    Status = "Active",
+                    CreatedAt = startDate,
+                    AutoRenew = false
+                };
+
+                _context.Subscriptions.Add(subscription);
+                await _context.SaveChangesAsync();
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
     }
 }

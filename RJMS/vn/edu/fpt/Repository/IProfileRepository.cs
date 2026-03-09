@@ -8,6 +8,8 @@ namespace RJMS.Vn.Edu.Fpt.Repository
     {
         // ── Candidate ─────────────────────────────────────────────────────────
         Task<UserProfileDTO?> GetProfileByUserIdAsync(string userId);
+        Task<CandidateEditProfileViewModel?> GetCandidateProfileForEditAsync(int userId);
+        Task<bool> UpdateCandidateProfileAsync(int userId, CandidateEditProfileViewModel model);
 
         // ── Password ──────────────────────────────────────────────────────────
         Task<User?> GetUserByIdAsync(int userId);
@@ -16,5 +18,12 @@ namespace RJMS.Vn.Edu.Fpt.Repository
         // ── Recruiter ─────────────────────────────────────────────────────────
         Task<RecruiterProfileUpdateViewModel?> GetRecruiterProfileAsync(int userId);
         Task<bool> UpdateRecruiterProfileAsync(int userId, RecruiterProfileUpdateViewModel model);
+
+        Task<RecruiterEditProfileViewModel?> GetRecruiterProfileForEditAsync(int userId);
+        Task<bool> UpdateRecruiterProfileNewAsync(int userId, RecruiterEditProfileViewModel model);
+
+        // ── Admin ─────────────────────────────────────────────────────────────
+        Task<AdminEditProfileViewModel?> GetAdminProfileForEditAsync(int userId);
+        Task<bool> UpdateAdminProfileAsync(int userId, AdminEditProfileViewModel model);
     }
 }

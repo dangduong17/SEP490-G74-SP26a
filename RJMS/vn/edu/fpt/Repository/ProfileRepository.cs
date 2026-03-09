@@ -156,5 +156,160 @@ namespace RJMS.Vn.Edu.Fpt.Repository
             await _context.SaveChangesAsync();
             return true;
         }
+
+        // ── Candidate Edit Profile ─────────────────────────────────────────────
+        public async Task<CandidateEditProfileViewModel?> GetCandidateProfileForEditAsync(int userId)
+        {
+            var candidate = await _context.Candidates
+                .Include(c => c.User)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.UserId == userId);
+
+            if (candidate == null) return null;
+
+            var user = candidate.User;
+            return new CandidateEditProfileViewModel
+            {
+                UserId = userId,
+                CandidateId = candidate.Id,
+                Email = user?.Email ?? string.Empty,
+                FirstName = user?.FirstName ?? string.Empty,
+                LastName = user?.LastName ?? string.Empty,
+                PhoneNumber = candidate.Phone ?? string.Empty,
+                Title = candidate.Title,
+                DateOfBirth = candidate.DateOfBirth,
+                Gender = candidate.Gender,
+                City = candidate.City,
+                Address = candidate.Address,
+                YearsOfExperience = candidate.YearsOfExperience,
+                CurrentSalary = candidate.CurrentSalary,
+                ExpectedSalary = candidate.ExpectedSalary,
+                Summary = candidate.Summary,
+                IsLookingForJob = candidate.IsLookingForJob ?? false,
+                Avatar = candidate.Avatar
+            };
+        }
+
+        public async Task<bool> UpdateCandidateProfileAsync(int userId, CandidateEditProfileViewModel model)
+        {
+            // 1. Update User
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null) return false;
+
+            user.Email = model.Email;
+            user.FirstName = model.FirstName;
+            user.LastName = model.LastName;
+            user.Phone = model.PhoneNumber;
+            user.UpdatedAt = DateTimeHelper.NowVietnam;
+
+            // 2. Update Candidate
+            var candidate = await _context.Candidates.FirstOrDefaultAsync(c => c.UserId == userId);
+            if (candidate == null) return false;
+
+            candidate.FullName = $"{model.FirstName} {model.LastName}".Trim();
+            candidate.Phone = model.PhoneNumber;
+            candidate.Title = model.Title;
+            candidate.DateOfBirth = model.DateOfBirth;
+            candidate.Gender = model.Gender;
+            candidate.City = model.City;
+            candidate.Address = model.Address;
+            candidate.YearsOfExperience = model.YearsOfExperience;
+            candidate.CurrentSalary = model.CurrentSalary;
+            candidate.ExpectedSalary = model.ExpectedSalary;
+            candidate.Summary = model.Summary;
+            candidate.IsLookingForJob = model.IsLookingForJob;
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        // ── Recruiter New Edit Profile ─────────────────────────────────────────
+        public async Task<RecruiterEditProfileViewModel?> GetRecruiterProfileForEditAsync(int userId)
+        {
+            var recruiter = await _context.Recruiters
+                .Include(r => r.User)
+                .Include(r => r.Company)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(r => r.UserId == userId);
+
+            if (recruiter == null) return null;
+
+            var user = recruiter.User;
+            var company = recruiter.Company;
+
+            return new RecruiterEditProfileViewModel
+            {
+                UserId = userId,
+                RecruiterId = recruiter.Id,
+                CompanyId = recruiter.CompanyId,
+                Email = user?.Email ?? string.Empty,
+                FirstName = user?.FirstName ?? string.Empty,
+                LastName = user?.LastName ?? string.Empty,
+                PhoneNumber = recruiter.Phone ?? string.Empty,
+                Position = recruiter.Position ?? string.Empty,
+                Avatar = recruiter.Avatar,
+                CompanyName = company?.Name,
+                IsVerified = recruiter.IsVerified ?? false
+            };
+        }
+
+        public async Task<bool> UpdateRecruiterProfileNewAsync(int userId, RecruiterEditProfileViewModel model)
+        {
+            // 1. Update User
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null) return false;
+
+            user.Email = model.Email;
+            user.FirstName = model.FirstName;
+            user.LastName = model.LastName;
+            user.Phone = model.PhoneNumber;
+            user.UpdatedAt = DateTimeHelper.NowVietnam;
+
+            // 2. Update Recruiter
+            var recruiter = await _context.Recruiters.FirstOrDefaultAsync(r => r.UserId == userId);
+            if (recruiter == null) return false;
+
+            recruiter.FullName = $"{model.FirstName} {model.LastName}".Trim();
+            recruiter.Phone = model.PhoneNumber;
+            recruiter.Position = model.Position;
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        // ── Admin Edit Profile ──────────────────────────────────────────────────
+        public async Task<AdminEditProfileViewModel?> GetAdminProfileForEditAsync(int userId)
+        {
+            var user = await _context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user == null) return null;
+
+            return new AdminEditProfileViewModel
+            {
+                UserId = userId,
+                Email = user.Email,
+                FirstName = user.FirstName ?? string.Empty,
+                LastName = user.LastName ?? string.Empty,
+                PhoneNumber = user.Phone,
+                Avatar = user.Avatar
+            };
+        }
+
+        public async Task<bool> UpdateAdminProfileAsync(int userId, AdminEditProfileViewModel model)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null) return false;
+
+            user.Email = model.Email;
+            user.FirstName = model.FirstName;
+            user.LastName = model.LastName;
+            user.Phone = model.PhoneNumber;
+            user.UpdatedAt = DateTimeHelper.NowVietnam;
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
     }
 }
