@@ -1,137 +1,494 @@
 @model AdminUserListViewModel
 @{
     ViewData["Title"] = "Quản lý người dùng";
+    ViewData["HidePageTitle"] = true;
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
 }
 
-<!-- Filters -->
-<form method="get" asp-action="UserList" class="row g-2 mb-3">
-    <div class="col-md-4">
-        <input name="keyword" class="form-control" placeholder="Tìm kiếm email, tên, SĐT..." value="@Model.Keyword" />
+@section Styles {
+<style>
+    /* ===== Page header toolbar ===== */
+    .user-toolbar {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        margin-bottom: 24px;
+        gap: 16px;
+    }
+    .user-toolbar h1 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #111827;
+        margin: 0 0 4px;
+    }
+    .user-toolbar p { font-size: 0.84rem; color: #6b7280; margin: 0; }
+
+    .btn-group-create {
+        display: flex;
+        gap: 8px;
+        flex-shrink: 0;
+    }
+    .btn-create {
+        background: #00b14f;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        padding: 10px 16px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        white-space: nowrap;
+        cursor: pointer;
+        transition: background 0.2s;
+        text-decoration: none;
+    }
+    .btn-create:hover { background: #009744; color: #fff; }
+    .btn-create-outline {
+        background: #fff;
+        color: #00b14f;
+        border: 1px solid #00b14f;
+    }
+    .btn-create-outline:hover {
+        background: #f0fdf4;
+        color: #00b14f;
+        border-color: #00b14f;
+    }
+
+    /* ===== Summary cards ===== */
+    .user-summary {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+    .sum-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 18px 22px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .sum-card-left small {
+        font-size: 0.78rem;
+        color: #9ca3af;
+        display: block;
+        margin-bottom: 4px;
+    }
+    .sum-card-left strong { font-size: 1.75rem; font-weight: 700; color: #111827; }
+    .sum-icon {
+        width: 46px; height: 46px; border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.2rem;
+    }
+
+    /* ===== Filter bar ===== */
+    .user-filterbar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+    .user-search {
+        position: relative;
+        flex: 1;
+        min-width: 200px;
+        max-width: 340px;
+    }
+    .user-search input {
+        border-radius: 8px;
+        border: 1px solid #d1d5db;
+        font-size: 0.875rem;
+        padding: 8px 12px;
+        width: 100%;
+    }
+    .user-search input:focus {
+        border-color: #00b14f;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(0,177,79,0.1);
+    }
+    .form-select {
+        font-size: 0.875rem;
+        border-radius: 8px;
+        border: 1px solid #d1d5db;
+        padding: 8px 12px;
+    }
+    .form-select:focus {
+        border-color: #00b14f;
+        box-shadow: 0 0 0 3px rgba(0,177,79,0.1);
+    }
+    .btn-filter-icon {
+        background: #00b14f;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        padding: 8px 16px;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .btn-filter-icon:hover { background: #009744; }
+
+    /* ===== Table ===== */
+    .user-table-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        overflow: hidden;
+        margin-bottom: 24px;
+    }
+    .user-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.875rem;
+    }
+    .user-table thead {
+        background: #f9fafb;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    .user-table th {
+        padding: 12px 16px;
+        text-align: left;
+        font-weight: 600;
+        color: #374151;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+    .user-table td {
+        padding: 14px 16px;
+        border-bottom: 1px solid #f3f4f6;
+        color: #111827;
+    }
+    .user-table tbody tr:last-child td { border-bottom: none; }
+    .user-table tbody tr:hover { background: #f9fafb; }
+
+    .user-email { font-weight: 500; color: #111827; }
+    .user-name { color: #374151; }
+    .user-phone { color: #6b7280; font-size: 0.85rem; }
+
+    .role-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+    }
+    .role-admin { background: #fee2e2; color: #991b1b; }
+    .role-candidate { background: #dbeafe; color: #1e40af; }
+    .role-recruiter { background: #d1fae5; color: #065f46; }
+
+    .st-active {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        background: #d1fae5;
+        color: #065f46;
+    }
+    .st-inactive {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .act-btn {
+        border: none;
+        background: none;
+        padding: 6px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        transition: all 0.15s;
+        margin-right: 4px;
+        font-weight: 500;
+    }
+    .act-btn-edit {
+        color: #2563eb;
+        background: #eff6ff;
+    }
+    .act-btn-edit:hover {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+    .act-btn-delete {
+        color: #dc2626;
+        background: #fef2f2;
+    }
+    .act-btn-delete:hover {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    /* ===== Pagination ===== */
+    .user-pagination {
+        padding: 16px 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-top: 1px solid #e5e7eb;
+        font-size: 0.85rem;
+        color: #6b7280;
+    }
+    .pg-btn {
+        border: 1px solid #d1d5db;
+        background: #fff;
+        color: #374151;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        text-decoration: none;
+        transition: all 0.15s;
+    }
+    .pg-btn:hover {
+        background: #f9fafb;
+        border-color: #9ca3af;
+        color: #111827;
+    }
+    .pg-btn.active {
+        background: #00b14f;
+        border-color: #00b14f;
+        color: #fff;
+        font-weight: 600;
+    }
+    .pg-btn-text {
+        color: #00b14f;
+        font-weight: 600;
+        padding: 6px 12px;
+        text-decoration: none;
+        border-radius: 6px;
+        transition: background 0.15s;
+    }
+    .pg-btn-text:hover {
+        background: #f0fdf4;
+        color: #00b14f;
+    }
+</style>
+}
+
+<!-- Toolbar -->
+<div class="user-toolbar">
+    <div>
+        <h1>Quản lý người dùng</h1>
+        <p>Quản lý tài khoản Admin, Ứng viên và Nhà tuyển dụng trên hệ thống Finding Jobs.</p>
     </div>
-    <div class="col-md-2">
-        <select name="role" class="form-select">
-            <option value="">Tất cả vai trò</option>
+    <div class="btn-group-create">
+        <a asp-action="CreateAdmin" class="btn-create">
+            Tạo Admin
+        </a>
+        <a asp-action="CreateCandidate" class="btn-create btn-create-outline">
+            Tạo Ứng viên
+        </a>
+        <a asp-action="CreateRecruiter" class="btn-create btn-create-outline">
+            Tạo NTD
+        </a>
+    </div>
+</div>
+
+<!-- Summary cards -->
+<div class="user-summary">
+    <div class="sum-card">
+        <div class="sum-card-left">
+            <small>Tổng người dùng</small>
+            <strong>@Model.TotalItems</strong>
+        </div>
+        <div class="sum-icon" style="background:#ecfdf5;color:#00b14f;"><i class="fas fa-users"></i></div>
+    </div>
+    <div class="sum-card">
+        <div class="sum-card-left">
+            <small>Admin</small>
+            <strong>@Model.Users.Count(u => u.Role == "Admin")</strong>
+        </div>
+        <div class="sum-icon" style="background:#fee2e2;color:#dc2626;"><i class="fas fa-user-shield"></i></div>
+    </div>
+    <div class="sum-card">
+        <div class="sum-card-left">
+            <small>Ứng viên</small>
+            <strong>@Model.Users.Count(u => u.Role == "Candidate")</strong>
+        </div>
+        <div class="sum-icon" style="background:#dbeafe;color:#2563eb;"><i class="fas fa-user"></i></div>
+    </div>
+    <div class="sum-card">
+        <div class="sum-card-left">
+            <small>Nhà tuyển dụng</small>
+            <strong>@Model.Users.Count(u => u.Role == "Recruiter")</strong>
+        </div>
+        <div class="sum-icon" style="background:#d1fae5;color:#059669;"><i class="fas fa-user-tie"></i></div>
+    </div>
+</div>
+
+<!-- Filter bar -->
+<form method="get" asp-action="UserList">
+    <div class="user-filterbar">
+        <div class="user-search">
+            <input name="keyword" value="@Model.Keyword" placeholder="Tìm kiếm email, tên, SĐT..." />
+        </div>
+
+        <span style="font-size:0.83rem;color:#374151;font-weight:500;white-space:nowrap;">Vai trò:</span>
+        <select name="role" class="form-select" style="width:160px;">
+            <option value="" selected="@(string.IsNullOrEmpty(Model.Role))">Tất cả</option>
             <option value="Admin" selected="@(Model.Role == "Admin")">Admin</option>
             <option value="Candidate" selected="@(Model.Role == "Candidate")">Ứng viên</option>
             <option value="Recruiter" selected="@(Model.Role == "Recruiter")">Nhà tuyển dụng</option>
         </select>
-    </div>
-    <div class="col-md-2">
-        <select name="status" class="form-select">
-            <option value="">Tất cả trạng thái</option>
+
+        <span style="font-size:0.83rem;color:#374151;font-weight:500;white-space:nowrap;">Trạng thái:</span>
+        <select name="status" class="form-select" style="width:150px;">
+            <option value="" selected="@(string.IsNullOrEmpty(Model.Status))">Tất cả</option>
             <option value="active" selected="@(Model.Status == "active")">Hoạt động</option>
             <option value="inactive" selected="@(Model.Status == "inactive")">Ngưng hoạt động</option>
         </select>
-    </div>
-    <div class="col-md-2">
-        <select name="pageSize" class="form-select">
-            <option value="10" selected="@(Model.PageSize == 10)">10 / trang</option>
-            <option value="20" selected="@(Model.PageSize == 20)">20 / trang</option>
-            <option value="50" selected="@(Model.PageSize == 50)">50 / trang</option>
+
+        <span style="font-size:0.83rem;color:#374151;font-weight:500;white-space:nowrap;">Hiển thị:</span>
+        <select name="pageSize" class="form-select" style="width:100px;">
+            <option value="10" selected="@(Model.PageSize == 10)">10</option>
+            <option value="20" selected="@(Model.PageSize == 20)">20</option>
+            <option value="50" selected="@(Model.PageSize == 50)">50</option>
         </select>
-    </div>
-    <div class="col-md-2 d-flex gap-2">
-        <button type="submit" class="btn btn-sm btn-topcv" style="width:70px">Lọc</button>
-        <a asp-action="UserList" class="btn btn-sm btn-outline-secondary" style="width:70px">Xóa</a>
+
+        <button type="submit" class="btn-filter-icon" title="Lọc">
+            Lọc
+        </button>
     </div>
 </form>
 
-<!-- Action buttons -->
-<div class="d-flex gap-2 mb-3">
-    <a asp-action="CreateAdmin" class="btn btn-sm btn-outline-secondary">+ Admin</a>
-    <a asp-action="CreateCandidate" class="btn btn-sm btn-outline-secondary">+ Ứng viên</a>
-    <a asp-action="CreateRecruiter" class="btn btn-sm btn-outline-secondary">+ Nhà tuyển dụng</a>
-</div>
-
 <!-- Table -->
-<div class="admin-card p-0">
-    <table class="table table-hover mb-0">
-        <thead class="table-light">
+<div class="user-table-card">
+    <table class="user-table">
+        <thead>
             <tr>
-                <th>#</th>
                 <th>Email</th>
                 <th>Họ tên</th>
-                <th>SĐT</th>
+                <th>Số điện thoại</th>
                 <th>Vai trò</th>
                 <th>Ngày tạo</th>
                 <th>Trạng thái</th>
-                <th></th>
+                <th style="text-align:right;">Thao tác</th>
             </tr>
         </thead>
         <tbody>
             @if (!Model.Users.Any())
             {
-                <tr><td colspan="8" class="text-center text-muted py-4">Không có dữ liệu</td></tr>
+                <tr><td colspan="7" class="text-center text-muted py-5">Không có dữ liệu</td></tr>
             }
-            @{int rowNum = (Model.Page - 1) * Model.PageSize + 1;}
             @foreach (var u in Model.Users)
             {
                 <tr>
-                    <td class="text-muted small align-middle">@rowNum</td>
-                    <td class="align-middle">@u.Email</td>
-                    <td class="align-middle">@u.FullName</td>
-                    <td class="align-middle">@(u.PhoneNumber ?? "—")</td>
-                    <td class="align-middle">
+                    <td>
+                        <div class="user-email">@u.Email</div>
+                    </td>
+                    <td>
+                        <div class="user-name">@u.FullName</div>
+                    </td>
+                    <td>
+                        <span class="user-phone">@(u.PhoneNumber ?? "—")</span>
+                    </td>
+                    <td>
                         @{
-                            var badgeClass = u.Role switch
+                            var roleClass = u.Role switch
                             {
-                                "Admin" => "bg-danger",
-                                "Candidate" => "bg-primary",
-                                "Recruiter" => "bg-success",
-                                _ => "bg-secondary"
+                                "Admin" => "role-admin",
+                                "Candidate" => "role-candidate",
+                                "Recruiter" => "role-recruiter",
+                                _ => "role-candidate"
                             };
                         }
-                        <span class="badge @badgeClass">@u.Role</span>
+                        <span class="role-badge @roleClass">@u.Role</span>
                     </td>
-                    <td class="align-middle small">@(u.CreatedAt?.ToString("dd/MM/yyyy") ?? "—")</td>
-                    <td class="align-middle">
+                    <td style="font-size:0.8rem;color:#6b7280;">
+                        @(u.CreatedAt?.ToString("dd/MM/yyyy") ?? "—")
+                    </td>
+                    <td>
                         @if (u.IsActive)
                         {
-                            <span class="badge bg-success-subtle text-success border border-success-subtle">Hoạt động</span>
+                            <span class="st-active">Hoạt động</span>
                         }
                         else
                         {
-                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Ngưng</span>
+                            <span class="st-inactive">Ngưng</span>
                         }
                     </td>
-                    <td class="align-middle text-end">
-                        <a asp-action="EditUser" asp-route-id="@u.Id" class="btn btn-sm btn-outline-primary me-1">Sửa</a>
+                    <td style="text-align:right;white-space:nowrap;">
+                        <a asp-action="EditUser" asp-route-id="@u.Id" class="act-btn act-btn-edit" title="Sửa">
+                            Sửa
+                        </a>
                         @if (u.IsActive)
                         {
                             <form asp-action="DeleteUser" asp-route-id="@u.Id" method="post" class="d-inline"
                                   onsubmit="return confirm('Xác nhận ngưng hoạt động tài khoản này?')">
                                 @Html.AntiForgeryToken()
-                                <button type="submit" class="btn btn-sm btn-outline-danger">Ngưng</button>
+                                <button type="submit" class="act-btn act-btn-delete" title="Ngưng">
+                                    Ngưng
+                                </button>
                             </form>
                         }
                     </td>
                 </tr>
-                rowNum++;
             }
         </tbody>
     </table>
-</div>
 
-<!-- Pagination -->
-@if (Model.TotalPages > 1)
-{
-    <nav class="mt-3">
-        <ul class="pagination pagination-sm justify-content-end mb-0">
-            @for (int p = 1; p <= Model.TotalPages; p++)
-            {
-                <li class="page-item @(p == Model.Page ? "active" : "")">
-                    <a class="page-link" asp-action="UserList"
+    <!-- Pagination -->
+    @if (Model.TotalPages > 1)
+    {
+        <div class="user-pagination">
+            <span>Hiển thị <strong>@((Model.Page-1)*Model.PageSize+1)–@Math.Min(Model.Page*Model.PageSize,Model.TotalItems)</strong> trong tổng số <strong>@Model.TotalItems</strong> người dùng</span>
+            <div style="display:flex;gap:6px;align-items:center;">
+                @if (Model.Page > 1)
+                {
+                    <a class="pg-btn-text" asp-action="UserList"
                        asp-route-keyword="@Model.Keyword"
                        asp-route-role="@Model.Role"
                        asp-route-status="@Model.Status"
-                       asp-route-page="@p"
-                       asp-route-pageSize="@Model.PageSize">@p</a>
-                </li>
-            }
-        </ul>
-    </nav>
-    <div class="text-muted small mt-1">
-        Hiển thị @Model.Users.Count / @Model.TotalItems người dùng
-    </div>
-}
+                       asp-route-page="@(Model.Page-1)"
+                       asp-route-pageSize="@Model.PageSize">Trước</a>
+                }
+                else
+                {
+                    <span class="pg-btn-text" style="opacity:.4;cursor:not-allowed;">Trước</span>
+                }
+
+                @for (int pg = 1; pg <= Math.Min(Model.TotalPages, 5); pg++)
+                {
+                    <a class="pg-btn @(pg == Model.Page ? "active" : "")"
+                       asp-action="UserList"
+                       asp-route-keyword="@Model.Keyword"
+                       asp-route-role="@Model.Role"
+                       asp-route-status="@Model.Status"
+                       asp-route-page="@pg"
+                       asp-route-pageSize="@Model.PageSize">@pg</a>
+                }
+
+                @if (Model.Page < Model.TotalPages)
+                {
+                    <a class="pg-btn-text" asp-action="UserList"
+                       asp-route-keyword="@Model.Keyword"
+                       asp-route-role="@Model.Role"
+                       asp-route-status="@Model.Status"
+                       asp-route-page="@(Model.Page+1)"
+                       asp-route-pageSize="@Model.PageSize">Sau</a>
+                }
+                else
+                {
+                    <span class="pg-btn-text" style="opacity:.4;cursor:not-allowed;">Sau</span>
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="user-pagination">
+            <span>Hiển thị <strong>@Model.Users.Count</strong> trong tổng số <strong>@Model.TotalItems</strong> người dùng</span>
+        </div>
+    }
+</div>

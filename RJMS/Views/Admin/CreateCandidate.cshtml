@@ -34,11 +34,6 @@
         <span asp-validation-for="PhoneNumber" class="text-danger"></span>
     </div>
     <div class="col-md-6">
-        <label asp-for="Title" class="form-label">Tiêu đề hồ sơ</label>
-        <input asp-for="Title" class="form-control" />
-        <span asp-validation-for="Title" class="text-danger"></span>
-    </div>
-    <div class="col-md-6">
         <label asp-for="DateOfBirth" class="form-label">Ngày sinh *</label>
         <input asp-for="DateOfBirth" class="form-control" type="date" />
         <span asp-validation-for="DateOfBirth" class="text-danger"></span>
@@ -52,30 +47,6 @@
             <option value="Other">Khác</option>
         </select>
         <span asp-validation-for="Gender" class="text-danger"></span>
-    </div>
-    <div class="col-md-6">
-        <label asp-for="City" class="form-label">Tỉnh/Thành phố</label>
-        <select id="provinceSelect" asp-for="City" class="form-select">
-            <option value="">-- Chọn tỉnh/thành phố --</option>
-        </select>
-    </div>
-    <div class="col-md-6">
-        <label asp-for="District" class="form-label">Phường/Xã</label>
-        <select id="wardSelect" asp-for="District" class="form-select" disabled>
-            <option value="">-- Chọn phường/xã --</option>
-        </select>
-    </div>
-    <div class="col-md-6">
-        <label asp-for="CurrentPosition" class="form-label">Vị trí hiện tại</label>
-        <input asp-for="CurrentPosition" class="form-control" />
-    </div>
-    <div class="col-md-6">
-        <label asp-for="YearsOfExperience" class="form-label">Số năm kinh nghiệm</label>
-        <input asp-for="YearsOfExperience" class="form-control" type="number" min="0" />
-    </div>
-    <div class="col-12">
-        <label asp-for="Address" class="form-label">Địa chỉ</label>
-        <input asp-for="Address" class="form-control" />
     </div>
     <div class="col-12 d-flex gap-2">
         <button type="submit" class="btn btn-sm btn-topcv" style="width:140px">Tạo ứng viên</button>
@@ -140,50 +111,6 @@
                 var eOk = validateEmail();
                 var pOk = validatePassword();
                 if (!eOk || !pOk) e.preventDefault();
-            });
-        })();
-
-        // Province & Ward API integration
-        (function() {
-            var provinceSelect = document.getElementById('provinceSelect');
-            var wardSelect = document.getElementById('wardSelect');
-            if (!provinceSelect || !wardSelect) return;
-
-            // Load provinces
-            fetch('https://provinces.open-api.vn/api/v2/p/')
-                .then(res => res.json())
-                .then(data => {
-                    data.forEach(function(province) {
-                        var opt = document.createElement('option');
-                        opt.value = province.name;
-                        opt.textContent = province.name;
-                        opt.dataset.code = province.code;
-                        provinceSelect.appendChild(opt);
-                    });
-                })
-                .catch(err => console.error('Error loading provinces:', err));
-
-            // Load wards when province changes
-            provinceSelect.addEventListener('change', function() {
-                var selectedOption = provinceSelect.options[provinceSelect.selectedIndex];
-                var provinceCode = selectedOption ? selectedOption.dataset.code : null;
-                
-                wardSelect.innerHTML = '<option value="">-- Chọn phường/xã --</option>';
-                wardSelect.disabled = !provinceCode;
-                
-                if (provinceCode) {
-                    fetch('https://provinces.open-api.vn/api/v2/w/?province=' + provinceCode)
-                        .then(res => res.json())
-                        .then(data => {
-                            data.forEach(function(ward) {
-                                var opt = document.createElement('option');
-                                opt.value = ward.name;
-                                opt.textContent = ward.name;
-                                wardSelect.appendChild(opt);
-                            });
-                        })
-                        .catch(err => console.error('Error loading wards:', err));
-                }
             });
         })();
     </script>
