@@ -1,53 +1,87 @@
 @model RJMS.Vn.Edu.Fpt.Model.DTOs.RegisterDTO
 @{
-    ViewData["Title"] = "Đăng ký Người dùng";
+    ViewData["Title"] = "Đăng ký Ứng viên";
 }
 
 <section class="auth-section">
-    <div class="container">
+    <div class="container py-5">
         <div class="row justify-content-center">
-            <div class="col-md-6 ">
-                <div class="auth-card">
-                    <div class="auth-header text-center">
-                        <h2 class="auth-title">Đăng ký tài khoản Người dùng</h2>
-                        <p class="auth-subtitle">Tạo tài khoản để trải nghiệm Finding Jobs</p>
+            <div class="col-lg-9">
+                <div class="auth-card" style="max-width:100%; border-radius:16px; overflow:hidden;">
+                    <div class="auth-header text-center p-4"
+                         style="background:linear-gradient(135deg,rgba(0,177,79,.12),rgba(0,177,79,.03)); border-bottom:1px solid #d7efe1;">
+                        <h2 class="auth-title mb-1" style="color:#00b14f; font-weight:800;">Đăng ký tài khoản Ứng viên</h2>
+                        <p class="auth-subtitle mb-0">Tạo tài khoản để tìm kiếm việc làm trên Finding Jobs</p>
                     </div>
                     
                     <form asp-action="Register" method="post" class="auth-form" novalidate id="register-form">
                         @Html.AntiForgeryToken()
                         <input asp-for="Role" type="hidden" />
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert" id="validation-summary"></div>
 
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label asp-for="LastName" class="form-label">Họ</label>
-                                <input asp-for="LastName" class="form-control" placeholder="Nhập họ" />
-                                <span asp-validation-for="LastName" class="text-danger small"></span>
+                        <!-- Thông tin tài khoản -->
+                        <div class="mb-4">
+                            <h6 class="fw-bold mb-3 pb-2" style="color:#0f172a; border-bottom:2px solid #d7efe1;">
+                                <i class="fas fa-user-circle me-2 text-success"></i>Thông tin tài khoản
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-12">
+                                    <label asp-for="Email" class="form-label fw-semibold small">Email *</label>
+                                    <input asp-for="Email" class="form-control" type="email" placeholder="name@example.com" />
+                                    <div id="emailErr" class="text-danger small mt-1" style="min-height:18px"></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label asp-for="Password" class="form-label fw-semibold small">Mật khẩu *</label>
+                                    <input asp-for="Password" class="form-control" type="password" placeholder="Tối thiểu 8 ký tự" autocomplete="new-password" />
+                                    <div id="passwordErr" class="text-danger small mt-1" style="min-height:18px"></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label asp-for="ConfirmPassword" class="form-label fw-semibold small">Xác nhận mật khẩu *</label>
+                                    <input asp-for="ConfirmPassword" class="form-control" type="password" placeholder="Nhập lại mật khẩu" />
+                                    <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                                </div>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label asp-for="FirstName" class="form-label">Tên</label>
-                                <input asp-for="FirstName" class="form-control" placeholder="Nhập tên" />
-                                <span asp-validation-for="FirstName" class="text-danger small"></span>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label asp-for="Email" class="form-label">Email</label>
-                            <input asp-for="Email" class="form-control" type="email" placeholder="name@example.com" />
-                            <span asp-validation-for="Email" class="text-danger small"></span>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label asp-for="Password" class="form-label">Mật khẩu</label>
-                            <input asp-for="Password" class="form-control" type="password" placeholder="Tối thiểu 6 ký tự" />
-                            <span asp-validation-for="Password" class="text-danger small"></span>
                         </div>
 
-                        <div class="mb-3">
-                            <label asp-for="ConfirmPassword" class="form-label">Nhập lại mật khẩu</label>
-                            <input asp-for="ConfirmPassword" class="form-control" type="password" placeholder="Xác nhận mật khẩu" />
-                            <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                        <!-- Thông tin cá nhân -->
+                        <div class="mb-4">
+                            <h6 class="fw-bold mb-3 pb-2" style="color:#0f172a; border-bottom:2px solid #d7efe1;">
+                                <i class="fas fa-id-card me-2 text-success"></i>Thông tin cá nhân
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label asp-for="FirstName" class="form-label fw-semibold small">Họ *</label>
+                                    <input asp-for="FirstName" class="form-control" placeholder="Nhập họ" />
+                                    <span asp-validation-for="FirstName" class="text-danger small"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <label asp-for="LastName" class="form-label fw-semibold small">Tên *</label>
+                                    <input asp-for="LastName" class="form-control" placeholder="Nhập tên" />
+                                    <span asp-validation-for="LastName" class="text-danger small"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <label asp-for="PhoneNumber" class="form-label fw-semibold small">Số điện thoại *</label>
+                                    <input asp-for="PhoneNumber" class="form-control" placeholder="0912 345 678" />
+                                    <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <label asp-for="DateOfBirth" class="form-label fw-semibold small">Ngày sinh *</label>
+                                    <input asp-for="DateOfBirth" class="form-control" type="date" />
+                                    <span asp-validation-for="DateOfBirth" class="text-danger small"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <label asp-for="Gender" class="form-label fw-semibold small">Giới tính *</label>
+                                    <select asp-for="Gender" class="form-select">
+                                        <option value="">Chọn giới tính</option>
+                                        <option value="Male">Nam</option>
+                                        <option value="Female">Nữ</option>
+                                        <option value="Other">Khác</option>
+                                    </select>
+                                    <span asp-validation-for="Gender" class="text-danger small"></span>
+                                </div>
+                            </div>
                         </div>
-                        
+
                         <div class="mb-3">
                             <a asp-action="RegisterRecruiter" class="btn btn-outline-secondary w-100">
                                 <i class="fas fa-briefcase me-2"></i>Bạn là Nhà tuyển dụng? Đăng ký tại đây
@@ -57,21 +91,22 @@
                         <div class="mb-3">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="agreeTerms" required>
-                                <label class="form-check-label" for="agreeTerms">
-                                    Tôi đồng ý với <a href="#">Điều khoản dịch vụ</a> và <a href="#">Chính sách bảo mật</a>
+                                <label class="form-check-label small" for="agreeTerms">
+                                    Tôi đồng ý với <a href="#" class="text-success">Điều khoản dịch vụ</a> và <a href="#" class="text-success">Chính sách bảo mật</a>
                                 </label>
                             </div>
                         </div>
                         
-                        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert" id="validation-summary"></div>
-                        <button type="submit" class="btn btn-primary w-100 btn-auth">Đăng ký</button>
+                        <button type="submit" class="btn btn-primary w-100 btn-auth">
+                            <i class="fas fa-user-plus me-2"></i>Đăng ký
+                        </button>
                         
-                        <div class="auth-divider">
+                        <div class="auth-divider mt-3">
                             <span>hoặc</span>
                         </div>
                         
                         <div class="text-center">
-                            <p class="auth-link-text">
+                            <p class="auth-link-text mb-0">
                                 Đã có tài khoản? <a asp-action="Login" class="auth-link">Đăng nhập ngay</a>
                             </p>
                         </div>
@@ -87,10 +122,70 @@
     <script>
         (function () {
             const summary = document.getElementById('validation-summary');
-
             if (summary && summary.textContent.trim().length > 0) {
                 toastr.error('Vui lòng kiểm tra lại thông tin đăng ký.');
             }
+
+            var form = document.getElementById('register-form');
+            if (!form) return;
+
+            var emailInput = document.getElementById('Email');
+            var passwordInput = document.getElementById('Password');
+
+            function setErr(input, divId, msg) {
+                var el = document.getElementById(divId);
+                if (el) el.textContent = msg;
+                if (!input) return;
+                if (msg) {
+                    input.classList.add('is-invalid');
+                    input.classList.remove('is-valid');
+                } else {
+                    input.classList.remove('is-invalid');
+                    if (input.value) input.classList.add('is-valid');
+                }
+            }
+
+            function isValidEmail(v) {
+                var at = v.indexOf('@@');
+                if (at < 1) return false;
+                var dot = v.lastIndexOf('.');
+                return dot > at + 1 && dot < v.length - 1;
+            }
+
+            function isValidPassword(v) {
+                return v.length >= 8 && /[A-Z]/.test(v) && /[0-9]/.test(v) && /[^a-zA-Z0-9]/.test(v);
+            }
+
+            function validateEmail() {
+                var v = emailInput ? emailInput.value.trim() : '';
+                if (!v) { setErr(emailInput, 'emailErr', ''); return true; }
+                var ok = isValidEmail(v);
+                setErr(emailInput, 'emailErr', ok ? '' : 'Email không đúng định dạng.');
+                return ok;
+            }
+
+            function validatePassword() {
+                var v = passwordInput ? passwordInput.value : '';
+                if (!v) { setErr(passwordInput, 'passwordErr', ''); return true; }
+                var ok = isValidPassword(v);
+                setErr(passwordInput, 'passwordErr', ok ? '' : 'Mật khẩu phải có ít nhất 8 ký tự, gồm chữ hoa, chữ số và ký tự đặc biệt.');
+                return ok;
+            }
+
+            if (emailInput) {
+                emailInput.addEventListener('input', validateEmail);
+                emailInput.addEventListener('blur', validateEmail);
+            }
+            if (passwordInput) {
+                passwordInput.addEventListener('input', validatePassword);
+                passwordInput.addEventListener('blur', validatePassword);
+            }
+
+            form.addEventListener('submit', function (e) {
+                var eOk = validateEmail();
+                var pOk = validatePassword();
+                if (!eOk || !pOk) e.preventDefault();
+            });
         })();
     </script>
 }

@@ -8,7 +8,9 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using RJMS.Vn.Edu.Fpt.Model.DTOs;
 using RJMS.vn.edu.fpt.Models;
+using RJMS.vn.edu.fpt.Models.DTOs;
 using RJMS.Vn.Edu.Fpt.Repository;
+using vn.edu.fpt.Utilities;
 using BCrypt.Net;
 
 namespace RJMS.Vn.Edu.Fpt.Service
@@ -16,18 +18,21 @@ namespace RJMS.Vn.Edu.Fpt.Service
     public class AuthService : IAuthService
     {
         private readonly IAuthRepository _authRepository;
+        private readonly IAdminRepository _adminRepository;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IEmailService _emailService;
         private readonly IConfiguration _configuration;
 
         public AuthService(
             IAuthRepository authRepository,
+            IAdminRepository adminRepository,
             IHttpContextAccessor httpContextAccessor,
             IEmailService emailService,
             IConfiguration configuration
         )
         {
             _authRepository = authRepository;
+            _adminRepository = adminRepository;
             _httpContextAccessor = httpContextAccessor;
             _emailService = emailService;
             _configuration = configuration;
@@ -171,9 +176,10 @@ namespace RJMS.Vn.Edu.Fpt.Service
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword(registerDto.Password),
                     FirstName = registerDto.FirstName,
                     LastName = registerDto.LastName,
+                    Phone = registerDto.PhoneNumber,
                     IsActive = true,
                     EmailConfirmed = false,
-                    CreatedAt = DateTime.UtcNow,
+                    CreatedAt = DateTimeHelper.NowVietnam,
                 };
 
                 var created = await _authRepository.CreateUserAsync(user);
@@ -187,6 +193,18 @@ namespace RJMS.Vn.Edu.Fpt.Service
                     || string.IsNullOrWhiteSpace(registerDto.Role)
                 )
                 {
+                    // Assign Candidate role
+                    var candidateRole = await _adminRepository.GetRoleByNameAsync("Candidate");
+                    if (candidateRole != null)
+                    {
+                        await _adminRepository.AddUserRoleAsync(new UserRole
+                        {
+                            UserId = created.Id,
+                            RoleId = candidateRole.Id,
+                            AssignedAt = DateTimeHelper.NowVietnam
+                        });
+                    }
+
                     var fullName = string.IsNullOrWhiteSpace(registerDto.FullName)
                         ? $"{registerDto.FirstName} {registerDto.LastName}".Trim()
                         : registerDto.FullName.Trim();
@@ -196,7 +214,10 @@ namespace RJMS.Vn.Edu.Fpt.Service
                         {
                             UserId = created.Id,
                             FullName = fullName,
-                            CreatedAt = DateTime.UtcNow,
+                            Phone = registerDto.PhoneNumber,
+                            DateOfBirth = registerDto.DateOfBirth,
+                            Gender = registerDto.Gender,
+                            CreatedAt = DateTimeHelper.NowVietnam,
                             IsLookingForJob = true,
                         }
                     );
@@ -229,6 +250,121 @@ namespace RJMS.Vn.Edu.Fpt.Service
             }
         }
 
+        public async Task<(bool Success, string Message)> RegisterRecruiterAsync(RecruiterRegisterViewModel registerDto)
+        {
+            try
+            {
+                // Validate required fields
+                if (string.IsNullOrWhiteSpace(registerDto.PhoneNumber))
+                    return (false, "Số điện thoại là bắt buộc.");
+                if (string.IsNullOrWhiteSpace(registerDto.Position))
+                    return (false, "Vị trí công việc là bắt buộc.");
+                if (string.IsNullOrWhiteSpace(registerDto.CompanyName))
+                    return (false, "Tên công ty là bắt buộc.");
+
+                // Check if email already exists
+                var exists = await _authRepository.UserExistsAsync(registerDto.Email);
+                if (exists)
+                {
+                    return (false, "Email đã được sử dụng.");
+                }
+
+                // Check if company tax code already exists (if provided)
+                if (!string.IsNullOrWhiteSpace(registerDto.CompanyTaxCode) &&
+                    await _adminRepository.CompanyTaxCodeExistsAsync(registerDto.CompanyTaxCode))
+                {
+                    return (false, "Mã số thuế công ty đã tồn tại.");
+                }
+
+                // Create user
+                var user = new User
+                {
+                    Email = registerDto.Email,
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword(registerDto.Password),
+                    FirstName = registerDto.FirstName,
+                    LastName = registerDto.LastName,
+                    Phone = registerDto.PhoneNumber,
+                    IsActive = true,
+                    EmailConfirmed = false,
+                    CreatedAt = DateTimeHelper.NowVietnam,
+                };
+
+                var created = await _authRepository.CreateUserAsync(user);
+                if (created == null)
+                {
+                    return (false, "Không thể tạo tài khoản. Vui lòng thử lại.");
+                }
+
+                // Assign Recruiter role
+                var recruiterRole = await _adminRepository.GetRoleByNameAsync("Recruiter");
+                if (recruiterRole != null)
+                {
+                    await _adminRepository.AddUserRoleAsync(new UserRole
+                    {
+                        UserId = created.Id,
+                        RoleId = recruiterRole.Id,
+                        AssignedAt = DateTimeHelper.NowVietnam
+                    });
+                }
+
+                // Create company
+                var company = new Company
+                {
+                    Name = registerDto.CompanyName,
+                    TaxCode = registerDto.CompanyTaxCode,
+                    CompanySize = registerDto.CompanySize,
+                    Industry = registerDto.CompanyIndustry,
+                    Website = registerDto.CompanyWebsite,
+                    Email = registerDto.CompanyEmail,
+                    Phone = registerDto.CompanyPhone ?? registerDto.PhoneNumber,
+                    Description = registerDto.CompanyDescription,
+                    IsVerified = false, // New registrations need verification
+                    CreatedAt = DateTimeHelper.NowVietnam,
+                    UpdatedAt = DateTimeHelper.NowVietnam
+                };
+                await _adminRepository.AddCompanyAsync(company);
+
+                // Create recruiter
+                var recruiter = new Recruiter
+                {
+                    UserId = created.Id,
+                    CompanyId = company.Id,
+                    FullName = $"{registerDto.FirstName} {registerDto.LastName}".Trim(),
+                    Phone = registerDto.PhoneNumber,
+                    Position = registerDto.Position,
+                    IsVerified = false, // New registrations need verification
+                    CreatedAt = DateTimeHelper.NowVietnam
+                };
+                await _adminRepository.AddRecruiterAsync(recruiter);
+
+                // Send email confirmation
+                var token = GenerateEmailToken(
+                    created.Email ?? string.Empty,
+                    TimeSpan.FromHours(24)
+                );
+                var confirmLink = BuildConfirmLink(token);
+
+                var emailSent = await _emailService.SendEmailConfirmationAsync(
+                    created.Email ?? string.Empty,
+                    confirmLink
+                );
+
+                if (!emailSent)
+                {
+                    return (
+                        false,
+                        "Đăng ký thành công nhưng gửi email xác nhận thất bại. Vui lòng thử lại."
+                    );
+                }
+
+                return (true, "Đăng ký thành công. Vui lòng kiểm tra email để xác nhận tài khoản. Tài khoản sẽ được kích hoạt sau khi quản trị viên xác minh.");
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Lỗi: {ex.Message}");
+            }
+        }
+
         public async Task<(bool Success, string Message)> ConfirmEmailAsync(string token)
         {
             try
@@ -244,6 +380,9 @@ namespace RJMS.Vn.Edu.Fpt.Service
                 {
                     return (false, "Không tìm thấy tài khoản để xác nhận.");
                 }
+
+                // Auto-assign free subscription plan to new recruiters
+                await _authRepository.AssignFreeSubscriptionIfRecruiterAsync(email);
 
                 return (true, "Xác nhận email thành công. Vui lòng đăng nhập.");
             }

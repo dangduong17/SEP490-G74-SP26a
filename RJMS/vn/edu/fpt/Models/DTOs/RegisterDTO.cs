@@ -4,25 +4,38 @@ namespace RJMS.Vn.Edu.Fpt.Model.DTOs
 {
     public class RegisterDTO
     {
-        [Required(ErrorMessage = "First name is required")]
+        [Required(ErrorMessage = "Họ là bắt buộc")]
+        [MaxLength(100)]
         public string FirstName { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Last name is required")]
+        [Required(ErrorMessage = "Tên là bắt buộc")]
+        [MaxLength(100)]
         public string LastName { get; set; } = string.Empty;
 
         public string? FullName { get; set; }
 
-        [Required(ErrorMessage = "Email is required")]
-        [EmailAddress(ErrorMessage = "Invalid email format")]
+        [Required(ErrorMessage = "Email là bắt buộc")]
+        [EmailAddress(ErrorMessage = "Email không đúng định dạng")]
         public string Email { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Password is required")]
-        [MinLength(6, ErrorMessage = "Password must be at least 6 characters")]
+        [Required(ErrorMessage = "Mật khẩu là bắt buộc")]
+        [MinLength(8, ErrorMessage = "Mật khẩu phải có ít nhất 8 ký tự")]
         public string Password { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Confirm password is required")]
-        [Compare("Password", ErrorMessage = "Passwords do not match")]
+        [Required(ErrorMessage = "Xác nhận mật khẩu là bắt buộc")]
+        [Compare("Password", ErrorMessage = "Mật khẩu xác nhận không khớp")]
         public string ConfirmPassword { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Số điện thoại là bắt buộc")]
+        [Phone(ErrorMessage = "Số điện thoại không đúng định dạng")]
+        [MaxLength(20)]
+        public string PhoneNumber { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Ngày sinh là bắt buộc")]
+        public DateTime? DateOfBirth { get; set; }
+
+        [Required(ErrorMessage = "Giới tính là bắt buộc")]
+        public string? Gender { get; set; }
 
         public string? Role { get; set; } = "Candidate";
     }
