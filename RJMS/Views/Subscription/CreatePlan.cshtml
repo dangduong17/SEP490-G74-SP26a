@@ -1,7 +1,7 @@
 @model SubscriptionPlanFormViewModel
 @using RJMS.vn.edu.fpt.Models.DTOs
 @{
-    ViewData["Title"] = "Chỉnh sửa gói đăng ký";
+    ViewData["Title"] = "Tạo gói đăng ký mới";
     ViewData["HidePageTitle"] = true;
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
 }
@@ -9,7 +9,7 @@
 @section Styles {
 <style>
     /* ===== Page container ===== */
-    .edit-container {
+    .create-container {
         max-width: 900px;
         margin: 0 auto;
     }
@@ -275,29 +275,28 @@
 </style>
 }
 
-<div class="edit-container">
+<div class="create-container">
     <!-- Page header -->
     <div class="page-header">
-        <h1><i class="fas fa-edit" style="color:#00b14f;"></i> Chỉnh sửa gói đăng ký</h1>
-        <p>Cập nhật thông tin và cấu hình cho gói dịch vụ đã tạo.</p>
+        <h1><i class="fas fa-plus-circle" style="color:#00b14f;"></i> Tạo gói đăng ký mới</h1>
+        <p>Thiết lập thông tin và cấu hình cho gói dịch vụ mới.</p>
     </div>
 
     <!-- Info box -->
     <div class="info-box">
         <div class="info-box-icon"><i class="fas fa-lightbulb"></i></div>
         <div class="info-box-content">
-            <div class="info-box-title">Lưu ý khi chỉnh sửa gói</div>
+            <div class="info-box-title">Lưu ý khi tạo gói mới</div>
             <div class="info-box-text">
-                Việc thay đổi giá hoặc giới hạn sẽ không ảnh hưởng đến các gói đăng ký đã kích hoạt trước đó. 
-                Chỉ áp dụng cho các đăng ký mới sau khi lưu thay đổi.
+                Gói sẽ chỉ hiển thị cho nhà tuyển dụng sau khi được kích hoạt. 
+                Bạn có thể chỉnh sửa thông tin gói bất kỳ lúc nào sau khi tạo.
             </div>
         </div>
     </div>
 
     <!-- Form -->
-    <form asp-action="EditPlan" method="post">
+    <form asp-action="CreatePlan" method="post">
         @Html.AntiForgeryToken()
-        <input type="hidden" asp-for="Id" />
 
         <!-- Basic Info Section -->
         <div class="form-card">
@@ -423,9 +422,9 @@
                         Phiên bản
                     </label>
                     <input asp-for="Version" type="number" min="1" 
-                           class="form-control-custom" placeholder="1" />
+                           class="form-control-custom" placeholder="1" value="1" />
                     <span asp-validation-for="Version" class="text-danger"></span>
-                    <span class="text-muted-small">Số phiên bản của gói (tự động tăng khi cập nhật)</span>
+                    <span class="text-muted-small">Số phiên bản của gói (mặc định là 1)</span>
                 </div>
             </div>
         </div>
@@ -439,7 +438,7 @@
             <div class="form-check-custom">
                 <input asp-for="IsActive" type="checkbox" id="chkActive" />
                 <label for="chkActive">
-                    <strong>Kích hoạt gói</strong>
+                    <strong>Kích hoạt gói ngay</strong>
                     <span style="display:block;font-size:0.8rem;color:#6b7280;margin-top:2px;">
                         Gói sẽ hiển thị cho nhà tuyển dụng có thể đăng ký
                     </span>
@@ -453,7 +452,7 @@
                 <i class="fas fa-times"></i> Hủy
             </a>
             <button type="submit" class="btn-custom btn-save">
-                <i class="fas fa-save"></i> Lưu thay đổi
+                <i class="fas fa-check"></i> Tạo gói
             </button>
         </div>
     </form>

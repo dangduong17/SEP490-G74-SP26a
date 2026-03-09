@@ -19,9 +19,13 @@ public partial class Subscription
 
     public DateTime? CreatedAt { get; set; }
 
+    public bool? AutoRenew { get; set; }
+
     public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
 
     public virtual SubscriptionPlan Plan { get; set; } = null!;
 
     public virtual User User { get; set; } = null!;
+
+    public virtual ICollection<SubscriptionPeriod> SubscriptionPeriods { get; set; } = new List<SubscriptionPeriod>();
 }

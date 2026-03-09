@@ -33,6 +33,8 @@ public partial class FindingJobsDbContext : DbContext
 
     public virtual DbSet<Payment> Payments { get; set; }
 
+    public virtual DbSet<PlanFeature> PlanFeatures { get; set; }
+
     public virtual DbSet<Recruiter> Recruiters { get; set; }
 
     public virtual DbSet<Role> Roles { get; set; }
@@ -42,6 +44,10 @@ public partial class FindingJobsDbContext : DbContext
     public virtual DbSet<Subscription> Subscriptions { get; set; }
 
     public virtual DbSet<SubscriptionPlan> SubscriptionPlans { get; set; }
+
+    public virtual DbSet<SubscriptionPeriod> SubscriptionPeriods { get; set; }
+
+    public virtual DbSet<SubscriptionUsage> SubscriptionUsages { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
 
