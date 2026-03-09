@@ -8,6 +8,7 @@ namespace RJMS.Vn.Edu.Fpt.Service
         Task<bool> LogoutAsync();
         Task<(bool Success, string Message)> ForgotPasswordAsync(ForgotPasswordDTO forgotDto);
         Task<(bool Success, string Message)> RegisterAsync(RegisterDTO registerDto);
+        Task<(bool Success, string Message)> RegisterRecruiterAsync(RecruiterRegisterViewModel registerDto);
         Task<(bool Success, string Message)> ConfirmEmailAsync(string token);
     }
 }

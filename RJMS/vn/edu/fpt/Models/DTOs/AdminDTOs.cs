@@ -128,29 +128,11 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
         [MaxLength(20)]
         public string PhoneNumber { get; set; } = string.Empty;
 
-        [MaxLength(1000)]
-        public string? Title { get; set; }
-
         [Required(ErrorMessage = "Ngày sinh là bắt buộc.")]
         public DateTime? DateOfBirth { get; set; }
 
         [Required(ErrorMessage = "Giới tính là bắt buộc.")]
         public string? Gender { get; set; }
-
-        [MaxLength(100)]
-        public string? City { get; set; }
-
-        [MaxLength(100)]
-        public string? District { get; set; }
-
-        [MaxLength(500)]
-        public string? Address { get; set; }
-
-        [MaxLength(1000)]
-        public string? CurrentPosition { get; set; }
-
-        [Range(0, 50, ErrorMessage = "Số năm kinh nghiệm không hợp lệ.")]
-        public int? YearsOfExperience { get; set; }
     }
 
     // ---------- Create Recruiter ----------

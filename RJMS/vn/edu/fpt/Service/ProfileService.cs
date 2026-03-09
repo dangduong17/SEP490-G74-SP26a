@@ -61,5 +61,37 @@ namespace RJMS.Vn.Edu.Fpt.Service
         {
             return await _profileRepository.UpdateRecruiterProfileAsync(userId, model);
         }
+
+        public async Task<RecruiterEditProfileViewModel?> GetRecruiterProfileForEditAsync(int userId)
+        {
+            return await _profileRepository.GetRecruiterProfileForEditAsync(userId);
+        }
+
+        public async Task<bool> UpdateRecruiterProfileNewAsync(int userId, RecruiterEditProfileViewModel model)
+        {
+            return await _profileRepository.UpdateRecruiterProfileNewAsync(userId, model);
+        }
+
+        // ── Candidate Edit Profile ────────────────────────────────────────────
+        public async Task<CandidateEditProfileViewModel?> GetCandidateProfileForEditAsync(int userId)
+        {
+            return await _profileRepository.GetCandidateProfileForEditAsync(userId);
+        }
+
+        public async Task<bool> UpdateCandidateProfileAsync(int userId, CandidateEditProfileViewModel model)
+        {
+            return await _profileRepository.UpdateCandidateProfileAsync(userId, model);
+        }
+
+        // ── Admin Edit Profile ─────────────────────────────────────────────────
+        public async Task<AdminEditProfileViewModel?> GetAdminProfileForEditAsync(int userId)
+        {
+            return await _profileRepository.GetAdminProfileForEditAsync(userId);
+        }
+
+        public async Task<bool> UpdateAdminProfileAsync(int userId, AdminEditProfileViewModel model)
+        {
+            return await _profileRepository.UpdateAdminProfileAsync(userId, model);
+        }
     }
 }

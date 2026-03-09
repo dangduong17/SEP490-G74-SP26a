@@ -30,6 +30,22 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             return null;
         }
 
+        private IActionResult? RequireAdmin()
+        {
+            var role = Request.Cookies["UserRole"];
+            if (role != "Admin")
+                return RedirectToAction("Login", "Auth");
+            return null;
+        }
+
+        private IActionResult? RequireCandidate()
+        {
+            var role = Request.Cookies["UserRole"];
+            if (role != "Candidate")
+                return RedirectToAction("Login", "Auth");
+            return null;
+        }
+
         // ── Candidate: Xem hồ sơ ─────────────────────────────────────────────
         [HttpGet]
         public async Task<IActionResult> PersonalProfile(string? userId)
@@ -154,11 +170,178 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         public IActionResult Info()
         {
             var role = Request.Cookies["UserRole"];
-            if (role == "Recruiter")
-                return RedirectToAction(nameof(EditProfile));
+            var userId = GetCurrentUserId();
 
-            var userId = Request.Cookies["UserId"];
-            return RedirectToAction(nameof(PersonalProfile), new { userId });
+            if (userId == null)
+                return RedirectToAction("Login", "Auth");
+
+            if (role == "Recruiter")
+                return RedirectToAction(nameof(EditProfileNew));
+            if (role == "Admin")
+                return RedirectToAction(nameof(EditAdminProfile));
+            if (role == "Candidate")
+                return RedirectToAction(nameof(EditCandidateProfile));
+
+            return RedirectToAction("Login", "Auth");
+        }
+
+        // ====== CANDIDATE EDIT PROFILE ======
+        [HttpGet]
+        public async Task<IActionResult> EditCandidateProfile()
+        {
+            if (RequireCandidate() is { } redirect) return redirect;
+
+            var userId = GetCurrentUserId();
+            if (userId == null)
+                return RedirectToAction("Login", "Auth");
+
+            var model = await _profileService.GetCandidateProfileForEditAsync(userId.Value)
+                        ?? new CandidateEditProfileViewModel();
+
+            ViewData["Title"] = "Chỉnh sửa hồ sơ cá nhân";
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditCandidateProfile(CandidateEditProfileViewModel model)
+        {
+            if (RequireCandidate() is { } redirect) return redirect;
+
+            var userId = GetCurrentUserId();
+            if (userId == null)
+                return RedirectToAction("Login", "Auth");
+
+            ViewData["Title"] = "Chỉnh sửa hồ sơ cá nhân";
+
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var success = await _profileService.UpdateCandidateProfileAsync(userId.Value, model);
+            if (!success)
+            {
+                ModelState.AddModelError(string.Empty, "Cập nhật thất bại. Vui lòng thử lại.");
+                return View(model);
+            }
+
+            // Đồng bộ cookie
+            var fullName = $"{model.FirstName} {model.LastName}".Trim();
+            Response.Cookies.Append("UserName", fullName, new CookieOptions
+            {
+                HttpOnly = false,
+                Secure = Request.IsHttps,
+                SameSite = SameSiteMode.Lax,
+                Expires = DateTimeOffset.UtcNow.AddDays(30)
+            });
+
+            TempData["SuccessToast"] = "Cập nhật hồ sơ thành công!";
+            return RedirectToAction("CandidateDashboard", "Dashboard");
+        }
+
+        // ====== RECRUITER NEW EDIT PROFILE ======
+        [HttpGet]
+        public async Task<IActionResult> EditProfileNew()
+        {
+            if (RequireRecruiter() is { } redirect) return redirect;
+
+            var userId = GetCurrentUserId();
+            if (userId == null)
+                return RedirectToAction("Login", "Auth");
+
+            var model = await _profileService.GetRecruiterProfileForEditAsync(userId.Value)
+                        ?? new RecruiterEditProfileViewModel();
+
+            ViewData["Title"] = "Chỉnh sửa hồ sơ nhà tuyển dụng";
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditProfileNew(RecruiterEditProfileViewModel model)
+        {
+            if (RequireRecruiter() is { } redirect) return redirect;
+
+            var userId = GetCurrentUserId();
+            if (userId == null)
+                return RedirectToAction("Login", "Auth");
+
+            ViewData["Title"] = "Chỉnh sửa hồ sơ nhà tuyển dụng";
+
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var success = await _profileService.UpdateRecruiterProfileNewAsync(userId.Value, model);
+            if (!success)
+            {
+                ModelState.AddModelError(string.Empty, "Cập nhật thất bại. Vui lòng thử lại.");
+                return View(model);
+            }
+
+            // Đồng bộ cookie
+            var fullName = $"{model.FirstName} {model.LastName}".Trim();
+            Response.Cookies.Append("UserName", fullName, new CookieOptions
+            {
+                HttpOnly = false,
+                Secure = Request.IsHttps,
+                SameSite = SameSiteMode.Lax,
+                Expires = DateTimeOffset.UtcNow.AddDays(30)
+            });
+
+            TempData["SuccessToast"] = "Cập nhật hồ sơ thành công!";
+            return RedirectToAction("RecruiterDashboard", "Recruiter");
+        }
+
+        // ====== ADMIN EDIT PROFILE ======
+        [HttpGet]
+        public async Task<IActionResult> EditAdminProfile()
+        {
+            if (RequireAdmin() is { } redirect) return redirect;
+
+            var userId = GetCurrentUserId();
+            if (userId == null)
+                return RedirectToAction("Login", "Auth");
+
+            var model = await _profileService.GetAdminProfileForEditAsync(userId.Value)
+                        ?? new AdminEditProfileViewModel();
+
+            ViewData["Title"] = "Chỉnh sửa hồ sơ quản trị viên";
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditAdminProfile(AdminEditProfileViewModel model)
+        {
+            if (RequireAdmin() is { } redirect) return redirect;
+
+            var userId = GetCurrentUserId();
+            if (userId == null)
+                return RedirectToAction("Login", "Auth");
+
+            ViewData["Title"] = "Chỉnh sửa hồ sơ quản trị viên";
+
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var success = await _profileService.UpdateAdminProfileAsync(userId.Value, model);
+            if (!success)
+            {
+                ModelState.AddModelError(string.Empty, "Cập nhật thất bại. Vui lòng thử lại.");
+                return View(model);
+            }
+
+            // Đồng bộ cookie
+            var fullName = $"{model.FirstName} {model.LastName}".Trim();
+            Response.Cookies.Append("UserName", fullName, new CookieOptions
+            {
+                HttpOnly = false,
+                Secure = Request.IsHttps,
+                SameSite = SameSiteMode.Lax,
+                Expires = DateTimeOffset.UtcNow.AddDays(30)
+            });
+
+            TempData["SuccessToast"] = "Cập nhật hồ sơ thành công!";
+            return RedirectToAction("Index", "Admin");
         }
     }
 }

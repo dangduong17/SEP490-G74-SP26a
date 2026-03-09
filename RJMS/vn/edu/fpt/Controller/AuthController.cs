@@ -94,15 +94,27 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult RegisterRecruiter(RecruiterRegisterViewModel registerDto)
+        public async Task<IActionResult> RegisterRecruiter(RecruiterRegisterViewModel registerDto)
         {
             if (!ModelState.IsValid)
             {
-                TempData["ErrorToast"] = "Vui lòng kiểm tra lại thông tin đăng ký.";
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+                TempData["ErrorToast"] = $"Vui lòng kiểm tra lại thông tin đăng ký. Chi tiết: {string.Join(", ", errors)}";
                 return View(registerDto);
             }
 
-            TempData["SuccessToast"] = "Đăng ký Nhà tuyển dụng thành công! Vui lòng đăng nhập.";
+            var result = await _authService.RegisterRecruiterAsync(registerDto);
+
+            if (result.Success)
+            {
+                TempData["SuccessToast"] = result.Message;
+            }
+            else
+            {
+                TempData["ErrorToast"] = result.Message;
+                return View(registerDto);
+            }
+
             return RedirectToAction("Login");
         }
 
