@@ -1,0 +1,62 @@
+@{
+    ViewData["Title"] = "Thanh toán thành công";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    .success-container { max-width: 600px; margin: 60px auto; padding: 0 20px; text-align: center; }
+    .success-card { background: #fff; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); padding: 50px 40px; }
+    .success-icon { width: 80px; height: 80px; background: #ecfdf5; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; }
+    .success-icon svg { width: 40px; height: 40px; }
+    .success-title { font-size: 2rem; font-weight: 700; color: #111827; margin: 0 0 12px; }
+    .success-message { font-size: 1.1rem; color: #6b7280; margin: 0 0 32px; line-height: 1.6; }
+    .transaction-info { background: #f9fafb; padding: 20px; border-radius: 12px; margin: 24px 0; text-align: left; }
+    .transaction-info-item { display: flex; justify-content: space-between; padding: 8px 0; }
+    .transaction-info-item label { color: #6b7280; font-size: 0.95rem; }
+    .transaction-info-item .value { color: #111827; font-weight: 600; }
+    .btn-group { display: flex; gap: 12px; justify-content: center; margin-top: 32px; }
+    .btn-primary, .btn-secondary { padding: 12px 24px; border-radius: 10px; font-weight: 600; text-decoration: none; transition: all 0.2s; }
+    .btn-primary { background: #00b14f; color: #fff; }
+    .btn-primary:hover { background: #009744; color: #fff; }
+    .btn-secondary { background: #f3f4f6; color: #374151; }
+    .btn-secondary:hover { background: #e5e7eb; color: #374151; }
+</style>
+
+<div class="success-container">
+    <div class="success-card">
+        <div class="success-icon">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="#00b14f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </div>
+        
+        <h1 class="success-title">Thanh toán thành công!</h1>
+        <p class="success-message">
+            Cảm ơn bạn đã đăng ký gói dịch vụ tại RJMS. Gói của bạn đã được kích hoạt thành công.<br/>
+            Một email xác nhận đã được gửi đến địa chỉ email của bạn.
+        </p>
+
+        @if (!string.IsNullOrEmpty(ViewBag.TransactionId))
+        {
+            <div class="transaction-info">
+                <div class="transaction-info-item">
+                    <label>Mã giao dịch</label>
+                    <span class="value">@ViewBag.TransactionId</span>
+                </div>
+                <div class="transaction-info-item">
+                    <label>Thời gian</label>
+                    <span class="value">@DateTime.Now.ToString("dd/MM/yyyy HH:mm")</span>
+                </div>
+                <div class="transaction-info-item">
+                    <label>Trạng thái</label>
+                    <span class="value" style="color: #00b14f;">Thành công</span>
+                </div>
+            </div>
+        }
+
+        <div class="btn-group">
+            <a asp-controller="Recruiter" asp-action="Dashboard" class="btn-primary">Về trang chủ</a>
+            <a asp-action="SubscriptionPlans" class="btn-secondary">Xem các gói khác</a>
+        </div>
+    </div>
+</div>
