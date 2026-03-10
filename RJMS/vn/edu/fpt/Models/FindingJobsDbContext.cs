@@ -23,6 +23,8 @@ public partial class FindingJobsDbContext : DbContext
 
     public virtual DbSet<Cv> Cvs { get; set; }
 
+    public virtual DbSet<Invoice> Invoices { get; set; }
+
     public virtual DbSet<Job> Jobs { get; set; }
 
     public virtual DbSet<JobCategory> JobCategories { get; set; }
