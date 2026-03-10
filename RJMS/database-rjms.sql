@@ -398,6 +398,38 @@ CREATE TABLE PlanFeatures
 GO
 
 
+/* =====================================================
+CREATE TABLE: Invoices
+===================================================== */
+
+CREATE TABLE Invoices
+(
+    Id INT IDENTITY PRIMARY KEY,
+
+    SubscriptionId INT NOT NULL,
+
+    PaymentId INT NOT NULL,
+
+    InvoiceNumber NVARCHAR(100) NOT NULL,
+
+    Amount DECIMAL(18,2),
+
+    InvoiceDate DATETIME2 DEFAULT GETDATE(),
+
+    DueDate DATETIME2,
+
+    Status NVARCHAR(50) DEFAULT 'PENDING',
+
+    Description NVARCHAR(MAX),
+
+    CreatedAt DATETIME2 DEFAULT GETDATE(),
+
+    FOREIGN KEY (SubscriptionId) REFERENCES Subscriptions(Id),
+
+    FOREIGN KEY (PaymentId) REFERENCES Payments(Id)
+)
+GO
+
 
 /* =====================================================
 CREATE TABLE: SubscriptionPeriods
