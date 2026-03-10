@@ -7,15 +7,17 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
     public class SubscriptionController : Controller
     {
         private readonly ISubscriptionService _subscriptionService;
+        private readonly IPaymentService _paymentService;
 
-        public SubscriptionController(ISubscriptionService subscriptionService)
+        public SubscriptionController(ISubscriptionService subscriptionService, IPaymentService paymentService)
         {
             _subscriptionService = subscriptionService;
+            _paymentService = paymentService;
         }
 
         // ── Subscription Plans Page for Recruiter (GET /Subscription or /Subscription/Index) ──
         [HttpGet]
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
             // Check if user is logged in and is recruiter
             var userRole = HttpContext.Request.Cookies["UserRole"];
@@ -32,8 +34,11 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                 return RedirectToAction("Index", "Home");
             }
 
+            // Get active subscription plans with features
+            var plans = await _paymentService.GetActiveSubscriptionPlansAsync();
+            
             ViewData["Title"] = "Chọn gói dịch vụ";
-            return View();
+            return View(plans);
         }
 
         // ── Auth guard ────────────────────────────────────────────────────────
