@@ -263,8 +263,23 @@
 
             <div class="form-row cols-2">
                 <div>
+                    <label class="form-label-custom">Tiêu đề / Vị trí mong muốn</label>
+                    <input asp-for="CandidateTitle" class="form-control-custom" placeholder="VD: Full-stack Developer" />
+                    <span asp-validation-for="CandidateTitle" class="text-danger"></span>
+                </div>
+
+                <div>
+                    <label class="form-label-custom">Thành phố</label>
+                    <input asp-for="CandidateCity" class="form-control-custom" placeholder="VD: Hà Nội" />
+                    <span asp-validation-for="CandidateCity" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="form-row cols-2">
+                <div>
                     <label class="form-label-custom">Ngày sinh</label>
                     <input asp-for="CandidateDateOfBirth" class="form-control-custom" type="date" />
+                    <span asp-validation-for="CandidateDateOfBirth" class="text-danger"></span>
                 </div>
 
                 <div>
@@ -275,6 +290,56 @@
                         <option value="Female">Nữ</option>
                         <option value="Other">Khác</option>
                     </select>
+                    <span asp-validation-for="CandidateGender" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div>
+                    <label class="form-label-custom">Địa chỉ</label>
+                    <input asp-for="CandidateAddress" class="form-control-custom" placeholder="Nhập địa chỉ chi tiết" />
+                    <span asp-validation-for="CandidateAddress" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="form-row cols-2">
+                <div>
+                    <label class="form-label-custom">Mức lương hiện tại (VNĐ)</label>
+                    <input asp-for="CandidateCurrentSalary" class="form-control-custom" type="number" step="100000" placeholder="VD: 15000000" />
+                    <span asp-validation-for="CandidateCurrentSalary" class="text-danger"></span>
+                </div>
+
+                <div>
+                    <label class="form-label-custom">Mức lương mong muốn (VNĐ)</label>
+                    <input asp-for="CandidateExpectedSalary" class="form-control-custom" type="number" step="100000" placeholder="VD: 20000000" />
+                    <span asp-validation-for="CandidateExpectedSalary" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="form-row cols-2">
+                <div>
+                    <label class="form-label-custom">Số năm kinh nghiệm</label>
+                    <input asp-for="CandidateYearsOfExperience" class="form-control-custom" type="number" min="0" max="50" placeholder="VD: 3" />
+                    <span asp-validation-for="CandidateYearsOfExperience" class="text-danger"></span>
+                </div>
+
+                <div>
+                    <label class="form-label-custom">Tình trạng tìm việc</label>
+                    <div class="form-check-custom">
+                        <input asp-for="CandidateIsLookingForJob" type="checkbox" id="chkLookingForJob" />
+                        <label for="chkLookingForJob">
+                            <strong>Đang tìm việc</strong>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div>
+                    <label class="form-label-custom">Giới thiệu bản thân</label>
+                    <textarea asp-for="CandidateSummary" class="form-control-custom" rows="4" 
+                              placeholder="Mô tả ngắn về bản thân, kinh nghiệm làm việc, kỹ năng..."></textarea>
+                    <span asp-validation-for="CandidateSummary" class="text-danger"></span>
                 </div>
             </div>
         </div>
@@ -289,6 +354,15 @@
                 <div>
                     <label class="form-label-custom">Vị trí công việc</label>
                     <input asp-for="RecruiterPosition" class="form-control-custom" placeholder="VD: HR Manager" />
+                    <span asp-validation-for="RecruiterPosition" class="text-danger"></span>
+                </div>
+
+                <div>
+                    <label class="form-label-custom">Công ty</label>
+                    <select asp-for="RecruiterCompanyId" asp-items="Model.Companies" class="form-select-custom">
+                        <option value="">-- Chọn công ty --</option>
+                    </select>
+                    <span asp-validation-for="RecruiterCompanyId" class="text-danger"></span>
                 </div>
             </div>
         </div>
