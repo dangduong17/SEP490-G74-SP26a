@@ -40,9 +40,10 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                 var role = Request.Cookies["UserRole"];
                 return role switch
                 {
-                    "Admin"     => RedirectToAction("Index",              "Admin"),
+                    "Admin"     => RedirectToAction("Index",     "Admin"),
+                    "Candidate" => RedirectToAction("Candidate", "Dashboard"),
                     "Recruiter" => RedirectToAction("RecruiterDashboard", "Recruiter"),
-                    _           => RedirectToAction("Index",              "Home"),
+                    _           => RedirectToAction("Index",     "Home"),
                 };
             }
 
