@@ -173,5 +173,192 @@ namespace RJMS.Vn.Edu.Fpt.Repository
         {
             return _db.SaveChangesAsync();
         }
+
+        // ── Skills ────────────────────────────────────────────────────────────
+
+        public async Task<(int total, List<Skill> items)> GetSkillsPagedAsync(string? keyword, string? category, int page, int pageSize)
+        {
+            var query = _db.Skills
+                .Include(s => s.JobSkills)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                var key = keyword.Trim().ToLower();
+                query = query.Where(s => s.Name.ToLower().Contains(key));
+            }
+
+            if (!string.IsNullOrWhiteSpace(category))
+            {
+                query = query.Where(s => s.Category == category);
+            }
+
+            var total = await query.CountAsync();
+            var items = await query
+                .OrderBy(s => s.Name)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (total, items);
+        }
+
+        public async Task<List<string>> GetSkillCategoriesAsync()
+        {
+            return await _db.Skills
+                .Where(s => s.Category != null)
+                .Select(s => s.Category!)
+                .Distinct()
+                .OrderBy(c => c)
+                .ToListAsync();
+        }
+
+        public Task<Skill?> GetSkillByIdAsync(int id)
+        {
+            return _db.Skills.FirstOrDefaultAsync(s => s.Id == id);
+        }
+
+        public Task<bool> SkillNameExistsAsync(string name, int? excludeId = null)
+        {
+            return excludeId.HasValue
+                ? _db.Skills.AnyAsync(s => s.Name == name && s.Id != excludeId.Value)
+                : _db.Skills.AnyAsync(s => s.Name == name);
+        }
+
+        public async Task AddSkillAsync(Skill skill)
+        {
+            _db.Skills.Add(skill);
+            await _db.SaveChangesAsync();
+        }
+
+        public async Task UpdateSkillAsync(Skill skill)
+        {
+            _db.Skills.Update(skill);
+            await _db.SaveChangesAsync();
+        }
+
+        public async Task DeleteSkillAsync(Skill skill)
+        {
+            _db.Skills.Remove(skill);
+            await _db.SaveChangesAsync();
+        }
+
+        // ── Companies ─────────────────────────────────────────────────────────
+
+        public async Task<List<Company>> GetAllCompaniesAsync()
+        {
+            return await _db.Companies
+                .Where(c => c.IsVerified == true)
+                .OrderBy(c => c.Name)
+                .ToListAsync();
+        }
+
+        public async Task<(int total, List<Company> items)> GetCompaniesPagedAsync(string? keyword, string? industry, string? verificationStatus, int page, int pageSize)
+        {
+            var query = _db.Companies
+                .Include(c => c.Recruiters)
+                .Include(c => c.Jobs)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                var key = keyword.Trim().ToLower();
+                query = query.Where(c =>
+                    (c.Name != null && c.Name.ToLower().Contains(key)) ||
+                    (c.TaxCode != null && c.TaxCode.ToLower().Contains(key)) ||
+                    (c.Email != null && c.Email.ToLower().Contains(key)));
+            }
+
+            if (!string.IsNullOrWhiteSpace(industry))
+            {
+                query = query.Where(c => c.Industry == industry);
+            }
+
+            if (!string.IsNullOrWhiteSpace(verificationStatus))
+            {
+                bool isVerified = verificationStatus.Equals("verified", StringComparison.OrdinalIgnoreCase);
+                query = isVerified
+                    ? query.Where(c => c.IsVerified == true)
+                    : query.Where(c => c.IsVerified != true);
+            }
+
+            var total = await query.CountAsync();
+            var items = await query
+                .OrderByDescending(c => c.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (total, items);
+        }
+
+        public Task<Company?> GetCompanyByIdWithDetailsAsync(int id)
+        {
+            return _db.Companies
+                .Include(c => c.Recruiters).ThenInclude(r => r.User)
+                .Include(c => c.Jobs)
+                .FirstOrDefaultAsync(c => c.Id == id);
+        }
+
+        public async Task UpdateCompanyAsync(Company company)
+        {
+            _db.Companies.Update(company);
+            await _db.SaveChangesAsync();
+        }
+
+        // ── Subscriptions ─────────────────────────────────────────────────────
+
+        public async Task<(int total, List<Subscription> items)> GetSubscriptionsPagedAsync(string? keyword, string? status, int? planId, int page, int pageSize)
+        {
+            var query = _db.Subscriptions
+                .Include(s => s.User).ThenInclude(u => u.UserRoles).ThenInclude(ur => ur.Role)
+                .Include(s => s.Plan)
+                .Include(s => s.Payments)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                var key = keyword.Trim().ToLower();
+                query = query.Where(s =>
+                    (s.User.Email != null && s.User.Email.ToLower().Contains(key)) ||
+                    ((s.User.FirstName + " " + s.User.LastName).ToLower().Contains(key)));
+            }
+
+            if (!string.IsNullOrWhiteSpace(status))
+            {
+                query = query.Where(s => s.Status == status);
+            }
+
+            if (planId.HasValue)
+            {
+                query = query.Where(s => s.PlanId == planId.Value);
+            }
+
+            var total = await query.CountAsync();
+            var items = await query
+                .OrderByDescending(s => s.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (total, items);
+        }
+
+        public Task<Subscription?> GetSubscriptionByIdWithDetailsAsync(int id)
+        {
+            return _db.Subscriptions
+                .Include(s => s.User).ThenInclude(u => u.UserRoles).ThenInclude(ur => ur.Role)
+                .Include(s => s.Plan)
+                .Include(s => s.Payments)
+                .FirstOrDefaultAsync(s => s.Id == id);
+        }
+
+        public async Task<List<SubscriptionPlan>> GetActiveSubscriptionPlansAsync()
+        {
+            return await _db.SubscriptionPlans
+                .Where(p => p.IsActive == true)
+                .OrderBy(p => p.Price)
+                .ToListAsync();
+        }
     }
 }

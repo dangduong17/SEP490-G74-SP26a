@@ -32,5 +32,25 @@ namespace RJMS.Vn.Edu.Fpt.Repository
         Task<bool> CompanyTaxCodeExistsAsync(string taxCode);
         Task AddCompanyAsync(Company company);
         Task<int> SaveChangesAsync();
+
+        // Skills
+        Task<(int total, List<Skill> items)> GetSkillsPagedAsync(string? keyword, string? category, int page, int pageSize);
+        Task<List<string>> GetSkillCategoriesAsync();
+        Task<Skill?> GetSkillByIdAsync(int id);
+        Task<bool> SkillNameExistsAsync(string name, int? excludeId = null);
+        Task AddSkillAsync(Skill skill);
+        Task UpdateSkillAsync(Skill skill);
+        Task DeleteSkillAsync(Skill skill);
+
+        // Companies
+        Task<List<Company>> GetAllCompaniesAsync();
+        Task<(int total, List<Company> items)> GetCompaniesPagedAsync(string? keyword, string? industry, string? verificationStatus, int page, int pageSize);
+        Task<Company?> GetCompanyByIdWithDetailsAsync(int id);
+        Task UpdateCompanyAsync(Company company);
+
+        // Subscriptions
+        Task<(int total, List<Subscription> items)> GetSubscriptionsPagedAsync(string? keyword, string? status, int? planId, int page, int pageSize);
+        Task<Subscription?> GetSubscriptionByIdWithDetailsAsync(int id);
+        Task<List<SubscriptionPlan>> GetActiveSubscriptionPlansAsync();
     }
 }
