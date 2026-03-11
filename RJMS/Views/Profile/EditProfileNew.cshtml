@@ -90,6 +90,46 @@
         border-color: #ef4444;
     }
 
+    .form-select-custom {
+        font-size: 0.875rem;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        padding: 10px 14px;
+        padding-right: 36px;
+        transition: border-color 0.15s, box-shadow 0.15s;
+        width: 100%;
+        cursor: pointer;
+        background-color: #fff;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23374151' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 10px center;
+        background-size: 16px 12px;
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+    }
+
+    .form-select-custom:focus {
+        border-color: #00b14f;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(0, 177, 79, 0.1);
+    }
+
+    .form-select-custom:disabled {
+        background-color: #f3f4f6;
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+
+    .form-select-custom option {
+        padding: 8px;
+    }
+
+    textarea.form-control-custom {
+        resize: vertical;
+        min-height: 100px;
+    }
+
     .text-danger {
         font-size: 0.8rem;
         color: #ef4444;
@@ -219,8 +259,9 @@
                 <div>
                     <label class="form-label-custom">
                         Email <span class="required">*</span>
+                        <span style="font-weight: 400; color: #9ca3af; font-size: 0.8rem; margin-left: 8px;">(Không thể thay đổi)</span>
                     </label>
-                    <input asp-for="Email" type="email" class="form-control-custom" placeholder="recruiter@example.com" />
+                    <input asp-for="Email" type="email" class="form-control-custom" placeholder="recruiter@example.com" readonly style="background-color: #f9fafb; cursor: not-allowed;" />
                     <span asp-validation-for="Email" class="text-danger"></span>
                 </div>
             </div>
@@ -272,17 +313,130 @@
             </div>
 
             <!-- Thông tin công ty -->
-            @if (!string.IsNullOrEmpty(Model.CompanyName))
-            {
-                <div class="section-title" style="margin-top: 32px;">
-                    <i class="fas fa-building"></i> Thông tin công ty
+            <div class="section-title" style="margin-top: 32px;">
+                <i class="fas fa-building"></i> Thông tin công ty
+            </div>
+
+            <div class="form-row">
+                <div>
+                    <label class="form-label-custom">
+                        Tên công ty <span class="required">*</span>
+                    </label>
+                    <input asp-for="CompanyName" type="text" class="form-control-custom" placeholder="Tên công ty" />
+                    <span asp-validation-for="CompanyName" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="form-row cols-2">
+                <div>
+                    <label class="form-label-custom">
+                        Mã số thuế
+                    </label>
+                    <input asp-for="CompanyTaxCode" type="text" class="form-control-custom" placeholder="0123456789" />
+                    <span asp-validation-for="CompanyTaxCode" class="text-danger"></span>
                 </div>
 
-                <div class="company-info-box">
-                    <p><strong>Công ty:</strong> @Model.CompanyName</p>
-                    <p style="margin:0;"><i class="fas fa-info-circle" style="color:#6b7280;"></i> Để thay đổi thông tin công ty, vui lòng liên hệ quản trị viên.</p>
+                <div>
+                    <label class="form-label-custom">
+                        Quy mô công ty
+                    </label>
+                    <select asp-for="CompanySize" class="form-select-custom">
+                        <option value="">-- Chọn quy mô --</option>
+                        <option value="1-10">1-10</option>
+                        <option value="11-50">11-50</option>
+                        <option value="51-200">51-200</option>
+                        <option value="201-500">201-500</option>
+                        <option value="501-1000">501-1000</option>
+                        <option value="1000+">1000+</option>
+                    </select>
+                    <span asp-validation-for="CompanySize" class="text-danger"></span>
                 </div>
-            }
+            </div>
+
+            <div class="form-row cols-2">
+                <div>
+                    <label class="form-label-custom">
+                        Lĩnh vực
+                    </label>
+                    <input asp-for="CompanyIndustry" type="text" class="form-control-custom" placeholder="Công nghệ thông tin" />
+                    <span asp-validation-for="CompanyIndustry" class="text-danger"></span>
+                </div>
+
+                <div>
+                    <label class="form-label-custom">
+                        Website
+                    </label>
+                    <input asp-for="CompanyWebsite" type="url" class="form-control-custom" placeholder="https://company.com" />
+                    <span asp-validation-for="CompanyWebsite" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="form-row cols-2">
+                <div>
+                    <label class="form-label-custom">
+                        Email công ty
+                    </label>
+                    <input asp-for="CompanyEmail" type="email" class="form-control-custom" placeholder="hr@company.com" />
+                    <span asp-validation-for="CompanyEmail" class="text-danger"></span>
+                </div>
+
+                <div>
+                    <label class="form-label-custom">
+                        SĐT công ty
+                    </label>
+                    <input asp-for="CompanyPhone" type="tel" class="form-control-custom" placeholder="028 1234 5678" />
+                    <span asp-validation-for="CompanyPhone" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div>
+                    <label class="form-label-custom">
+                        Mô tả công ty
+                    </label>
+                    <textarea asp-for="CompanyDescription" class="form-control-custom" rows="4" placeholder="Giới thiệu ngắn về công ty..."></textarea>
+                    <span asp-validation-for="CompanyDescription" class="text-danger"></span>
+                </div>
+            </div>
+
+            <!-- Địa chỉ làm việc -->
+            <div class="section-title" style="margin-top: 32px;">
+                <i class="fas fa-map-marker-alt"></i> Địa chỉ làm việc
+            </div>
+
+            <div class="form-row cols-2">
+                <div>
+                    <label class="form-label-custom">
+                        Tỉnh/Thành phố
+                    </label>
+                    <select id="provinceSelect" class="form-select-custom">
+                        <option value="">-- Chọn tỉnh/thành phố --</option>
+                    </select>
+                    <input asp-for="ProvinceCode" type="hidden" id="provinceCodeInput" />
+                    <input asp-for="ProvinceName" type="hidden" id="provinceNameInput" />
+                </div>
+
+                <div>
+                    <label class="form-label-custom">
+                        Phường/Xã
+                    </label>
+                    <select id="wardSelect" class="form-select-custom" disabled>
+                        <option value="">-- Chọn phường/xã --</option>
+                    </select>
+                    <input asp-for="WardCode" type="hidden" id="wardCodeInput" />
+                    <input asp-for="WardName" type="hidden" id="wardNameInput" />
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div>
+                    <label class="form-label-custom">
+                        Địa chỉ chi tiết
+                    </label>
+                    <input asp-for="WorkAddress" type="text" class="form-control-custom" placeholder="Tầng 5, Tòa nhà ABC, số 12..." />
+                    <span asp-validation-for="WorkAddress" class="text-danger"></span>
+                </div>
+            </div>
 
             <div class="form-actions">
                 <a asp-action="RecruiterDashboard" asp-controller="Recruiter" class="btn-custom btn-cancel">
@@ -298,4 +452,125 @@
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+    <script>
+        (function() {
+            var provinceSelect = document.getElementById('provinceSelect');
+            var wardSelect = document.getElementById('wardSelect');
+            var provinceCodeInput = document.getElementById('provinceCodeInput');
+            var provinceNameInput = document.getElementById('provinceNameInput');
+            var wardCodeInput = document.getElementById('wardCodeInput');
+            var wardNameInput = document.getElementById('wardNameInput');
+
+            if (!provinceSelect || !wardSelect) return;
+
+            // Load provinces on page load
+            async function loadProvinces() {
+                try {
+                    provinceSelect.innerHTML = '<option value="">Đang tải...</option>';
+                    var res = await fetch('https://provinces.open-api.vn/api/v2/p/');
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    var list = await res.json();
+                    
+                    provinceSelect.innerHTML = '<option value="">-- Chọn tỉnh/thành phố --</option>';
+                    if (!Array.isArray(list) || list.length === 0) {
+                        provinceSelect.innerHTML = '<option value="">Không có dữ liệu</option>';
+                        return;
+                    }
+                    
+                    list.forEach(function(p) {
+                        var opt = document.createElement('option');
+                        opt.value = p.code;
+                        opt.textContent = p.name;
+                        provinceSelect.appendChild(opt);
+                    });
+
+                    // Pre-select if ProvinceCode exists
+                    var currentProvinceCode = provinceCodeInput.value;
+                    if (currentProvinceCode) {
+                        provinceSelect.value = currentProvinceCode;
+                        await loadWards(currentProvinceCode);
+                        
+                        // Pre-select ward if exists
+                        var currentWardCode = wardCodeInput.value;
+                        if (currentWardCode) {
+                            wardSelect.value = currentWardCode;
+                        }
+                    }
+                } catch (err) {
+                    console.error('Load provinces error:', err);
+                    provinceSelect.innerHTML = '<option value="">Lỗi tải dữ liệu</option>';
+                }
+            }
+
+            async function loadWards(provinceCode) {
+                wardSelect.innerHTML = '<option value="">-- Chọn phường/xã --</option>';
+                wardSelect.disabled = true;
+                
+                if (!provinceCode) {
+                    wardCodeInput.value = '';
+                    wardNameInput.value = '';
+                    return;
+                }
+
+                try {
+                    wardSelect.innerHTML = '<option value="">Đang tải...</option>';
+                    
+                    var res = await fetch('https://provinces.open-api.vn/api/v2/w/?province=' + provinceCode);
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    
+                    var list = await res.json();
+                    
+                    wardSelect.innerHTML = '<option value="">-- Chọn phường/xã --</option>';
+                    if (!Array.isArray(list) || list.length === 0) {
+                        wardSelect.innerHTML = '<option value="">Không có dữ liệu</option>';
+                        return;
+                    }
+                    
+                    list.sort(function(a, b) {
+                        return a.name.localeCompare(b.name, 'vi');
+                    });
+                    
+                    list.forEach(function(w) {
+                        var opt = document.createElement('option');
+                        opt.value = w.code;
+                        opt.textContent = w.name;
+                        wardSelect.appendChild(opt);
+                    });
+                    
+                    wardSelect.disabled = false;
+                } catch (err) {
+                    console.error('Fatal error loading wards:', err);
+                    wardSelect.innerHTML = '<option value="">Lỗi tải dữ liệu</option>';
+                }
+            }
+
+            // Event listeners
+            provinceSelect.addEventListener('change', function() {
+                var selectedOption = provinceSelect.options[provinceSelect.selectedIndex];
+                var selectedValue = selectedOption.value || '';
+                var selectedText = (selectedValue && selectedOption.text !== '-- Chọn tỉnh/thành phố --') ? selectedOption.text : '';
+                
+                provinceCodeInput.value = selectedValue;
+                provinceNameInput.value = selectedText;
+                
+                console.log('Province selected:', selectedValue, selectedText);
+                loadWards(selectedValue);
+            });
+
+            wardSelect.addEventListener('change', function() {
+                var selectedOption = wardSelect.options[wardSelect.selectedIndex];
+                var selectedValue = selectedOption.value || '';
+                var selectedText = (selectedValue && selectedOption.text !== '-- Chọn phường/xã --') ? selectedOption.text : '';
+                
+                wardCodeInput.value = selectedValue;
+                wardNameInput.value = selectedText;
+                
+                console.log('Ward selected:', selectedValue, selectedText);
+            });
+
+            // Initialize
+            loadProvinces();
+        })();
+    </script>
 }
