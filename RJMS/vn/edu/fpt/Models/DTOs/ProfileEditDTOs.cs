@@ -35,8 +35,7 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
         public int UserId { get; set; }
         public int CandidateId { get; set; }
 
-        [Required(ErrorMessage = "Email là bắt buộc.")]
-        [EmailAddress(ErrorMessage = "Email không đúng định dạng.")]
+        // Email is readonly in UI, no validation needed
         public string Email { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Họ là bắt buộc.")]
@@ -97,8 +96,7 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
         public int RecruiterId { get; set; }
         public int? CompanyId { get; set; }
 
-        [Required(ErrorMessage = "Email là bắt buộc.")]
-        [EmailAddress(ErrorMessage = "Email không đúng định dạng.")]
+        // Email is readonly in UI, no validation needed
         public string Email { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Họ là bắt buộc.")]
@@ -123,9 +121,42 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
 
         public string? Avatar { get; set; }
 
-        // Company info (read-only or editable depending on requirements)
+        // Company info - now editable
+        [Required(ErrorMessage = "Tên công ty là bắt buộc.")]
         [MaxLength(255)]
-        public string? CompanyName { get; set; }
+        public string CompanyName { get; set; } = string.Empty;
+
+        [MaxLength(100)]
+        public string? CompanyTaxCode { get; set; }
+
+        [MaxLength(50)]
+        public string? CompanySize { get; set; }
+
+        [MaxLength(200)]
+        public string? CompanyIndustry { get; set; }
+
+        [MaxLength(500)]
+        [Url(ErrorMessage = "URL website không hợp lệ")]
+        public string? CompanyWebsite { get; set; }
+
+        [EmailAddress(ErrorMessage = "Email công ty không hợp lệ")]
+        [MaxLength(100)]
+        public string? CompanyEmail { get; set; }
+
+        [Phone]
+        [MaxLength(20)]
+        public string? CompanyPhone { get; set; }
+
+        public string? CompanyDescription { get; set; }
+
+        // Location fields
+        public int? ProvinceCode { get; set; }
+        public string? ProvinceName { get; set; }
+        public int? WardCode { get; set; }
+        public string? WardName { get; set; }
+        
+        [MaxLength(500)]
+        public string? WorkAddress { get; set; }
 
         public bool IsVerified { get; set; }
     }

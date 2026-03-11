@@ -175,22 +175,34 @@
         <!-- Sidebar -->
         <aside class="admin-sidebar">
             <div class="admin-sidebar-logo">
-                <i class="fas fa-shield-alt me-2 text-success"></i>Admin Panel
+                Admin Panel
             </div>
             <nav class="nav flex-column pt-1">
                 <span class="nav-section">Tổng quan</span>
                 <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Index" ? "active" : "")"
                    asp-controller="Admin" asp-action="Index">
-                    <i class="fas fa-chart-pie fa-sm"></i> Bảng điều khiển
+                    Bảng điều khiển
                 </a>
                 <span class="nav-section">Quản lý</span>
                 <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() is "UserList" or "EditUser" or "CreateAdmin" or "CreateCandidate" or "CreateRecruiter" ? "active" : "")"
                    asp-controller="Admin" asp-action="UserList">
-                    <i class="fas fa-users fa-sm"></i> Người dùng
+                    Người dùng
+                </a>
+                <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() is "SkillList" or "CreateSkill" or "EditSkill" ? "active" : "")"
+                   asp-controller="Admin" asp-action="SkillList">
+                    Kỹ năng
+                </a>
+                <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() is "CompanyList" or "CompanyDetail" ? "active" : "")"
+                   asp-controller="Admin" asp-action="CompanyList">
+                    Công ty
+                </a>
+                <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() is "SubscriptionList" or "SubscriptionDetail" ? "active" : "")"
+                   asp-controller="Admin" asp-action="SubscriptionList">
+                    Danh sách sử dụng gói dịch vụ
                 </a>
                 <a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Subscription" ? "active" : "")"
                    asp-controller="Subscription" asp-action="ManageSubscription">
-                    <i class="fas fa-credit-card fa-sm"></i> Gói đăng ký
+                    Quản lí gói Dịch vụ
                 </a>
             </nav>
         </aside>
@@ -205,6 +217,13 @@
             {
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
                     @TempData["Success"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    @TempData["Error"]
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             }

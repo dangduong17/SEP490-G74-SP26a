@@ -77,7 +77,6 @@ namespace RJMS.Vn.Edu.Fpt.Model.DTOs
         [MaxLength(500)]
         public string? WorkAddress { get; set; }
 
-        [Range(typeof(bool), "true", "true", ErrorMessage = "Bạn phải đồng ý với điều khoản dịch vụ")]
         public bool AgreeTerms { get; set; }
     }
 }

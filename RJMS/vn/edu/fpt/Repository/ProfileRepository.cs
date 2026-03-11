@@ -192,11 +192,11 @@ namespace RJMS.Vn.Edu.Fpt.Repository
 
         public async Task<bool> UpdateCandidateProfileAsync(int userId, CandidateEditProfileViewModel model)
         {
-            // 1. Update User
+            // 1. Update User (but not email)
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
             if (user == null) return false;
 
-            user.Email = model.Email;
+            // Don't update email - it's readonly
             user.FirstName = model.FirstName;
             user.LastName = model.LastName;
             user.Phone = model.PhoneNumber;
@@ -247,19 +247,33 @@ namespace RJMS.Vn.Edu.Fpt.Repository
                 LastName = user?.LastName ?? string.Empty,
                 PhoneNumber = recruiter.Phone ?? string.Empty,
                 Position = recruiter.Position ?? string.Empty,
+                Department = null, // Not stored in current schema
                 Avatar = recruiter.Avatar,
-                CompanyName = company?.Name,
+                // Company fields
+                CompanyName = company?.Name ?? string.Empty,
+                CompanyTaxCode = company?.TaxCode,
+                CompanySize = company?.CompanySize,
+                CompanyIndustry = company?.Industry,
+                CompanyWebsite = company?.Website,
+                CompanyEmail = company?.Email,
+                CompanyPhone = company?.Phone,
+                CompanyDescription = company?.Description,
+                ProvinceCode = company?.ProvinceCode,
+                ProvinceName = company?.ProvinceName,
+                WardCode = company?.WardCode,
+                WardName = company?.WardName,
+                WorkAddress = company?.Address,
                 IsVerified = recruiter.IsVerified ?? false
             };
         }
 
         public async Task<bool> UpdateRecruiterProfileNewAsync(int userId, RecruiterEditProfileViewModel model)
         {
-            // 1. Update User
+            // 1. Update User (but not email)
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
             if (user == null) return false;
 
-            user.Email = model.Email;
+            // Don't update email - it's readonly
             user.FirstName = model.FirstName;
             user.LastName = model.LastName;
             user.Phone = model.PhoneNumber;
@@ -272,6 +286,29 @@ namespace RJMS.Vn.Edu.Fpt.Repository
             recruiter.FullName = $"{model.FirstName} {model.LastName}".Trim();
             recruiter.Phone = model.PhoneNumber;
             recruiter.Position = model.Position;
+
+            // 3. Update Company
+            if (model.CompanyId.HasValue)
+            {
+                var company = await _context.Companies.FirstOrDefaultAsync(c => c.Id == model.CompanyId.Value);
+                if (company != null)
+                {
+                    company.Name = model.CompanyName;
+                    company.TaxCode = model.CompanyTaxCode;
+                    company.CompanySize = model.CompanySize;
+                    company.Industry = model.CompanyIndustry;
+                    company.Website = model.CompanyWebsite;
+                    company.Email = model.CompanyEmail;
+                    company.Phone = model.CompanyPhone ?? model.PhoneNumber;
+                    company.Description = model.CompanyDescription;
+                    company.ProvinceCode = model.ProvinceCode;
+                    company.ProvinceName = model.ProvinceName;
+                    company.WardCode = model.WardCode;
+                    company.WardName = model.WardName;
+                    company.Address = model.WorkAddress;
+                    company.UpdatedAt = DateTimeHelper.NowVietnam;
+                }
+            }
 
             await _context.SaveChangesAsync();
             return true;
