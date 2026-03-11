@@ -81,11 +81,16 @@ namespace RJMS.Vn.Edu.Fpt.Service
                     if (context != null)
                     {
                         var userRole = await _authRepository.GetUserRoleAsync(user.Id);
+                        
+                        // Debug logging
+                        Console.WriteLine($"[LOGIN] Email: {user.Email}, UserId: {user.Id}, Role: {userRole}");
 
                         context.Response.Cookies.Append("UserId", user.Id.ToString(), cookieOptions);
                         context.Response.Cookies.Append("UserEmail", user.Email ?? "", cookieOptions);
                         context.Response.Cookies.Append("UserName", user.FirstName ?? "", cookieOptions);
                         context.Response.Cookies.Append("UserRole", userRole, cookieOptions);
+                        
+                        Console.WriteLine($"[LOGIN] Cookies set - Role cookie value: {userRole}");
                     }
                 }
 
@@ -297,6 +302,8 @@ namespace RJMS.Vn.Edu.Fpt.Service
 
                 // Assign Recruiter role
                 var recruiterRole = await _adminRepository.GetRoleByNameAsync("Recruiter");
+                Console.WriteLine($"[REGISTER] RecruiterRole found: {recruiterRole != null}, RoleId: {recruiterRole?.Id}");
+                
                 if (recruiterRole != null)
                 {
                     await _adminRepository.AddUserRoleAsync(new UserRole
@@ -305,6 +312,11 @@ namespace RJMS.Vn.Edu.Fpt.Service
                         RoleId = recruiterRole.Id,
                         AssignedAt = DateTimeHelper.NowVietnam
                     });
+                    Console.WriteLine($"[REGISTER] UserRole added for UserId: {created.Id}, RoleId: {recruiterRole.Id}");
+                }
+                else
+                {
+                    Console.WriteLine($"[REGISTER ERROR] Recruiter role not found in database!");
                 }
 
                 // Create company
@@ -318,6 +330,11 @@ namespace RJMS.Vn.Edu.Fpt.Service
                     Email = registerDto.CompanyEmail,
                     Phone = registerDto.CompanyPhone ?? registerDto.PhoneNumber,
                     Description = registerDto.CompanyDescription,
+                    ProvinceCode = registerDto.ProvinceCode,
+                    ProvinceName = registerDto.ProvinceName,
+                    WardCode = registerDto.WardCode,
+                    WardName = registerDto.WardName,
+                    Address = registerDto.WorkAddress,
                     IsVerified = false, // New registrations need verification
                     CreatedAt = DateTimeHelper.NowVietnam,
                     UpdatedAt = DateTimeHelper.NowVietnam

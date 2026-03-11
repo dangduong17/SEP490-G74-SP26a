@@ -431,6 +431,7 @@ CREATE TABLE Invoices
 GO
 
 
+
 /* =====================================================
 CREATE TABLE: SubscriptionPeriods
 ===================================================== */
@@ -472,3 +473,10 @@ CREATE TABLE SubscriptionUsage
     FOREIGN KEY (PeriodId) REFERENCES SubscriptionPeriods(Id)
 )
 GO
+
+ALTER TABLE Companies 
+ADD ProvinceCode INT NULL,
+    ProvinceName NVARCHAR(100) NULL,
+    WardCode INT NULL,
+    WardName NVARCHAR(100) NULL,
+    Address NVARCHAR(500) NULL;

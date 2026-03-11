@@ -7,6 +7,9 @@ using RJMS.Vn.Edu.Fpt.Service;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configure to run on port 5000 (HTTP) and 5001 (HTTPS)
+builder.WebHost.UseUrls("https://localhost:5000", "https://localhost:5001");
+
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 builder.Services.AddDbContext<FindingJobsDbContext>(options =>
