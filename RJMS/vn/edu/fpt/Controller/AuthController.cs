@@ -96,6 +96,11 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RegisterRecruiter(RecruiterRegisterViewModel registerDto)
         {
+            if (!registerDto.AgreeTerms)
+            {
+                ModelState.AddModelError("AgreeTerms", "Bạn phải đồng ý với điều khoản dịch vụ");
+            }
+
             if (!ModelState.IsValid)
             {
                 var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
