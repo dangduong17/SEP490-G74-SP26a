@@ -8,5 +8,6 @@ namespace RJMS.Vn.Edu.Fpt.Service
         Task<SubscriptionPlan?> GetSubscriptionPlanByIdAsync(int planId);
         Task<(int SubscriptionId, int PaymentId, string PaymentUrl)> CreatePaymentAsync(int userId, int planId, string ipAddress);
         Task<bool> ProcessPaymentSuccessAsync(int paymentId, string transactionId);
+        Task<bool> ProcessPaymentFailureAsync(int paymentId, string transactionId);
     }
 }

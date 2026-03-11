@@ -145,7 +145,7 @@
 <div class="profile-container">
     <div class="profile-card">
         <div class="profile-header">
-            <h1><i class="fas fa-user-shield" style="color:#00b14f;"></i> Chỉnh sửa hồ sơ</h1>
+            <h1>Chỉnh sửa hồ sơ</h1>
             <p>Cập nhật thông tin cá nhân của bạn</p>
         </div>
 
@@ -158,8 +158,9 @@
                     <label class="form-label-custom">
                         Email <span class="required">*</span>
                     </label>
-                    <input asp-for="Email" type="email" class="form-control-custom" placeholder="admin@example.com" />
+                    <input asp-for="Email" type="email" class="form-control-custom" placeholder="admin@example.com" readonly />
                     <span asp-validation-for="Email" class="text-danger"></span>
+                    <small style="color:#6b7280;font-size:0.75rem;margin-top:4px;display:block;">Email không thể thay đổi</small>
                 </div>
             </div>
 
@@ -181,7 +182,7 @@
                 </div>
             </div>
 
-            <div class="form-row cols-2">
+            <div class="form-row">
                 <div>
                     <label class="form-label-custom">
                         Số điện thoại
@@ -189,22 +190,14 @@
                     <input asp-for="PhoneNumber" type="tel" class="form-control-custom" placeholder="0123456789" />
                     <span asp-validation-for="PhoneNumber" class="text-danger"></span>
                 </div>
-
-                <div>
-                    <label class="form-label-custom">
-                        Phòng ban
-                    </label>
-                    <input asp-for="Department" type="text" class="form-control-custom" placeholder="Phòng Kỹ thuật" />
-                    <span asp-validation-for="Department" class="text-danger"></span>
-                </div>
             </div>
 
             <div class="form-actions">
                 <a asp-action="Index" asp-controller="Admin" class="btn-custom btn-cancel">
-                    <i class="fas fa-times"></i> Hủy
+                    Hủy
                 </a>
                 <button type="submit" class="btn-custom btn-save">
-                    <i class="fas fa-save"></i> Lưu thay đổi
+                    Lưu thay đổi
                 </button>
             </div>
         </form>

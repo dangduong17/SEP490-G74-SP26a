@@ -239,8 +239,212 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
 
         public string? CandidateGender { get; set; }
 
+        [MaxLength(500)]
+        public string? CandidateAddress { get; set; }
+
+        [Range(0, double.MaxValue, ErrorMessage = "Mức lương hiện tại phải lớn hơn hoặc bằng 0.")]
+        public decimal? CandidateCurrentSalary { get; set; }
+
+        [Range(0, double.MaxValue, ErrorMessage = "Mức lương mong muốn phải lớn hơn hoặc bằng 0.")]
+        public decimal? CandidateExpectedSalary { get; set; }
+
+        [Range(0, 50, ErrorMessage = "Số năm kinh nghiệm phải từ 0 đến 50.")]
+        public int? CandidateYearsOfExperience { get; set; }
+
+        [MaxLength(5000)]
+        public string? CandidateSummary { get; set; }
+
+        public bool CandidateIsLookingForJob { get; set; }
+
         // Recruiter-specific fields
         [MaxLength(255)]
         public string? RecruiterPosition { get; set; }
+
+        public int? RecruiterCompanyId { get; set; }
+
+        // For company dropdown (not saved, just for display)
+        public List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>? Companies { get; set; }
+    }
+
+    // ========== SKILLS MANAGEMENT ==========
+
+    public class AdminSkillListItemViewModel
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string? Category { get; set; }
+        public int JobCount { get; set; }
+    }
+
+    public class AdminSkillListViewModel
+    {
+        public string? Keyword { get; set; }
+        public string? Category { get; set; }
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 20;
+        public int TotalItems { get; set; }
+        public List<AdminSkillListItemViewModel> Skills { get; set; } = new();
+        public List<string> Categories { get; set; } = new();
+        public int TotalPages => (int)Math.Ceiling((double)TotalItems / PageSize);
+    }
+
+    public class AdminCreateSkillViewModel
+    {
+        [Required(ErrorMessage = "Tên kỹ năng là bắt buộc.")]
+        [MaxLength(100, ErrorMessage = "Tên kỹ năng không được vượt quá 100 ký tự.")]
+        public string Name { get; set; } = string.Empty;
+
+        [MaxLength(100, ErrorMessage = "Danh mục không được vượt quá 100 ký tự.")]
+        public string? Category { get; set; }
+    }
+
+    public class AdminUpdateSkillViewModel
+    {
+        public int Id { get; set; }
+
+        [Required(ErrorMessage = "Tên kỹ năng là bắt buộc.")]
+        [MaxLength(100, ErrorMessage = "Tên kỹ năng không được vượt quá 100 ký tự.")]
+        public string Name { get; set; } = string.Empty;
+
+        [MaxLength(100, ErrorMessage = "Danh mục không được vượt quá 100 ký tự.")]
+        public string? Category { get; set; }
+    }
+
+    // ========== COMPANIES MANAGEMENT ==========
+
+    public class AdminCompanyListItemViewModel
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string? TaxCode { get; set; }
+        public string? Industry { get; set; }
+        public string? CompanySize { get; set; }
+        public string? Email { get; set; }
+        public string? Phone { get; set; }
+        public bool IsVerified { get; set; }
+        public int RecruiterCount { get; set; }
+        public int JobCount { get; set; }
+        public DateTime? CreatedAt { get; set; }
+    }
+
+    public class AdminCompanyListViewModel
+    {
+        public string? Keyword { get; set; }
+        public string? Industry { get; set; }
+        public string? VerificationStatus { get; set; }
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 10;
+        public int TotalItems { get; set; }
+        public List<AdminCompanyListItemViewModel> Companies { get; set; } = new();
+        public int TotalPages => (int)Math.Ceiling((double)TotalItems / PageSize);
+    }
+
+    public class AdminCompanyDetailViewModel
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string? Logo { get; set; }
+        public string? TaxCode { get; set; }
+        public string? CompanySize { get; set; }
+        public string? Industry { get; set; }
+        public string? Website { get; set; }
+        public string? Email { get; set; }
+        public string? Phone { get; set; }
+        public string? Description { get; set; }
+        public string? Benefits { get; set; }
+        public string? ProvinceName { get; set; }
+        public string? WardName { get; set; }
+        public string? Address { get; set; }
+        public bool IsVerified { get; set; }
+        public DateTime? VerifiedAt { get; set; }
+        public DateTime? CreatedAt { get; set; }
+        public List<CompanyRecruiterViewModel> Recruiters { get; set; } = new();
+        public List<CompanyJobViewModel> Jobs { get; set; } = new();
+    }
+
+    public class CompanyRecruiterViewModel
+    {
+        public int Id { get; set; }
+        public string FullName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string? Position { get; set; }
+        public string? Phone { get; set; }
+        public bool IsVerified { get; set; }
+    }
+
+    public class CompanyJobViewModel
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string? Location { get; set; }
+        public string? Salary { get; set; }
+        public DateTime? CreatedAt { get; set; }
+    }
+
+    // ========== SUBSCRIPTIONS MANAGEMENT ==========
+
+    public class AdminSubscriptionListItemViewModel
+    {
+        public int Id { get; set; }
+        public int UserId { get; set; }
+        public string UserEmail { get; set; } = string.Empty;
+        public string UserName { get; set; } = string.Empty;
+        public string PlanName { get; set; } = string.Empty;
+        public decimal PlanPrice { get; set; }
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
+        public string Status { get; set; } = string.Empty;
+        public bool AutoRenew { get; set; }
+        public DateTime? CreatedAt { get; set; }
+    }
+
+    public class AdminSubscriptionListViewModel
+    {
+        public string? Keyword { get; set; }
+        public string? Status { get; set; }
+        public int? PlanId { get; set; }
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 10;
+        public int TotalItems { get; set; }
+        public List<AdminSubscriptionListItemViewModel> Subscriptions { get; set; } = new();
+        public List<SubscriptionPlanLookupViewModel> Plans { get; set; } = new();
+        public int TotalPages => (int)Math.Ceiling((double)TotalItems / PageSize);
+    }
+
+    public class SubscriptionPlanLookupViewModel
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public decimal Price { get; set; }
+    }
+
+    public class AdminSubscriptionDetailViewModel
+    {
+        public int Id { get; set; }
+        public int UserId { get; set; }
+        public string UserEmail { get; set; } = string.Empty;
+        public string UserName { get; set; } = string.Empty;
+        public string UserRole { get; set; } = string.Empty;
+        public int PlanId { get; set; }
+        public string PlanName { get; set; } = string.Empty;
+        public decimal PlanPrice { get; set; }
+        public int PlanDurationDays { get; set; }
+        public string? PlanDescription { get; set; }
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
+        public string Status { get; set; } = string.Empty;
+        public bool AutoRenew { get; set; }
+        public DateTime? CreatedAt { get; set; }
+        public List<SubscriptionPaymentViewModel> Payments { get; set; } = new();
+    }
+
+    public class SubscriptionPaymentViewModel
+    {
+        public int Id { get; set; }
+        public decimal Amount { get; set; }
+        public DateTime? PaymentDate { get; set; }
+        public string? TransactionId { get; set; }
+        public string Status { get; set; } = string.Empty;
+        public string? PaymentMethod { get; set; }
     }
 }

@@ -1,0 +1,249 @@
+@model RJMS.vn.edu.fpt.Models.DTOs.AdminSubscriptionDetailViewModel
+@{
+    ViewData["Title"] = $"Chi tiết gói dịch vụ - {Model.UserName}";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<style>
+    .detail-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+    .detail-title { font-size: 1.75rem; font-weight: 700; color: #1f2937; }
+    .detail-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        padding: 2rem;
+        margin-bottom: 1.5rem;
+    }
+    .section-title { font-size: 1.25rem; font-weight: 600; color: #374151; margin-bottom: 1rem; border-bottom: 2px solid #e5e7eb; padding-bottom: 0.5rem; }
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+    }
+    .info-item label {
+        display: block;
+        font-weight: 600;
+        color: #6b7280;
+        font-size: 0.85rem;
+        margin-bottom: 0.5rem;
+    }
+    .info-item .value {
+        font-size: 1rem;
+        color: #1f2937;
+    }
+    .btn-back {
+        padding: 0.75rem 1.5rem;
+        background: #6b7280;
+        color: white;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 1rem;
+    }
+    .btn-back:hover { background: #4b5563; color: white; }
+    .payment-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .payment-table th {
+        padding: 0.75rem;
+        background: #f9fafb;
+        text-align: left;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #6b7280;
+        border-bottom: 2px solid #e5e7eb;
+    }
+    .payment-table td {
+        padding: 0.75rem;
+        border-bottom: 1px solid #f3f4f6;
+        font-size: 0.9rem;
+    }
+    .status-active {
+        padding: 0.375rem 0.875rem;
+        background: #d1fae5;
+        color: #065f46;
+        border-radius: 6px;
+        font-weight: 600;
+        display: inline-block;
+    }
+    .status-expired {
+        padding: 0.375rem 0.875rem;
+        background: #fee2e2;
+        color: #991b1b;
+        border-radius: 6px;
+        font-weight: 600;
+        display: inline-block;
+    }
+    .status-success {
+        padding: 0.25rem 0.75rem;
+        background: #d1fae5;
+        color: #065f46;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    .status-pending {
+        padding: 0.25rem 0.75rem;
+        background: #fef3c7;
+        color: #92400e;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    .status-failed {
+        padding: 0.25rem 0.75rem;
+        background: #fee2e2;
+        color: #991b1b;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+</style>
+
+<div class="detail-header">
+    <h1 class="detail-title">Chi tiết gói dịch vụ</h1>
+    <a asp-action="SubscriptionList" class="btn-back">
+        Quay lại
+    </a>
+</div>
+
+<div class="detail-card">
+    <div class="section-title">Thông tin người dùng</div>
+    <div class="info-grid">
+        <div class="info-item">
+            <label>Tên người dùng</label>
+            <div class="value"><strong>@Model.UserName</strong></div>
+        </div>
+        <div class="info-item">
+            <label>Email</label>
+            <div class="value">@Model.UserEmail</div>
+        </div>
+        <div class="info-item">
+            <label>User ID</label>
+            <div class="value">@Model.UserId</div>
+        </div>
+        <div class="info-item">
+            <label>Vai trò</label>
+            <div class="value">@Model.UserRole</div>
+        </div>
+    </div>
+</div>
+
+<div class="detail-card">
+    <div class="section-title">Thông tin gói dịch vụ</div>
+    <div class="info-grid">
+        <div class="info-item">
+            <label>Tên gói</label>
+            <div class="value"><strong>@Model.PlanName</strong></div>
+        </div>
+        <div class="info-item">
+            <label>Giá</label>
+            <div class="value" style="color:#10b981; font-weight:700; font-size:1.25rem;">
+                @Model.PlanPrice.ToString("N0") VNĐ
+            </div>
+        </div>
+        <div class="info-item">
+            <label>Thời hạn</label>
+            <div class="value">@Model.PlanDurationDays ngày</div>
+        </div>
+        <div class="info-item">
+            <label>Ngày bắt đầu</label>
+            <div class="value">@(Model.StartDate?.ToString("dd/MM/yyyy HH:mm") ?? "—")</div>
+        </div>
+        <div class="info-item">
+            <label>Ngày kết thúc</label>
+            <div class="value">@(Model.EndDate?.ToString("dd/MM/yyyy HH:mm") ?? "—")</div>
+        </div>
+        <div class="info-item">
+            <label>Trạng thái</label>
+            <div class="value">
+                @if (Model.Status == "Active")
+                {
+                    <span class="status-active">Active</span>
+                }
+                else
+                {
+                    <span class="status-expired">@Model.Status</span>
+                }
+            </div>
+        </div>
+        <div class="info-item">
+            <label>Tự động gia hạn</label>
+            <div class="value">
+                @if (Model.AutoRenew)
+                {
+                    <span style="color:#10b981; font-weight:600;">Có</span>
+                }
+                else
+                {
+                    <span style="color:#9ca3af;">Không</span>
+                }
+            </div>
+        </div>
+        <div class="info-item">
+            <label>Ngày đăng ký</label>
+            <div class="value">@(Model.CreatedAt?.ToString("dd/MM/yyyy HH:mm") ?? "—")</div>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.PlanDescription))
+    {
+        <div style="margin-top:1.5rem;">
+            <label style="display:block;font-weight:600;color:#6b7280;font-size:0.85rem;margin-bottom:0.5rem;">Mô tả gói</label>
+            <div style="color:#374151;">@Model.PlanDescription</div>
+        </div>
+    }
+</div>
+
+<div class="detail-card">
+    <div class="section-title">Lịch sử thanh toán (@Model.Payments.Count)</div>
+    @if (Model.Payments.Any())
+    {
+        <table class="payment-table">
+            <thead>
+                <tr>
+                    <th>Ngày thanh toán</th>
+                    <th>Số tiền</th>
+                    <th>Mã giao dịch</th>
+                    <th>Phương thức</th>
+                    <th>Trạng thái</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var payment in Model.Payments)
+                {
+                    <tr>
+                        <td>@(payment.PaymentDate?.ToString("dd/MM/yyyy HH:mm") ?? "—")</td>
+                        <td style="font-weight:600; color:#10b981;">@payment.Amount.ToString("N0") VNĐ</td>
+                        <td><code>@(payment.TransactionId ?? "—")</code></td>
+                        <td>@(payment.PaymentMethod ?? "—")</td>
+                        <td>
+                            @if (payment.Status == "Success")
+                            {
+                                <span class="status-success">Success</span>
+                            }
+                            else if (payment.Status == "Pending")
+                            {
+                                <span class="status-pending">Pending</span>
+                            }
+                            else
+                            {
+                                <span class="status-failed">@payment.Status</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div style="text-align:center; padding:2rem; color:#9ca3af;">Chưa có lịch sử thanh toán</div>
+    }
+</div>
