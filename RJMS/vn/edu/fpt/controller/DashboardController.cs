@@ -13,9 +13,17 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Candidate(Guid? userId)
+        public async Task<IActionResult> Candidate()
         {
-            var dashboard = await _dashboardService.GetDashboardAsync(userId ?? Guid.Empty);
+            // Lấy userId từ cookie
+            var userIdStr = Request.Cookies["UserId"];
+            if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
+            {
+                TempData["ErrorToast"] = "Vui lòng đăng nhập để truy cập dashboard.";
+                return RedirectToAction("Login", "Auth");
+            }
+
+            var dashboard = await _dashboardService.GetDashboardAsync(userId);
             return View("Candidate", dashboard);
         }
     }

@@ -4,4 +4,756 @@
     ViewData["Title"] = "Candidate Dashboard";
 }
 
-@*  *@
+@section Styles {
+<style>
+    /* ===== Dashboard Container ===== */
+    .dashboard-container {
+        max-width: 1320px;
+        margin: 0 auto;
+        padding: 32px 20px;
+    }
+
+    /* ===== Header Section ===== */
+    .dash-header {
+        margin-bottom: 32px;
+    }
+    .dash-header h1 {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: #111827;
+        margin: 0 0 8px;
+    }
+    .dash-header p {
+        font-size: 0.95rem;
+        color: #6b7280;
+        margin: 0;
+    }
+
+    /* ===== Stats Cards ===== */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+        margin-bottom: 32px;
+    }
+    .stat-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .stat-content h3 {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin: 0 0 8px;
+    }
+    .stat-content .stat-number {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #111827;
+        margin: 0 0 4px;
+    }
+    .stat-content .stat-desc {
+        font-size: 0.8rem;
+        color: #9ca3af;
+    }
+    .stat-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    /* ===== Main Content Layout ===== */
+    .dash-main {
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        gap: 24px;
+        margin-bottom: 32px;
+    }
+
+    /* ===== Recent Applications Section ===== */
+    .section-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 24px;
+    }
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    .section-header h2 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #111827;
+        margin: 0;
+    }
+    .section-header p {
+        font-size: 0.85rem;
+        color: #6b7280;
+        margin: 4px 0 0;
+    }
+    .view-all-btn {
+        color: #00b14f;
+        font-size: 0.875rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: gap 0.2s;
+    }
+    .view-all-btn:hover {
+        gap: 10px;
+    }
+
+    /* ===== Applications Table ===== */
+    .apps-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .apps-table thead {
+        border-bottom: 2px solid #f3f4f6;
+    }
+    .apps-table th {
+        text-align: left;
+        padding: 12px 8px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .apps-table td {
+        padding: 16px 8px;
+        border-bottom: 1px solid #f3f4f6;
+        font-size: 0.875rem;
+    }
+    .apps-table tr:last-child td {
+        border-bottom: none;
+    }
+    .job-title {
+        font-weight: 600;
+        color: #111827;
+        margin: 0 0 4px;
+    }
+    .company-name {
+        font-size: 0.8rem;
+        color: #6b7280;
+    }
+    .date-text {
+        color: #6b7280;
+    }
+
+    /* Status Badges */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .status-interview {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+    .status-pending {
+        background: #fef3c7;
+        color: #92400e;
+    }
+    .status-rejected {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+    .status-accepted {
+        background: #dcfce7;
+        color: #15803d;
+    }
+    .status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+    }
+
+    /* Action Button */
+    .view-job-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        background: #fff;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        color: #374151;
+        font-size: 0.8rem;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.15s;
+    }
+    .view-job-btn:hover {
+        background: #f9fafb;
+        border-color: #00b14f;
+        color: #00b14f;
+    }
+
+    /* ===== Profile Sidebar ===== */
+    .profile-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 24px;
+        text-align: center;
+    }
+    .profile-avatar {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #00b14f, #009744);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        color: #fff;
+        font-weight: 700;
+        margin: 0 auto 16px;
+    }
+    .profile-name {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #111827;
+        margin: 0 0 4px;
+    }
+    .profile-title {
+        font-size: 0.875rem;
+        color: #6b7280;
+        margin: 0 0 20px;
+    }
+    .profile-meta {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        padding: 16px 0;
+        border-top: 1px solid #f3f4f6;
+        border-bottom: 1px solid #f3f4f6;
+        margin-bottom: 20px;
+    }
+    .meta-item {
+        text-align: center;
+    }
+    .meta-label {
+        font-size: 0.7rem;
+        color: #9ca3af;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+    }
+    .meta-value {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #111827;
+    }
+    .profile-completion {
+        margin-bottom: 20px;
+    }
+    .completion-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+    .completion-label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #374151;
+    }
+    .completion-percent {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: #00b14f;
+    }
+    .progress-bar {
+        width: 100%;
+        height: 8px;
+        background: #e5e7eb;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #00b14f, #00d95f);
+        border-radius: 10px;
+        transition: width 0.3s;
+    }
+    .completion-hint {
+        font-size: 0.75rem;
+        color: #6b7280;
+        margin-top: 8px;
+        text-align: left;
+    }
+    .edit-profile-btn {
+        width: 100%;
+        padding: 10px;
+        background: #00b14f;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+        text-decoration: none;
+        display: block;
+        text-align: center;
+    }
+    .edit-profile-btn:hover {
+        background: #009744;
+        color: #fff;
+    }
+
+    /* Quick Actions */
+    .quick-actions {
+        margin-top: 24px;
+        padding-top: 24px;
+        border-top: 1px solid #f3f4f6;
+    }
+    .quick-actions h3 {
+        font-size: 0.875rem;
+        font-weight: 700;
+        color: #111827;
+        margin: 0 0 16px;
+        text-align: left;
+    }
+    .action-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        margin-bottom: 8px;
+        cursor: pointer;
+        transition: all 0.15s;
+        text-decoration: none;
+        color: inherit;
+    }
+    .action-item:hover {
+        background: #f3f4f6;
+        border-color: #00b14f;
+    }
+    .action-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+    .action-text {
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: #374151;
+        text-align: left;
+    }
+
+    /* ===== Recommended Jobs Section ===== */
+    .recommended-jobs {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 24px;
+    }
+    .jobs-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        margin-top: 20px;
+    }
+    .job-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 20px;
+        transition: all 0.2s;
+    }
+    .job-card:hover {
+        border-color: #00b14f;
+        box-shadow: 0 4px 12px rgba(0,177,79,0.1);
+    }
+    .job-card h3 {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #111827;
+        margin: 0 0 8px;
+    }
+    .job-card .company {
+        font-size: 0.85rem;
+        color: #00b14f;
+        font-weight: 600;
+        margin-bottom: 12px;
+    }
+    .job-info {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-bottom: 16px;
+    }
+    .job-info-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.8rem;
+        color: #6b7280;
+    }
+    .apply-now-btn {
+        width: 100%;
+        padding: 10px;
+        background: #00b14f;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+        text-decoration: none;
+        display: block;
+        text-align: center;
+    }
+    .apply-now-btn:hover {
+        background: #009744;
+        color: #fff;
+    }
+
+    /* ===== Responsive ===== */
+    @@media (max-width: 1200px) {
+        .dash-main {
+            grid-template-columns: 1fr;
+        }
+        .jobs-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    @@media (max-width: 768px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        .jobs-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+}
+
+<div class="dashboard-container">
+    <!-- Header -->
+    <div class="dash-header">
+        <h1>Candidate Dashboard</h1>
+        <p>Tổng quan hoạt động tìm việc của bạn</p>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-content">
+                <h3>Total Applications</h3>
+                <div class="stat-number">@(Model?.TotalApplications ?? 24)</div>
+                <div class="stat-desc">Tổng số ứng tuyển đã ứng tuyển</div>
+            </div>
+            <div class="stat-icon" style="background:#dcfce7;color:#15803d;">
+                📋
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-content">
+                <h3>Interviews</h3>
+                <div class="stat-number">@((Model?.InterviewsScheduled ?? 6).ToString("D2"))</div>
+                <div class="stat-desc">Số buổi phỏng vấn đã đặt lịch</div>
+            </div>
+            <div class="stat-icon" style="background:#dbeafe;color:#1e40af;">
+                📅
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-content">
+                <h3>Offers Received</h3>
+                <div class="stat-number">@(Model?.OffersReceived ?? 12)</div>
+                <div class="stat-desc">Số lời mời đã nhận được</div>
+            </div>
+            <div class="stat-icon" style="background:#fef3c7;color:#92400e;">
+                ⭐
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-content">
+                <h3>Profile Views</h3>
+                <div class="stat-number">158</div>
+                <div class="stat-desc">Lượt xem hồ sơ tuần này</div>
+            </div>
+            <div class="stat-icon" style="background:#e9d5ff;color:#7c3aed;">
+                👁️
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="dash-main">
+        <!-- Recent Applications -->
+        <div class="section-card">
+            <div class="section-header">
+                <div>
+                    <h2>Recent Applications</h2>
+                    <p>Theo dõi trạng thái các đơn ứng tuyển của bạn</p>
+                </div>
+                <a href="#" class="view-all-btn">
+                    View All →
+                </a>
+            </div>
+
+            <table class="apps-table">
+                <thead>
+                    <tr>
+                        <th>Job Title & Company</th>
+                        <th>Date Applied</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <div class="job-title">Senior Frontend Engineer</div>
+                            <div class="company-name">Tech-Nova Solutions</div>
+                        </td>
+                        <td class="date-text">20 Oct 2023</td>
+                        <td>
+                            <span class="status-badge status-interview">
+                                <span class="status-dot"></span>
+                                Interview
+                            </span>
+                        </td>
+                        <td>
+                            <a href="#" class="view-job-btn">
+                                🔗 View Job
+                            </a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="job-title">Product Designer (UI/UX)</div>
+                            <div class="company-name">Creative Flow</div>
+                        </td>
+                        <td class="date-text">18 Oct 2023</td>
+                        <td>
+                            <span class="status-badge status-pending">
+                                <span class="status-dot"></span>
+                                Pending
+                            </span>
+                        </td>
+                        <td>
+                            <a href="#" class="view-job-btn">
+                                🔗 View Job
+                            </a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="job-title">Fullstack Developer</div>
+                            <div class="company-name">Global Systems</div>
+                        </td>
+                        <td class="date-text">15 Oct 2023</td>
+                        <td>
+                            <span class="status-badge status-rejected">
+                                <span class="status-dot"></span>
+                                Rejected
+                            </span>
+                        </td>
+                        <td>
+                            <a href="#" class="view-job-btn">
+                                🔗 View Job
+                            </a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="job-title">Marketing Specialist</div>
+                            <div class="company-name">Bright Media</div>
+                        </td>
+                        <td class="date-text">12 Oct 2023</td>
+                        <td>
+                            <span class="status-badge status-accepted">
+                                <span class="status-dot"></span>
+                                Accepted
+                            </span>
+                        </td>
+                        <td>
+                            <a href="#" class="view-job-btn">
+                                🔗 View Job
+                            </a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="job-title">Junior React Developer</div>
+                            <div class="company-name">Startup Hub</div>
+                        </td>
+                        <td class="date-text">10 Oct 2023</td>
+                        <td>
+                            <span class="status-badge status-pending">
+                                <span class="status-dot"></span>
+                                Pending
+                            </span>
+                        </td>
+                        <td>
+                            <a href="#" class="view-job-btn">
+                                🔗 View Job
+                            </a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Profile Sidebar -->
+        <div>
+            <div class="profile-card">
+                <div class="profile-avatar">
+                    A
+                </div>
+                <div class="profile-name">Nguyễn Văn A</div>
+                <div class="profile-title">Senior Frontend Developer</div>
+
+                <div class="profile-meta">
+                    <div class="meta-item">
+                        <div class="meta-label">Location</div>
+                        <div class="meta-value">HCM City</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Experience</div>
+                        <div class="meta-value">5 Years</div>
+                    </div>
+                </div>
+
+                <div class="profile-completion">
+                    <div class="completion-header">
+                        <span class="completion-label">Profile Completion</span>
+                        <span class="completion-percent">70%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 70%;"></div>
+                    </div>
+                    <div class="completion-hint">Add your education details to reach 90%</div>
+                </div>
+
+                <a href="@Url.Action("EditCandidateProfile", "Profile")" class="edit-profile-btn">
+                    Edit Profile
+                </a>
+
+                <div class="quick-actions">
+                    <h3>Quick Actions</h3>
+                    <a href="#" class="action-item">
+                        <div class="action-icon" style="background:#dcfce7;color:#15803d;">
+                            📄
+                        </div>
+                        <div class="action-text">Upload New CV</div>
+                    </a>
+                    <a href="#" class="action-item">
+                        <div class="action-icon" style="background:#dbeafe;color:#1e40af;">
+                            💼
+                        </div>
+                        <div class="action-text">Update Portfolio</div>
+                    </a>
+                    <a href="#" class="action-item">
+                        <div class="action-icon" style="background:#fef3c7;color:#92400e;">
+                            🔍
+                        </div>
+                        <div class="action-text">Browse More Jobs</div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recommended Jobs -->
+    <div class="recommended-jobs">
+        <div class="section-header">
+            <div>
+                <h2>Recommended Jobs for You</h2>
+                <p>Based on your profile and recent activity</p>
+            </div>
+            <a href="#" class="view-all-btn">
+                Explore All Jobs →
+            </a>
+        </div>
+
+        <div class="jobs-grid">
+            <div class="job-card">
+                <h3>Lead Web Architect</h3>
+                <div class="company">Infinity Digital</div>
+                <div class="job-info">
+                    <div class="job-info-item">
+                        💰 $5,000 - $7,000
+                    </div>
+                    <div class="job-info-item">
+                        📍 Quận 1, TP. HCM
+                    </div>
+                </div>
+                <a href="#" class="apply-now-btn">Apply Now</a>
+            </div>
+
+            <div class="job-card">
+                <h3>React Expert (Remote)</h3>
+                <div class="company">CloudWave</div>
+                <div class="job-info">
+                    <div class="job-info-item">
+                        💰 $3,000 - $5,000
+                    </div>
+                    <div class="job-info-item">
+                        📍 Đà Nẵng
+                    </div>
+                </div>
+                <a href="#" class="apply-now-btn">Apply Now</a>
+            </div>
+
+            <div class="job-card">
+                <h3>Senior UX Researcher</h3>
+                <div class="company">UserFirst</div>
+                <div class="job-info">
+                    <div class="job-info-item">
+                        💰 $4,000 - $6,000
+                    </div>
+                    <div class="job-info-item">
+                        📍 Cầu Giấy, Hà Nội
+                    </div>
+                </div>
+                <a href="#" class="apply-now-btn">Apply Now</a>
+            </div>
+        </div>
+    </div>
+</div>
