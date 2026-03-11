@@ -23,6 +23,7 @@ namespace RJMS.Vn.Edu.Fpt.Service
             var vnpUrl = _configuration["VNPay:Url"]!;
             var returnUrl = _configuration["VNPay:ReturnUrl"]!;
 
+            // SortedDictionary tự động sort theo key (alphabet)
             var vnPayData = new SortedDictionary<string, string>
             {
                 { "vnp_Version", "2.1.0" },
@@ -39,13 +40,13 @@ namespace RJMS.Vn.Edu.Fpt.Service
                 { "vnp_TxnRef", $"{paymentId}_{DateTime.Now.Ticks}" } // Mã giao dịch unique
             };
 
-            // Tạo chuỗi hash
-            var signData = string.Join("&", vnPayData.Select(kv => $"{kv.Key}={WebUtility.UrlEncode(kv.Value)}"));
+            // Tạo chuỗi hash (KHÔNG encode theo docs VNPay)
+            var signData = string.Join("&", vnPayData.Select(kv => $"{kv.Key}={kv.Value}"));
             var vnpSecureHash = HmacSHA512(hashSecret, signData);
 
             vnPayData.Add("vnp_SecureHash", vnpSecureHash);
 
-            // Build URL
+            // Build URL (CÓ encode)
             var queryString = string.Join("&", vnPayData.Select(kv => $"{kv.Key}={WebUtility.UrlEncode(kv.Value)}"));
             return $"{vnpUrl}?{queryString}";
         }

@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using RJMS.Vn.Edu.Fpt.Service;
-using System.Security.Claims;
 
 namespace RJMS.Vn.Edu.Fpt.Controllers
 {
@@ -26,10 +25,27 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         [HttpGet]
         public async Task<IActionResult> PlanDetail(int id)
         {
+            // Check if user is logged in
+            var userIdStr = Request.Cookies["UserId"];
+            var userRole = Request.Cookies["UserRole"];
+            
+            if (string.IsNullOrEmpty(userIdStr))
+            {
+                TempData["ErrorToast"] = "Vui lòng đăng nhập để xem chi tiết gói";
+                return RedirectToAction("Login", "Auth");
+            }
+
+            // Only Recruiters can view subscription plan details
+            if (userRole != "Recruiter")
+            {
+                TempData["ErrorToast"] = "Chỉ nhà tuyển dụng mới có thể đăng ký gói dịch vụ";
+                return RedirectToAction("Index", "Home");
+            }
+
             var plan = await _paymentService.GetSubscriptionPlanByIdAsync(id);
             if (plan == null)
             {
-                TempData["Error"] = "Gói đăng ký không tồn tại";
+                TempData["ErrorToast"] = "Gói đăng ký không tồn tại";
                 return RedirectToAction(nameof(SubscriptionPlans));
             }
 
@@ -44,15 +60,24 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         {
             try
             {
-                // Get current user ID
-                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(userIdClaim))
+                // Get current user ID from cookie
+                var userIdStr = Request.Cookies["UserId"];
+                var userRole = Request.Cookies["UserRole"];
+                
+                if (string.IsNullOrEmpty(userIdStr))
                 {
-                    TempData["Error"] = "Vui lòng đăng nhập để tiếp tục";
+                    TempData["ErrorToast"] = "Vui lòng đăng nhập để tiếp tục";
                     return RedirectToAction("Login", "Auth");
                 }
 
-                var userId = int.Parse(userIdClaim);
+                // Only Recruiters can purchase subscription plans
+                if (userRole != "Recruiter")
+                {
+                    TempData["ErrorToast"] = "Chỉ nhà tuyển dụng mới có thể đăng ký gói dịch vụ";
+                    return RedirectToAction("Index", "Home");
+                }
+
+                var userId = int.Parse(userIdStr);
                 var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
 
                 // Create subscription, payment and get payment URL
@@ -63,7 +88,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             }
             catch (Exception ex)
             {
-                TempData["Error"] = ex.Message;
+                TempData["ErrorToast"] = ex.Message;
                 return RedirectToAction(nameof(PlanDetail), new { id = planId });
             }
         }
@@ -77,19 +102,24 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                 // Process callback from VNPay
                 var (success, message, transactionId) = _vnPayService.ProcessPaymentCallback(Request.Query);
 
-                if (!success)
-                {
-                    TempData["Error"] = message;
-                    return RedirectToAction(nameof(PaymentFailed));
-                }
-
-                // Extract paymentId from vnp_TxnRef
+                // Extract paymentId from vnp_TxnRef first (needed for both success and failure)
                 var txnRef = Request.Query["vnp_TxnRef"].ToString();
                 var paymentId = ExtractPaymentIdFromTxnRef(txnRef);
 
+                if (!success)
+                {
+                    // Update payment status to FAILED
+                    if (paymentId > 0)
+                    {
+                        await _paymentService.ProcessPaymentFailureAsync(paymentId, transactionId);
+                    }
+                    TempData["ErrorToast"] = message;
+                    return RedirectToAction(nameof(PaymentFailed));
+                }
+
                 if (paymentId == 0)
                 {
-                    TempData["Error"] = "Không tìm thấy thông tin thanh toán";
+                    TempData["ErrorToast"] = "Không tìm thấy thông tin thanh toán";
                     return RedirectToAction(nameof(PaymentFailed));
                 }
 
@@ -98,18 +128,18 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
 
                 if (processed)
                 {
-                    TempData["Success"] = "Thanh toán thành công! Gói dịch vụ đã được kích hoạt.";
+                    TempData["SuccessToast"] = "Thanh toán thành công! Gói dịch vụ đã được kích hoạt.";
                     return RedirectToAction(nameof(PaymentSuccess), new { transactionId });
                 }
                 else
                 {
-                    TempData["Error"] = "Có lỗi xảy ra khi xử lý thanh toán";
+                    TempData["ErrorToast"] = "Có lỗi xảy ra khi xử lý thanh toán";
                     return RedirectToAction(nameof(PaymentFailed));
                 }
             }
             catch (Exception ex)
             {
-                TempData["Error"] = $"Lỗi: {ex.Message}";
+                TempData["ErrorToast"] = $"Lỗi: {ex.Message}";
                 return RedirectToAction(nameof(PaymentFailed));
             }
         }

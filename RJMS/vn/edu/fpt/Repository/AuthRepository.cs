@@ -87,7 +87,15 @@ namespace RJMS.Vn.Edu.Fpt.Repository
                 .Include(ur => ur.Role)
                 .FirstOrDefaultAsync(ur => ur.UserId == userId);
             
-            return userRole?.Role?.Name ?? "Candidate";
+            var roleName = userRole?.Role?.Name ?? "Candidate";
+            
+            // Debug logging
+            Console.WriteLine($"[DEBUG] GetUserRoleAsync - UserId: {userId}");
+            Console.WriteLine($"[DEBUG] UserRole found: {userRole != null}");
+            Console.WriteLine($"[DEBUG] Role found: {userRole?.Role != null}");
+            Console.WriteLine($"[DEBUG] Role name: {roleName}");
+            
+            return roleName;
         }
 
         public async Task<bool> AssignFreeSubscriptionIfRecruiterAsync(string email)

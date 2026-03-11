@@ -121,5 +121,19 @@ namespace RJMS.Vn.Edu.Fpt.Service
 
             return true;
         }
+
+        public async Task<bool> ProcessPaymentFailureAsync(int paymentId, string transactionId)
+        {
+            var payment = await _paymentRepo.GetPaymentByIdAsync(paymentId);
+            if (payment == null) return false;
+
+            // 1. Update Payment = FAILED
+            await _paymentRepo.UpdatePaymentStatusAsync(paymentId, "FAILED", transactionId);
+
+            // 2. Update Subscription = CANCELLED
+            await _paymentRepo.UpdateSubscriptionStatusAsync(payment.SubscriptionId, "CANCELLED");
+
+            return true;
+        }
     }
 }
