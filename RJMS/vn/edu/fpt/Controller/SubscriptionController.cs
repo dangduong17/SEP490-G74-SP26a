@@ -33,6 +33,13 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                 TempData["ErrorToast"] = "Tính năng này chỉ dành cho nhà tuyển dụng";
                 return RedirectToAction("Index", "Home");
             }
+            
+            var userIdStr = HttpContext.Request.Cookies["UserId"];
+            if (int.TryParse(userIdStr, out int userId))
+            {
+                var activeSubscription = await _paymentService.GetActiveSubscriptionByUserIdAsync(userId);
+                ViewBag.CurrentPlanId = activeSubscription?.PlanId;
+            }
 
             // Get active subscription plans with features
             var plans = await _paymentService.GetActiveSubscriptionPlansAsync();
