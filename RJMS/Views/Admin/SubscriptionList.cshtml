@@ -127,6 +127,14 @@
         font-size: 0.75rem;
         font-weight: 600;
     }
+    .st-pending {
+        background: #fef3c7;
+        color: #92400e;
+        padding: 3px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
     .st-cancelled {
         background: #f3f4f6;
         color: #6b7280;
@@ -224,10 +232,11 @@
 
         <span class="filter-label">Trạng thái:</span>
         <select name="status" class="form-select">
-            <option value="">Tất cả</option>
-            <option value="Active" selected="@(Model.Status == "Active")">Active</option>
-            <option value="Expired" selected="@(Model.Status == "Expired")">Expired</option>
-            <option value="Cancelled" selected="@(Model.Status == "Cancelled")">Cancelled</option>
+            <option value="ALL" selected="@(Model.Status == "ALL")">Tất cả</option>
+            <option value="ACTIVE" selected="@(Model.Status == "ACTIVE")">Đang hoạt động</option>
+            <option value="PENDING" selected="@(Model.Status == "PENDING")">Đang chờ</option>
+            <option value="EXPIRED" selected="@(Model.Status == "EXPIRED")">Hết hạn</option>
+            <option value="CANCELLED" selected="@(Model.Status == "CANCELLED")">Đã hủy</option>
         </select>
 
         <span class="filter-label">Gói:</span>
@@ -277,13 +286,21 @@
                     <td style="font-size:0.82rem;color:#6b7280;">@(sub.StartDate?.ToString("dd/MM/yyyy") ?? "—")</td>
                     <td style="font-size:0.82rem;color:#6b7280;">@(sub.EndDate?.ToString("dd/MM/yyyy") ?? "—")</td>
                     <td>
-                        @if (sub.Status == "Active")
+                        @if (sub.Status?.ToUpper() == "ACTIVE")
                         {
-                            <span class="st-active">Active</span>
+                            <span class="st-active">Đang hoạt động</span>
                         }
-                        else if (sub.Status == "Expired")
+                        else if (sub.Status?.ToUpper() == "EXPIRED")
                         {
-                            <span class="st-expired">Expired</span>
+                            <span class="st-expired">Hết hạn</span>
+                        }
+                        else if (sub.Status?.ToUpper() == "CANCELLED")
+                        {
+                            <span class="st-cancelled">Đã hủy</span>
+                        }
+                        else if (sub.Status?.ToUpper() == "PENDING")
+                        {
+                            <span class="st-pending">Đang chờ</span>
                         }
                         else
                         {
