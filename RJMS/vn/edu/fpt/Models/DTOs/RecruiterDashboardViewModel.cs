@@ -19,6 +19,7 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
         // ---- Subscription ----
         public string SubscriptionPlan { get; set; } = "Premium Plan";
         public string SubscriptionValidTo { get; set; } = "31 Dec 2025";
+        public decimal PlanPrice { get; set; } = 0;
         public int JobPostsUsed { get; set; } = 8;
         public int JobPostsTotal { get; set; } = 20;
         public int CvSearchesUsed { get; set; } = 156;

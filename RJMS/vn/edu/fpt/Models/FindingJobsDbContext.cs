@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 
@@ -293,6 +293,18 @@ public partial class FindingJobsDbContext : DbContext
 
             entity.Property(e => e.Name).HasMaxLength(100);
             entity.Property(e => e.Price).HasColumnType("decimal(18, 2)");
+        });
+
+        modelBuilder.Entity<SubscriptionUsage>(entity =>
+        {
+            entity.ToTable("SubscriptionUsage");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.FeatureCode).HasMaxLength(100);
+            
+            entity.HasOne(d => d.Period)
+                .WithMany(p => p.SubscriptionUsages)
+                .HasForeignKey(d => d.PeriodId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
         });
 
         modelBuilder.Entity<User>(entity =>
