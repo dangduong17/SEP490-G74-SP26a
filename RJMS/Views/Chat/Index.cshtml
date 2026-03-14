@@ -1,0 +1,901 @@
+@model RJMS.vn.edu.fpt.Models.DTOs.ChatPageViewModel
+
+@{
+    ViewData["Title"] = "Tin nhắn";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <style>
+        body {
+            background-color: #f4f5f5;
+        }
+
+        .chat-container {
+            max-width: 1100px;
+            margin: 20px auto;
+            padding: 0 15px;
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 20px;
+            height: calc(100vh - 140px);
+            min-height: 600px;
+        }
+
+        @@media (max-width: 991px) {
+            .chat-container {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+            .chat-context {
+                display: none;
+            }
+        }
+
+        @@media (max-width: 767px) {
+            .chat-sidebar {
+                display: none;
+            }
+            .chat-container.show-sidebar .chat-sidebar {
+                display: flex;
+            }
+            .chat-container.show-sidebar .chat-main {
+                display: none;
+            }
+        }
+
+        /* --- LEFT SIDEBAR (CHAT LIST) --- */
+        .chat-sidebar {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+        }
+
+        .chat-sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #f3f4f6;
+            background: #fafafa;
+        }
+
+        .chat-sidebar-header h2 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #111827;
+            margin: 0 0 16px;
+        }
+
+        .chat-search {
+            position: relative;
+            margin-bottom: 12px;
+        }
+
+        .chat-search i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+            font-size: 0.85rem;
+        }
+
+        .chat-search input {
+            width: 100%;
+            padding: 8px 12px 8px 36px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            outline: none;
+            transition: all 0.2s;
+            background: #fff;
+        }
+
+        .chat-search input:focus {
+            border-color: #00b14f;
+            box-shadow: 0 0 0 3px rgba(0, 177, 79, 0.12);
+        }
+
+        .chat-filters {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .chat-filter-btn {
+            background: #f3f4f6;
+            color: #4b5563;
+            border: 1px solid transparent;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .chat-filter-btn:hover {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        .chat-filter-btn.active {
+            background: #00b14f;
+            color: #fff;
+            border-color: #00b14f;
+        }
+
+        .chat-list {
+            flex: 1;
+            overflow-y: auto;
+            background: #fff;
+        }
+
+        .chat-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-list::-webkit-scrollbar-track {
+            background: #f9fafb;
+        }
+
+        .chat-list::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 3px;
+        }
+
+        .chat-list::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
+
+        .chat-item {
+            display: flex;
+            padding: 16px 20px;
+            border-bottom: 1px solid #f3f4f6;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .chat-item:hover {
+            background: #f9fafb;
+        }
+
+        .chat-item.active {
+            background: #f0fdf4;
+            border-left: 3px solid #00b14f;
+        }
+
+        .chat-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: #00b14f;
+        }
+
+        .chat-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 12px;
+        }
+
+        .chat-item-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .chat-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+
+        .chat-item-name {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #111827;
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .chat-item-time {
+            font-size: 0.7rem;
+            color: #9ca3af;
+        }
+
+        .chat-item-company {
+            font-size: 0.75rem;
+            color: #6b7280;
+            margin: 0 0 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .chat-item-msg-wrapper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .chat-item-msg {
+            font-size: 0.8rem;
+            color: #4b5563;
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding-right: 10px;
+        }
+
+        .chat-unread-badge {
+            background: #10b981;
+            color: #fff;
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 10px;
+        }
+
+        /* --- MIDDLE AREA (CHAT VIEW) --- */
+        .chat-main {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+        }
+
+        .chat-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid #f3f4f6;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #fafafa;
+        }
+
+        .chat-header-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .chat-header-info img {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .chat-header-text h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #111827;
+            margin: 0 0 2px;
+        }
+
+        .chat-header-text p {
+            font-size: 0.8rem;
+            color: #6b7280;
+            margin: 0 0 2px;
+        }
+
+        .chat-status-online {
+            font-size: 0.75rem;
+            color: #10b981;
+            font-weight: 500;
+        }
+
+        .chat-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            background: #fafafa;
+        }
+
+        .chat-body::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .chat-body::-webkit-scrollbar-track {
+            background: #f3f4f6;
+        }
+
+        .chat-body::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 4px;
+        }
+
+        .chat-body::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
+
+        .chat-date-divider {
+            text-align: center;
+            margin: 16px 0;
+            position: relative;
+        }
+
+        .chat-date-divider span {
+            background: #fafafa;
+            color: #9ca3af;
+            font-size: 0.75rem;
+            padding: 0 12px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .chat-date-divider::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 50%;
+            width: 100%;
+            height: 1px;
+            background: #e5e7eb;
+            z-index: 0;
+        }
+
+        .chat-notice {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .chat-notice span {
+            background: #f3f4f6;
+            color: #6b7280;
+            font-size: 0.8rem;
+            padding: 6px 16px;
+            border-radius: 20px;
+        }
+
+        .msg-row {
+            display: flex;
+            margin-bottom: 16px;
+            align-items: flex-end;
+            gap: 10px;
+        }
+
+        .msg-row.sent {
+            justify-content: flex-end;
+        }
+
+        .msg-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .msg-bubble {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            position: relative;
+        }
+
+        .msg-row.received .msg-bubble {
+            background: #f3f4f6;
+            color: #1f2937;
+            border-bottom-left-radius: 2px;
+        }
+
+        .msg-row.sent .msg-bubble {
+            background: #e6f7ec; /* Light green tint */
+            color: #1f2937;
+            border-bottom-right-radius: 2px;
+        }
+
+        .msg-time {
+            font-size: 0.65rem;
+            color: #9ca3af;
+            margin-top: 4px;
+            display: block;
+            text-align: right;
+        }
+
+        /* Attachment bubble */
+        .msg-attachment {
+            background: #fff;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .msg-attachment:hover {
+            background: #f9fafb;
+        }
+
+        .msg-attachment-icon {
+            width: 36px;
+            height: 36px;
+            background: #fee2e2;
+            color: #ef4444;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .msg-attachment-info {
+            flex: 1;
+        }
+
+        .msg-attachment-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0 0 2px;
+        }
+
+        .msg-attachment-size {
+            font-size: 0.7rem;
+            color: #6b7280;
+            margin: 0;
+        }
+
+        .msg-attachment-dl {
+            color: #00b14f;
+            font-size: 1.1rem;
+        }
+
+        /* Input Area */
+        .chat-input-area {
+            padding: 16px 24px;
+            border-top: 1px solid #f3f4f6;
+            background: #fff;
+        }
+
+        .chat-input-wrapper {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .btn-attach {
+            color: #6b7280;
+            background: none;
+            border: none;
+            font-size: 1.25rem;
+            padding: 8px;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .btn-attach:hover {
+            color: #1f2937;
+        }
+
+        .chat-input {
+            flex: 1;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 0.875rem;
+            resize: none;
+            outline: none;
+            min-height: 42px;
+            max-height: 120px;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .chat-input:focus {
+            border-color: #00b14f;
+            box-shadow: 0 0 0 3px rgba(0, 177, 79, 0.12);
+        }
+
+        .btn-send {
+            background: #00b14f;
+            color: #fff;
+            border: none;
+            width: 42px;
+            height: 42px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .btn-send:hover {
+            background: #009744;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 177, 79, 0.2);
+        }
+
+        .btn-send:active {
+            transform: translateY(0);
+        }
+
+        .chat-input-hint {
+            text-align: center;
+            font-size: 0.7rem;
+            color: #9ca3af;
+            margin-top: 8px;
+        }
+
+        /* --- RIGHT SIDEBAR (CONTEXT INFO) --- */
+        .chat-context {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .context-card {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+            transition: all 0.2s;
+        }
+
+        .context-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .context-card-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #111827;
+            margin: 0 0 16px;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+            font-size: 0.85rem;
+            color: #6b7280;
+        }
+
+        /* Job Info */
+        .job-info h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #111827;
+            margin: 0 0 12px;
+        }
+
+        .job-detail {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: #4b5563;
+            margin-bottom: 8px;
+        }
+
+        .job-detail i {
+            color: #10b981;
+            width: 14px;
+            text-align: center;
+        }
+
+        .job-status {
+            font-size: 0.8rem;
+            color: #3b82f6;
+            margin-top: 12px;
+            font-weight: 500;
+        }
+
+        .btn-outline-custom {
+            display: block;
+            width: 100%;
+            text-align: center;
+            padding: 10px 0;
+            border: 1px solid #00b14f;
+            color: #00b14f;
+            background: #fff;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-decoration: none;
+            margin-top: 16px;
+            transition: all 0.2s;
+        }
+
+        .btn-outline-custom:hover {
+            background: #f0fdf4;
+            color: #00b14f;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 177, 79, 0.15);
+        }
+
+        /* Company Info */
+        .company-info {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .company-info h4 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #111827;
+            margin: 0 0 4px;
+        }
+
+        .company-info p {
+            font-size: 0.75rem;
+            color: #6b7280;
+            margin: 0;
+        }
+
+        .hr-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-top: 16px;
+            border-top: 1px solid #f3f4f6;
+        }
+
+        .hr-info img {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+        }
+
+        .hr-info-text h5 {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #111827;
+            margin: 0 0 2px;
+        }
+
+        .hr-info-text p {
+            font-size: 0.75rem;
+            color: #6b7280;
+            margin: 0;
+        }
+
+        /* Notes */
+        .notes-textarea {
+            width: 100%;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 0.85rem;
+            resize: vertical;
+            min-height: 100px;
+            outline: none;
+            transition: all 0.2s;
+            margin-bottom: 12px;
+            font-family: inherit;
+        }
+
+        .notes-textarea:focus {
+            border-color: #00b14f;
+            box-shadow: 0 0 0 3px rgba(0, 177, 79, 0.12);
+        }
+
+        .btn-outline-gray {
+            display: block;
+            width: 100%;
+            text-align: center;
+            padding: 10px 0;
+            border: 1px solid #d1d5db;
+            color: #4b5563;
+            background: #fff;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-outline-gray:hover {
+            background: #f9fafb;
+            color: #111827;
+            border-color: #9ca3af;
+        }
+
+        /* Utilities */
+        nav[aria-label="breadcrumb"] {
+            margin-left: 15px;
+            margin-bottom: 0;
+        }
+
+        /* Empty state */
+        .chat-empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #9ca3af;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .chat-empty-state i {
+            font-size: 4rem;
+            margin-bottom: 16px;
+            color: #d1d5db;
+        }
+
+        .chat-empty-state h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #6b7280;
+            margin-bottom: 8px;
+        }
+
+        .chat-empty-state p {
+            font-size: 0.875rem;
+            color: #9ca3af;
+        }
+        
+    </style>
+}
+
+<!-- Breadcrumbs -->
+<div class="container-fluid" style="max-width: 1100px; margin: 0 auto;">
+    <nav aria-label="breadcrumb" class="mt-3 mb-2">
+        <ol class="breadcrumb bg-transparent p-0 m-0" style="font-size: 0.85rem;">
+            <li class="breadcrumb-item"><a href="/" class="text-decoration-none" style="color: #6b7280;">Trang chủ</a></li>
+            <li class="breadcrumb-item active" style="color: #111827; font-weight: 600;" aria-current="page">Tin nhắn</li>
+        </ol>
+    </nav>
+</div>
+
+<div class="chat-container">
+    
+    <!-- LEFT SIDEBAR -->
+    <div class="chat-sidebar">
+        <div class="chat-sidebar-header">
+            <h2>Tin nhắn</h2>
+            <div class="chat-search">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="Tìm theo tên, công ty..." />
+            </div>
+            <div class="chat-filters">
+                <button class="chat-filter-btn active">Tất cả</button>
+                <button class="chat-filter-btn">Chưa đọc</button>
+                <button class="chat-filter-btn">Ứng tuyển</button>
+            </div>
+        </div>
+        
+        <div class="chat-list">
+            @foreach (var conv in Model.Conversations)
+            {
+                <div class="chat-item @(conv.IsActive ? "active" : "")">
+                    <img src="@conv.Avatar" alt="Avatar" class="chat-avatar" />
+                    <div class="chat-item-content">
+                        <div class="chat-item-header">
+                            <h4 class="chat-item-name">@conv.Name</h4>
+                            <span class="chat-item-time">@conv.Time</span>
+                        </div>
+                        <p class="chat-item-company">@conv.Company</p>
+                        <div class="chat-item-msg-wrapper">
+                            <p class="chat-item-msg">@conv.LastMessage</p>
+                            @if (conv.UnreadCount > 0)
+                            {
+                                <span class="chat-unread-badge">@conv.UnreadCount</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- MIDDLE VIEW -->
+    <div class="chat-main">
+        @if (Model.ActiveConversation != null)
+        {
+            var active = Model.ActiveConversation;
+            <div class="chat-header">
+                <div class="chat-header-info">
+                    <img src="@active.Avatar" alt="Avatar" />
+                    <div class="chat-header-text">
+                        <h3>@active.Name</h3>
+                        <p>@active.Company</p>
+                        @if (active.IsOnline)
+                        {
+                            <span class="chat-status-online">Online</span>
+                        }
+                    </div>
+                </div>
+                <div class="dropdown">
+                    <button class="btn btn-link text-muted" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                        <li><a class="dropdown-item" href="#">Xem hồ sơ</a></li>
+                        <li><a class="dropdown-item text-danger" href="#">Chặn tin nhắn</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="chat-body">
+                <div class="chat-date-divider">
+                    <span>Hôm nay</span>
+                </div>
+
+                @if (!string.IsNullOrEmpty(active.JobApplied))
+                {
+                    <div class="chat-notice">
+                        <span>Bạn đã ứng tuyển vị trí: @active.JobApplied</span>
+                    </div>
+                }
+
+                @foreach (var msg in active.Messages)
+                {
+                    <div class="msg-row @(msg.IsMine ? "sent" : "received")">
+                        @if (!msg.IsMine)
+                        {
+                            <img src="@msg.Avatar" alt="Avatar" class="msg-avatar" />
+                        }
+                        
+                        <div style="display:flex; flex-direction:column; @(msg.IsMine ? "align-items:flex-end;" : "align-items:flex-start;")">
+                            @if (!string.IsNullOrEmpty(msg.Content) && !msg.IsAttachment)
+                            {
+                                <div class="msg-bubble">
+                                    @msg.Content
+                                </div>
+                            }
+                            else if (!string.IsNullOrEmpty(msg.Content) && msg.IsAttachment)
+                            {
+                                <!-- Text above attachment case -->
+                                <div class="msg-bubble" style="margin-bottom:8px;">
+                                    @msg.Content
+                                </div>
+                            }
+                            
+                            @if (msg.IsAttachment)
+                            {
+                                <div class="msg-bubble" style="background:#e6f7ec; padding:8px 16px;">
+                                    <div class="msg-attachment" style="background:#fff; border:1px solid #bbf7d0;">
+                                        <div class="msg-attachment-icon">
+                                            <i class="fas fa-file-pdf"></i>
+                                        </div>
+                                        <div class="msg-attachment-info">
+                                            <h5 class="msg-attachment-name">@msg.FileName</h5>
+                                            <p class="msg-attachment-size">@msg.FileSize</p>
+                                        </div>
+                                        <i class="fas fa-download msg-attachment-dl"></i>
+                                    </div>
+                                </div>
+                            }
+                            <span class="msg-time">@msg.Time</span>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="chat-input-area">
+                <div class="chat-input-wrapper">
+                    <button class="btn-attach"><i class="fas fa-paperclip"></i></button>
+                    <textarea class="chat-input" placeholder="Nhập tin nhắn..." rows="1"></textarea>
+                    <button class="btn-send"><i class="fas fa-paper-plane"></i></button>
+                </div>
+                <div class="chat-input-hint">Nhấn Enter để gửi</div>
+            </div>
+        }
+    </div>
+
+
+
+</div>
