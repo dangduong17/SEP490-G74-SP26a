@@ -244,6 +244,13 @@
             </button>
 
             <!-- Navigation Menu -->
+            @{
+                var userId = Context.Request.Cookies["UserId"];
+                var isAuthenticated = !string.IsNullOrEmpty(userId);
+                var userRole = Context.Request.Cookies["UserRole"];
+                var userName = Context.Request.Cookies["UserName"] ?? "User";
+                var userEmail = Context.Request.Cookies["UserEmail"] ?? "";
+            }
             <div class="collapse navbar-collapse" id="navbarContent">
                 <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
                     <li class="nav-item">
@@ -251,11 +258,14 @@
                             Việc làm
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link fw-semibold" asp-controller="CVs" asp-action="CVList">
-                            Hồ sơ & CV
-                        </a>
-                    </li>
+                    @if (userRole == "Candidate")
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link fw-semibold" asp-controller="CV" asp-action="Index">
+                                Hồ sơ & CV
+                            </a>
+                        </li>
+                    }
                     <li class="nav-item">
                         <a class="nav-link fw-semibold" asp-controller="Home" asp-action="Index">
                             Công ty
@@ -270,14 +280,6 @@
 
                 <!-- User Actions -->
                 <div class="d-flex align-items-center gap-2">
-                    @{
-                        var userId = Context.Request.Cookies["UserId"];
-                        var isAuthenticated = !string.IsNullOrEmpty(userId);
-                        var userRole = Context.Request.Cookies["UserRole"];
-                        var userName = Context.Request.Cookies["UserName"] ?? "User";
-                        var userEmail = Context.Request.Cookies["UserEmail"] ?? "";
-                    }
-
                     @if (isAuthenticated)
                     {
                         if (userRole == "Admin")
@@ -359,9 +361,9 @@
                                 </button>
 
                                 <!-- Message Icon -->
-                                <button class="header-icon-btn" title="Tin nhắn">
+                                <a asp-controller="Chat" asp-action="Index" class="header-icon-btn text-decoration-none" title="Tin nhắn">
                                     <i class="fas fa-comment-dots"></i>
-                                </button>
+                                </a>
 
                                 <div class="profile-dropdown" id="profileDropdown">
                                     <div class="profile-avatar-wrapper" onclick="toggleProfileMenu()">
@@ -450,9 +452,9 @@
                                     </button>
                                     
                                     <!-- Message Icon -->
-                                    <button class="header-icon-btn">
+                                    <a asp-controller="Chat" asp-action="Index" class="header-icon-btn text-decoration-none" title="Tin nhắn">
                                         <i class="fas fa-comment-dots"></i>
-                                    </button>
+                                    </a>
                                 }
                                 
                                 <!-- Profile Dropdown -->
@@ -507,7 +509,7 @@
                                                     <i class="fas fa-chevron-down arrow"></i>
                                                 </div>
                                                 <div class="profile-submenu">
-                                                    <a asp-controller="CVs" asp-action="CVList" class="profile-submenu-item">CV của tôi</a>
+                                                    <a asp-controller="CV" asp-action="Index" class="profile-submenu-item">CV của tôi</a>
                                                     <a asp-controller="Profile" asp-action="Info" class="profile-submenu-item">Hồ sơ cá nhân</a>
                                                 </div>
                                             </div>
