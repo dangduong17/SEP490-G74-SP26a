@@ -312,10 +312,18 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         // ========== SUBSCRIPTIONS MANAGEMENT ==========
 
         [HttpGet]
-        public async Task<IActionResult> SubscriptionList(string? keyword, string? status, int? planId, int page = 1, int pageSize = 10)
+        public async Task<IActionResult> SubscriptionList(string? keyword, string? status = "ACTIVE", int? planId = null, int page = 1, int pageSize = 10)
         {
             if (RequireAdmin() is { } redirect) return redirect;
-            var model = await _adminService.GetSubscriptionListAsync(keyword, status, planId, page, pageSize);
+            
+            var filterStatus = status == "ALL" ? null : status;
+            var model = await _adminService.GetSubscriptionListAsync(keyword, filterStatus, planId, page, pageSize);
+            
+            if (model != null)
+            {
+                model.Status = status;
+            }
+
             ViewData["Title"] = "Quản lý gói dịch vụ";
             return View(model);
         }

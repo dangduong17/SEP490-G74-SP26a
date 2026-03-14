@@ -14,6 +14,7 @@ namespace RJMS.Vn.Edu.Fpt.Repository
         Task<int> CreateInvoiceAsync(Invoice invoice);
         Task<Payment?> GetPaymentByIdAsync(int paymentId);
         Task<Subscription?> GetSubscriptionByIdAsync(int subscriptionId);
+        Task<Subscription?> GetActiveSubscriptionByUserIdAsync(int userId);
         Task<User?> GetUserByIdAsync(int userId);
     }
 }

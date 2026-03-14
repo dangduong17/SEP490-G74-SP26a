@@ -255,7 +255,11 @@
                             </div>
                         }
 
-                        @if (plan.Price == 0)
+                        @if (ViewBag.CurrentPlanId != null && plan.Id == (int)ViewBag.CurrentPlanId)
+                        {
+                            <button class="btn btn-pricing btn-pricing-outline" disabled style="background-color: #f8f9fa; border-color: #6c757d; color: #6c757d;">Đang sử dụng</button>
+                        }
+                        else if (plan.Price == 0)
                         {
                             <button class="btn btn-pricing btn-pricing-outline" disabled>Gói hiện tại</button>
                         }

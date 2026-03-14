@@ -135,5 +135,10 @@ namespace RJMS.Vn.Edu.Fpt.Service
 
             return true;
         }
+
+        public async Task<Subscription?> GetActiveSubscriptionByUserIdAsync(int userId)
+        {
+            return await _paymentRepo.GetActiveSubscriptionByUserIdAsync(userId);
+        }
     }
 }

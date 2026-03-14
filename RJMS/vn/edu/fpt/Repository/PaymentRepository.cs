@@ -136,5 +136,15 @@ namespace RJMS.Vn.Edu.Fpt.Repository
         {
             return await _context.Users.FindAsync(userId);
         }
+
+        public async Task<Subscription?> GetActiveSubscriptionByUserIdAsync(int userId)
+        {
+            var now = DateTime.UtcNow;
+            return await _context.Subscriptions
+                .Include(s => s.Plan)
+                .Where(s => s.UserId == userId && s.Status == "ACTIVE" && s.StartDate <= now && s.EndDate >= now)
+                .OrderByDescending(s => s.EndDate)
+                .FirstOrDefaultAsync();
+        }
     }
 }
