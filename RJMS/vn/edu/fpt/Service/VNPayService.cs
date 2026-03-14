@@ -23,8 +23,7 @@ namespace RJMS.Vn.Edu.Fpt.Service
             var vnpUrl = _configuration["VNPay:Url"]!;
             var returnUrl = _configuration["VNPay:ReturnUrl"]!;
 
-            // SortedDictionary tự động sort theo key (alphabet)
-            var vnPayData = new SortedDictionary<string, string>
+            var vnPayData = new SortedDictionary<string, string>(StringComparer.Ordinal)
             {
                 { "vnp_Version", "2.1.0" },
                 { "vnp_Command", "pay" },
@@ -40,22 +39,36 @@ namespace RJMS.Vn.Edu.Fpt.Service
                 { "vnp_TxnRef", $"{paymentId}_{DateTime.Now.Ticks}" } // Mã giao dịch unique
             };
 
-            // Tạo chuỗi hash (KHÔNG encode theo docs VNPay)
-            var signData = string.Join("&", vnPayData.Select(kv => $"{kv.Key}={kv.Value}"));
-            var vnpSecureHash = HmacSHA512(hashSecret, signData);
+            var buildString = new StringBuilder();
 
-            vnPayData.Add("vnp_SecureHash", vnpSecureHash);
+            foreach (var kv in vnPayData)
+            {
+                if (!string.IsNullOrEmpty(kv.Value))
+                {
+                    buildString.Append(WebUtility.UrlEncode(kv.Key) + "=" + WebUtility.UrlEncode(kv.Value) + "&");
+                }
+            }
 
-            // Build URL (CÓ encode)
-            var queryString = string.Join("&", vnPayData.Select(kv => $"{kv.Key}={WebUtility.UrlEncode(kv.Value)}"));
-            return $"{vnpUrl}?{queryString}";
+            var signString = buildString.ToString();
+            if (signString.Length > 0)
+            {
+                signString = signString.Substring(0, signString.Length - 1);
+            }
+            if (buildString.Length > 0)
+            {
+                buildString = buildString.Remove(buildString.Length - 1, 1);
+            }
+
+            var vnpSecureHash = HmacSHA512(hashSecret, signString);
+
+            return $"{vnpUrl}?{buildString.ToString()}&vnp_SecureHash={vnpSecureHash}";
         }
 
         public bool ValidateSignature(IQueryCollection queryCollection, string inputHash)
         {
             var hashSecret = _configuration["VNPay:HashSecret"]!;
 
-            var vnPayData = new SortedDictionary<string, string>();
+            var vnPayData = new SortedDictionary<string, string>(StringComparer.Ordinal);
             foreach (var key in queryCollection.Keys)
             {
                 if (key != "vnp_SecureHash" && key != "vnp_SecureHashType")
@@ -64,8 +77,17 @@ namespace RJMS.Vn.Edu.Fpt.Service
                 }
             }
 
-            var signData = string.Join("&", vnPayData.Select(kv => $"{kv.Key}={kv.Value}"));
-            var checkSum = HmacSHA512(hashSecret, signData);
+            var signString = new StringBuilder();
+            foreach (var kv in vnPayData)
+            {
+                if (!string.IsNullOrEmpty(kv.Value))
+                {
+                    signString.Append(WebUtility.UrlEncode(kv.Key) + "=" + WebUtility.UrlEncode(kv.Value) + "&");
+                }
+            }
+            if (signString.Length > 0) signString.Remove(signString.Length - 1, 1);
+
+            var checkSum = HmacSHA512(hashSecret, signString.ToString());
 
             return checkSum.Equals(inputHash, StringComparison.InvariantCultureIgnoreCase);
         }
