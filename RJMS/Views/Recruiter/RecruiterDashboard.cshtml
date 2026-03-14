@@ -566,38 +566,43 @@
         <!-- Subscription card -->
         <div class="rsub-card">
             <div class="rsub-header">
-                <span class="rsub-title">Your Subscription</span>
+                <span class="rsub-title">Gói dịch vụ hiện tại</span>
                 <span class="rsub-plan-badge">@Model.SubscriptionPlan</span>
             </div>
-            <div class="rsub-valid">Valid until @Model.SubscriptionValidTo</div>
+            <div class="rsub-valid">Hạn dùng đến @Model.SubscriptionValidTo</div>
 
             <div class="rsub-metric">
                 <div class="rsub-metric-label">
-                    <span>Job Posts Remaining</span>
+                    <span>Lượt đăng tin còn lại</span>
                     <span class="rsub-metric-val">@Model.JobPostsUsed / @Model.JobPostsTotal</span>
                 </div>
                 <div class="rsub-bar-bg">
-                    <div class="rsub-bar-fill" style="width:@((int)((double)Model.JobPostsUsed/Model.JobPostsTotal*100))%;"></div>
+                    <div class="rsub-bar-fill" style="width:@((Model.JobPostsTotal > 0) ? (int)((double)Model.JobPostsUsed/Model.JobPostsTotal*100) : 0)%;"></div>
                 </div>
             </div>
 
             <div class="rsub-metric">
                 <div class="rsub-metric-label">
-                    <span>CV Searches</span>
+                    <span>Lượt lọc AI CV còn lại</span>
                     <span class="rsub-metric-val">@Model.CvSearchesUsed / @Model.CvSearchesTotal</span>
                 </div>
                 <div class="rsub-bar-bg">
-                    <div class="rsub-bar-fill" style="width:@((int)((double)Model.CvSearchesUsed/Model.CvSearchesTotal*100))%;"></div>
+                    <div class="rsub-bar-fill" style="width:@((Model.CvSearchesTotal > 0) ? (int)((double)Model.CvSearchesUsed/Model.CvSearchesTotal*100) : 0)%;"></div>
                 </div>
             </div>
 
-            <div class="rsub-metric-plain">
-                <span>Premium Support</span>
-                <span class="val">Unlimited</span>
+            <div class="d-flex flex-column gap-2 mt-4">
+                <a asp-controller="Subscription" asp-action="Index" class="btn-upgrade mb-0">
+                    Nâng cấp gói <i class="fas fa-arrow-trend-up ms-1"></i>
+                </a>
+                @if (Model.PlanPrice > 0)
+                {
+                    <button class="btn btn-outline-light btn-sm" style="font-size: 0.8rem; border-color: rgba(255,255,255,0.3);">
+                        <i class="fas fa-times-circle"></i> Hủy gói hiện tại
+                    </button>
+                }
             </div>
-
-            <a href="#" class="btn-upgrade">Upgrade Plan <i class="fas fa-arrow-trend-up ms-1"></i></a>
-            <div class="rsub-contact">Need custom limits? <a href="#">Contact Sales</a></div>
+            <div class="rsub-contact mt-3">Cần yêu cầu đặc biệt? <a href="#">Liên hệ Sale</a></div>
         </div>
 
         <!-- Recruitment tip -->
