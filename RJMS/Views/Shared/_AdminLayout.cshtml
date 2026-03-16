@@ -192,6 +192,10 @@
                    asp-controller="Admin" asp-action="SkillList">
                     Kỹ năng
                 </a>
+                <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() is "JobCategoryList" or "CreateJobCategory" or "EditJobCategory" ? "active" : "")"
+                   asp-controller="Admin" asp-action="JobCategoryList">
+                    Danh mục nghề nghiệp
+                </a>
                 <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() is "CompanyList" or "CompanyDetail" ? "active" : "")"
                    asp-controller="Admin" asp-action="CompanyList">
                     Công ty
@@ -212,20 +216,6 @@
             @if (ViewData["HidePageTitle"] == null || !(bool)ViewData["HidePageTitle"]!)
             {
                 <div class="admin-page-title">@ViewData["Title"]</div>
-            }
-            @if (TempData["Success"] != null)
-            {
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    @TempData["Success"]
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            }
-            @if (TempData["Error"] != null)
-            {
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    @TempData["Error"]
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
             }
             <div class="admin-card">
                 @RenderBody()
