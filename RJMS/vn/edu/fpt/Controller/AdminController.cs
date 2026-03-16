@@ -7,17 +7,22 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
     public class AdminController : Controller
     {
         private readonly IAdminService _adminService;
+        private readonly IJobCategoryService _jobCategoryService;
 
-        public AdminController(IAdminService adminService)
+        public AdminController(IAdminService adminService, IJobCategoryService jobCategoryService)
         {
             _adminService = adminService;
+            _jobCategoryService = jobCategoryService;
         }
 
         private IActionResult? RequireAdmin()
         {
             var role = Request.Cookies["UserRole"];
             if (role != "Admin")
+            {
+                TempData["WarningToast"] = "Vui lòng đăng nhập với quyền Quản trị viên.";
                 return RedirectToAction("Login", "Auth");
+            }
             return null;
         }
 
@@ -58,7 +63,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                 return View(model);
             }
 
-            TempData["Success"] = "Tạo tài khoản admin thành công.";
+            TempData["SuccessToast"] = "Tạo tài khoản admin thành công.";
             return RedirectToAction(nameof(UserList));
         }
 
@@ -85,7 +90,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                 return View(model);
             }
 
-            TempData["Success"] = "Tạo ứng viên thành công.";
+            TempData["SuccessToast"] = "Tạo ứng viên thành công.";
             return RedirectToAction(nameof(UserList));
         }
 
@@ -112,7 +117,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                 return View(model);
             }
 
-            TempData["Success"] = "Tạo nhà tuyển dụng thành công.";
+            TempData["SuccessToast"] = "Tạo nhà tuyển dụng thành công.";
             return RedirectToAction(nameof(UserList));
         }
 
@@ -144,7 +149,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                 return View(model);
             }
 
-            TempData["Success"] = "Cập nhật người dùng thành công.";
+            TempData["SuccessToast"] = "Cập nhật người dùng thành công.";
             return RedirectToAction(nameof(UserList));
         }
 
@@ -157,11 +162,11 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             if (!result.Succeeded)
             {
                 if (result.NotFound) return NotFound();
-                TempData["Error"] = result.Errors.FirstOrDefault()?.Message ?? "Thao tác thất bại.";
+                TempData["ErrorToast"] = result.Errors.FirstOrDefault()?.Message ?? "Thao tác thất bại.";
                 return RedirectToAction(nameof(UserList));
             }
 
-            TempData["Success"] = "Đã chuyển trạng thái người dùng sang ngưng hoạt động.";
+            TempData["SuccessToast"] = "Đã chuyển trạng thái người dùng sang ngưng hoạt động.";
             return RedirectToAction(nameof(UserList));
         }
 
@@ -200,7 +205,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                 return View(model);
             }
 
-            TempData["Success"] = "Thêm kỹ năng thành công.";
+            TempData["SuccessToast"] = "Thêm kỹ năng thành công.";
             return RedirectToAction(nameof(SkillList));
         }
 
@@ -232,7 +237,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                 return View(model);
             }
 
-            TempData["Success"] = "Cập nhật kỹ năng thành công.";
+            TempData["SuccessToast"] = "Cập nhật kỹ năng thành công.";
             return RedirectToAction(nameof(SkillList));
         }
 
@@ -245,12 +250,123 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             if (!result.Succeeded)
             {
                 if (result.NotFound) return NotFound();
-                TempData["Error"] = result.Errors.FirstOrDefault()?.Message ?? "Thao tác thất bại.";
+                TempData["ErrorToast"] = result.Errors.FirstOrDefault()?.Message ?? "Thao tác thất bại.";
                 return RedirectToAction(nameof(SkillList));
             }
 
-            TempData["Success"] = "Đã xóa kỹ năng.";
+            TempData["SuccessToast"] = "Đã xóa kỹ năng.";
             return RedirectToAction(nameof(SkillList));
+        }
+
+        // ========== JOB CATEGORIES MANAGEMENT ==========
+
+        [HttpGet]
+        public async Task<IActionResult> JobCategoryList(string? keyword, int? filterLevel, int page = 1, int pageSize = 20)
+        {
+            if (RequireAdmin() is { } redirect) return redirect;
+            var model = await _jobCategoryService.GetCategoriesAsync(keyword, filterLevel, page, pageSize);
+            ViewData["Title"] = "Danh mục nghề nghiệp";
+            return View(model);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> CreateJobCategory(int level = 1)
+        {
+            if (RequireAdmin() is { } redirect) return redirect;
+            ViewData["Title"] = "Thêm danh mục nghề nghiệp";
+            
+            var parents = await _jobCategoryService.GetPossibleParentsAsync(level);
+            ViewBag.PossibleParents = parents;
+            
+            return View(new CreateJobCategoryModel { Level = level });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateJobCategory(CreateJobCategoryModel model)
+        {
+            if (RequireAdmin() is { } redirect) return redirect;
+            ViewData["Title"] = "Thêm danh mục nghề nghiệp";
+            
+            if (!ModelState.IsValid) 
+            {
+                ViewBag.PossibleParents = await _jobCategoryService.GetPossibleParentsAsync(model.Level);
+                return View(model);
+            }
+
+            var result = await _jobCategoryService.CreateCategoryAsync(model);
+            if (!result.Succeeded)
+            {
+                AddErrorsToModelState(result);
+                ViewBag.PossibleParents = await _jobCategoryService.GetPossibleParentsAsync(model.Level);
+                return View(model);
+            }
+
+            TempData["SuccessToast"] = "Thêm danh mục thành công.";
+            return RedirectToAction(nameof(JobCategoryList));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> EditJobCategory(int id)
+        {
+            if (RequireAdmin() is { } redirect) return redirect;
+            var cat = await _jobCategoryService.GetCategoryByIdAsync(id);
+            if (cat == null) return NotFound();
+
+            var model = new UpdateJobCategoryModel
+            {
+                Id = cat.Id,
+                Name = cat.Name,
+                Description = cat.Description,
+                ParentId = cat.ParentId,
+                Level = cat.Level,
+                Slug = cat.Slug
+            };
+
+            ViewBag.PossibleParents = await _jobCategoryService.GetPossibleParentsAsync(model.Level);
+            ViewData["Title"] = "Cập nhật danh mục nghề nghiệp";
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditJobCategory(UpdateJobCategoryModel model)
+        {
+            if (RequireAdmin() is { } redirect) return redirect;
+            ViewData["Title"] = "Cập nhật danh mục nghề nghiệp";
+            
+            if (!ModelState.IsValid) 
+            {
+                ViewBag.PossibleParents = await _jobCategoryService.GetPossibleParentsAsync(model.Level);
+                return View(model);
+            }
+
+            var result = await _jobCategoryService.UpdateCategoryAsync(model);
+            if (!result.Succeeded)
+            {
+                AddErrorsToModelState(result);
+                ViewBag.PossibleParents = await _jobCategoryService.GetPossibleParentsAsync(model.Level);
+                return View(model);
+            }
+
+            TempData["SuccessToast"] = "Cập nhật danh mục thành công.";
+            return RedirectToAction(nameof(JobCategoryList));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteJobCategory(int id)
+        {
+            if (RequireAdmin() is { } redirect) return redirect;
+            var result = await _jobCategoryService.DeleteCategoryAsync(id);
+            if (!result.Succeeded)
+            {
+                TempData["ErrorToast"] = result.Errors.FirstOrDefault()?.Message ?? "Thao tác thất bại.";
+                return RedirectToAction(nameof(JobCategoryList));
+            }
+
+            TempData["SuccessToast"] = "Đã xóa danh mục.";
+            return RedirectToAction(nameof(JobCategoryList));
         }
 
         // ========== COMPANIES MANAGEMENT ==========
@@ -284,11 +400,11 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             if (!result.Succeeded)
             {
                 if (result.NotFound) return NotFound();
-                TempData["Error"] = result.Errors.FirstOrDefault()?.Message ?? "Thao tác thất bại.";
+                TempData["ErrorToast"] = result.Errors.FirstOrDefault()?.Message ?? "Thao tác thất bại.";
                 return RedirectToAction(nameof(CompanyDetail), new { id });
             }
 
-            TempData["Success"] = "Đã xác minh công ty.";
+            TempData["SuccessToast"] = "Đã xác minh công ty.";
             return RedirectToAction(nameof(CompanyDetail), new { id });
         }
 
@@ -301,11 +417,11 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             if (!result.Succeeded)
             {
                 if (result.NotFound) return NotFound();
-                TempData["Error"] = result.Errors.FirstOrDefault()?.Message ?? "Thao tác thất bại.";
+                TempData["ErrorToast"] = result.Errors.FirstOrDefault()?.Message ?? "Thao tác thất bại.";
                 return RedirectToAction(nameof(CompanyDetail), new { id });
             }
 
-            TempData["Success"] = "Đã hủy xác minh công ty.";
+            TempData["SuccessToast"] = "Đã hủy xác minh công ty.";
             return RedirectToAction(nameof(CompanyDetail), new { id });
         }
 
