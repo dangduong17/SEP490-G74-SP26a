@@ -154,13 +154,13 @@ public partial class FindingJobsDbContext : DbContext
             entity.HasKey(e => e.Id).HasName("PK__Jobs__3214EC072AAD8B7F");
 
             entity.Property(e => e.ApplicationCount).HasDefaultValue(0);
-            entity.Property(e => e.Benefits).HasColumnType("text");
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
-            entity.Property(e => e.Description).HasColumnType("text");
             entity.Property(e => e.JobType).HasMaxLength(50);
             entity.Property(e => e.MaxSalary).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.MinSalary).HasColumnType("decimal(18, 2)");
-            entity.Property(e => e.Requirements).HasColumnType("text");
+            entity.Property(e => e.Requirements).HasColumnType("nvarchar(max)");
+            entity.Property(e => e.Benefits).HasColumnType("nvarchar(max)");
+            entity.Property(e => e.Description).HasColumnType("nvarchar(max)");
             entity.Property(e => e.Status).HasMaxLength(50);
             entity.Property(e => e.Title).HasMaxLength(500);
             entity.Property(e => e.ViewCount).HasDefaultValue(0);
@@ -190,6 +190,14 @@ public partial class FindingJobsDbContext : DbContext
 
             entity.Property(e => e.Description).HasMaxLength(500);
             entity.Property(e => e.Name).HasMaxLength(100);
+            
+            entity.Property(e => e.Level).HasDefaultValue(1);
+            entity.Property(e => e.Slug).HasMaxLength(200);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+
+            entity.HasOne(d => d.Parent).WithMany(p => p.Children)
+                .HasForeignKey(d => d.ParentId)
+                .HasConstraintName("FK__JobCateg__Parent__XYZ");
         });
 
         modelBuilder.Entity<JobSkill>(entity =>
@@ -212,6 +220,9 @@ public partial class FindingJobsDbContext : DbContext
             entity.HasKey(e => e.Id).HasName("PK__Location__3214EC07EAA4C6B7");
 
             entity.Property(e => e.CityName).HasMaxLength(100);
+            entity.Property(e => e.WardName).HasMaxLength(100);
+            entity.Property(e => e.Address).HasMaxLength(500);
+            entity.Property(e => e.DetailAddress).HasMaxLength(500);
         });
 
         modelBuilder.Entity<Payment>(entity =>

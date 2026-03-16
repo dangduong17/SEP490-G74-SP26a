@@ -1,0 +1,563 @@
+@model RJMS.vn.edu.fpt.Models.DTOs.JobSaveDTO
+@{
+    ViewData["Title"] = "Đăng tin tuyển dụng";
+    Layout = "~/Views/Shared/_RecruiterLayout.cshtml";
+}
+
+@section Styles {
+<style>
+    .page-title { font-size: 1.4rem; font-weight: 700; color: #111827; margin-bottom: 1.5rem; border-left: 4px solid #00b14f; padding-left: 0.75rem; }
+    .section-card { background: #fff; border-radius: 10px; border: 1px solid #e5e7eb; padding: 1.5rem; margin-bottom: 1.25rem; }
+    .section-card h3 { font-size: 0.95rem; font-weight: 700; color: #00b14f; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #f3f4f6; }
+    .form-label { font-size: 0.85rem; font-weight: 600; color: #374151; margin-bottom: 0.35rem; }
+    .required::after { content: " *"; color: #dc2626; }
+    .form-control, .form-select { border-radius: 7px; font-size: 0.9rem; border-color: #d1d5db; padding: 0.5rem 0.875rem; }
+    .form-control:focus, .form-select:focus { border-color: #00b14f; box-shadow: 0 0 0 3px rgba(0,177,79,0.08); }
+    .btn-post { background: linear-gradient(135deg,#00b14f,#009744); color: white; border: none; border-radius: 8px; font-weight: 700; padding: 10px 28px; font-size: 0.95rem; transition: all .2s; }
+    .btn-post:hover { background: linear-gradient(135deg,#009744,#007a38); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,177,79,.3); }
+    .btn-draft { background: #fff; color: #374151; border: 1.5px solid #d1d5db; border-radius: 8px; font-weight: 600; padding: 10px 24px; font-size: 0.9rem; }
+    .btn-draft:hover { background: #f9fafb; border-color: #9ca3af; }
+    .category-chain { display: flex; flex-direction: column; gap: 0.5rem; }
+    .category-chain label { font-size: 0.8rem; color: #6b7280; font-weight: 500; margin-bottom: 2px; }
+    .skill-badge { display: inline-flex; align-items: center; background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; border-radius: 20px; padding: 3px 10px; font-size: 0.82rem; font-weight: 500; margin: 2px; }
+    .skill-badge button { background: none; border: none; color: #166534; padding: 0 0 0 5px; font-size: 0.85rem; cursor: pointer; line-height: 1; }
+    .skill-search-container { position: relative; }
+    .skill-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #d1d5db; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,.1); z-index: 100; max-height: 200px; overflow-y: auto; display: none; }
+    .skill-dropdown-item { padding: 8px 12px; font-size: 0.88rem; cursor: pointer; color: #374151; transition: background .15s; }
+    .skill-dropdown-item:hover { background: #f0fdf4; color: #166534; }
+    .skill-selected-area { min-height: 40px; border: 1px solid #d1d5db; border-radius: 7px; padding: 6px 8px; background: #fafafa; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+    /* Modal */
+    .modal-category { display: none; position: fixed; inset: 0; z-index: 9999; align-items: center; justify-content: center; }
+    .modal-category.show { display: flex; }
+    .modal-backdrop-custom { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(2px); }
+    .modal-box { position: relative; z-index: 1; background: white; border-radius: 16px; padding: 2rem; width: 420px; max-width: 95vw; box-shadow: 0 20px 60px rgba(0,0,0,.2); animation: modalIn .25s ease; }
+    @@keyframes modalIn { from { opacity: 0; transform: translateY(-20px) scale(.97); } to { opacity: 1; transform: none; } }
+    .modal-box h4 { font-size: 1.1rem; font-weight: 700; color: #111827; margin-bottom: 0.5rem; }
+    .modal-box p { font-size: 0.875rem; color: #6b7280; margin-bottom: 1.25rem; }
+    .modal-box .modal-input { width: 100%; padding: 0.6rem 1rem; border: 1.5px solid #d1d5db; border-radius: 8px; font-size: 0.95rem; transition: border .2s; }
+    .modal-box .modal-input:focus { border-color: #00b14f; outline: none; box-shadow: 0 0 0 3px rgba(0,177,79,.1); }
+    .modal-footer-btns { display: flex; gap: 0.75rem; margin-top: 1.25rem; justify-content: flex-end; }
+    .btn-modal-ok { background: #00b14f; color: white; border: none; border-radius: 8px; padding: 8px 22px; font-weight: 600; cursor: pointer; }
+    .btn-modal-ok:hover { background: #009744; }
+    .btn-modal-cancel { background: #f3f4f6; color: #374151; border: none; border-radius: 8px; padding: 8px 18px; font-weight: 500; cursor: pointer; }
+    .btn-modal-cancel:hover { background: #e5e7eb; }
+    .add-cat-link { font-size: 0.8rem; color: #00b14f; cursor: pointer; text-decoration: underline; display: inline-block; margin-top: 3px; }
+    .add-cat-link:hover { color: #009744; }
+    .skills-limit-note { font-size: 0.78rem; color: #6b7280; margin-top: 4px; }
+</style>
+}
+
+<div class="container-fluid py-3">
+    <h2 class="page-title">Đăng tin tuyển dụng</h2>
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger mb-3">
+            <div asp-validation-summary="All"></div>
+        </div>
+    }
+
+    <form asp-action="CreateJob" method="post" id="jobForm">
+        <input type="hidden" asp-for="ActionType" id="ActionType" value="Submit" />
+        <input type="hidden" asp-for="JobCategoryId" id="JobCategoryId" value="0" />
+        <input type="hidden" asp-for="JobCategoryLevel1Id" id="JobCategoryLevel1IdHidden" />
+        <input type="hidden" asp-for="JobCategoryLevel2Id" id="JobCategoryLevel2IdHidden" />
+        <input type="hidden" asp-for="JobCategoryLevel3Id" id="JobCategoryLevel3IdHidden" />
+        
+        <!-- Skills hidden inputs -->
+        <div id="skillHiddenInputs"></div>
+
+        <div class="row g-3">
+            <!-- Cột trái -->
+            <div class="col-lg-8">
+
+                <!-- CARD 1: Thông tin chung -->
+                <div class="section-card">
+                    <h3>Thông tin công việc</h3>
+
+                    <div class="mb-3">
+                        <label asp-for="Title" class="form-label required">Tiêu đề công việc</label>
+                        <input asp-for="Title" class="form-control" placeholder="VD: Senior Backend .NET Developer" />
+                        <span asp-validation-for="Title" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Ngành nghề - phân cấp nhỏ gọn theo row -->
+                    <div class="mb-3">
+                        <label class="form-label required">Phân loại ngành nghề</label>
+                        <div class="category-chain">
+                            <div>
+                                <label>Nhóm nghề (Cấp 1)</label>
+                                <div class="d-flex gap-2 align-items-center">
+                                    <select class="form-select" id="Cat1Select" style="flex:1">
+                                        <option value="">Chọn nhóm nghề...</option>
+                                        @foreach(var cat in ViewBag.Categories1 ?? new List<RJMS.vn.edu.fpt.Models.JobCategory>())
+                                        {
+                                            <option value="@cat.Id">@cat.Name</option>
+                                        }
+                                    </select>
+                                    <span class="add-cat-link" onclick="openCatModal(1,null,'Cat1Select')">+ Thêm mới</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label>Nghề nghiệp (Cấp 2)</label>
+                                <div class="d-flex gap-2 align-items-center">
+                                    <select class="form-select" id="Cat2Select" style="flex:1" disabled>
+                                        <option value="">Chọn sau khi chọn Cấp 1...</option>
+                                    </select>
+                                    <span class="add-cat-link" id="btnAddCat2" onclick="openCatModal(2,document.getElementById('Cat1Select').value,'Cat2Select')" style="opacity:.4;pointer-events:none">+ Thêm mới</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label>Vị trí chuyên môn (Cấp 3)</label>
+                                <div class="d-flex gap-2 align-items-center">
+                                    <select class="form-select" id="Cat3Select" style="flex:1" disabled>
+                                        <option value="">Chọn sau khi chọn Cấp 2...</option>
+                                    </select>
+                                    <span class="add-cat-link" id="btnAddCat3" onclick="openCatModal(3,document.getElementById('Cat2Select').value,'Cat3Select')" style="opacity:.4;pointer-events:none">+ Thêm mới</span>
+                                </div>
+                            </div>
+                        </div>
+                        <span asp-validation-for="JobCategoryId" class="text-danger small"></span>
+                    </div>
+
+                    <div class="row g-2">
+                        <div class="col-md-12">
+                            <label asp-for="JobType" class="form-label required">Hình thức</label>
+                            <select asp-for="JobType" class="form-select">
+                                <option value="">Chọn...</option>
+                                <option value="Full-time">Full-time</option>
+                                <option value="Part-time">Part-time</option>
+                                <option value="Remote">Remote</option>
+                                <option value="Freelance">Freelance</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CARD 2: Mô tả -->
+                <div class="section-card">
+                    <h3>Mô tả & yêu cầu</h3>
+
+                    <div class="mb-3">
+                        <label asp-for="Description" class="form-label required">Mô tả công việc</label>
+                        <textarea asp-for="Description" class="form-control" rows="4" placeholder="Mô tả nhiệm vụ, trách nhiệm chính của vị trí..."></textarea>
+                        <span asp-validation-for="Description" class="text-danger small"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Requirements" class="form-label required">Yêu cầu ứng viên</label>
+                        <textarea asp-for="Requirements" class="form-control" rows="4" placeholder="Kỹ năng, học vấn, kinh nghiệm cần thiết..."></textarea>
+                        <span asp-validation-for="Requirements" class="text-danger small"></span>
+                    </div>
+                    <div>
+                        <label asp-for="Benefits" class="form-label">Quyền lợi</label>
+                        <textarea asp-for="Benefits" class="form-control" rows="3" placeholder="BHXH, thưởng, đào tạo, team building..."></textarea>
+                    </div>
+                </div>
+
+                <!-- CARD 3: Skills -->
+                <div class="section-card">
+                    <h3>Kỹ năng yêu cầu</h3>
+
+                    <div class="mb-2">
+                        <label class="form-label">Chọn kỹ năng <span class="text-muted fw-normal">(tối đa 5 kỹ năng)</span></label>
+                        <!-- Selected skills display -->
+                        <div id="selectedSkillsArea" class="skill-selected-area mb-2">
+                            <span class="text-muted" style="font-size:.82rem;" id="noSkillPlaceholder">Chưa có kỹ năng nào được chọn</span>
+                        </div>
+                        <!-- Search box -->
+                        <div class="skill-search-container">
+                            <input type="text" id="skillSearchInput" class="form-control" placeholder="Tìm kiếm kỹ năng..." autocomplete="off" />
+                            <div class="skill-dropdown" id="skillDropdown"></div>
+                        </div>
+                        <div class="skills-limit-note">Bạn đã chọn <span id="skillCountDisplay">0</span>/5 kỹ năng từ danh sách. Kỹ năng chưa có trong hệ thống sẽ được tạo tự động.</div>
+                    </div>
+                    <div>
+                        <label asp-for="NewSkills" class="form-label">Kỹ năng mới (chưa có trong danh sách)</label>
+                        <input asp-for="NewSkills" id="NewSkillsInput" class="form-control" placeholder="Vue.js, Kubernetes, ... (cách nhau bằng dấu phẩy, tối đa 5)" />
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Cột phải -->
+            <div class="col-lg-4">
+
+                <!-- CARD: Lương -->
+                <div class="section-card">
+                    <h3>Mức lương</h3>
+                    <div class="mb-2">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="ThoaThuan">
+                            <label class="form-check-label text-muted small" for="ThoaThuan">Thỏa thuận (không hiển thị mức lương)</label>
+                        </div>
+                    </div>
+                    <div id="salaryFields">
+                        <div class="mb-2">
+                            <label asp-for="MinSalary" class="form-label">Từ (VNĐ)</label>
+                            <input asp-for="MinSalary" type="number" class="form-control salary-input" placeholder="10,000,000" />
+                        </div>
+                        <div>
+                            <label asp-for="MaxSalary" class="form-label">Đến (VNĐ)</label>
+                            <input asp-for="MaxSalary" type="number" class="form-control salary-input" placeholder="20,000,000" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CARD: Địa điểm -->
+                <div class="section-card">
+                    <h3>Địa điểm làm việc</h3>
+                    <input type="hidden" asp-for="ProvinceName" id="ProvinceName" />
+                    <input type="hidden" asp-for="WardName" id="WardName" />
+                    <div class="mb-2">
+                        <label class="form-label required">Tỉnh / Thành phố</label>
+                        <select asp-for="ProvinceCode" class="form-select" id="ProvinceCode">
+                            <option value="">Đang tải...</option>
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Quận / Huyện</label>
+                        <select asp-for="WardCode" class="form-select" id="WardCode">
+                            <option value="">Chọn tỉnh trước</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label asp-for="Address" class="form-label">Địa chỉ cụ thể</label>
+                        <input asp-for="Address" class="form-control" placeholder="Số 123, đường ABC..." />
+                    </div>
+                </div>
+
+                <!-- CARD: Chi tiết ứng viên -->
+                <div class="section-card">
+                    <h3>Thông tin ứng viên</h3>
+                    <div class="mb-2">
+                        <label asp-for="NumberOfPositions" class="form-label">Số lượng tuyển</label>
+                        <input asp-for="NumberOfPositions" class="form-control" type="number" min="1" placeholder="1" />
+                    </div>
+                </div>
+
+                <!-- CARD: Nộp hồ sơ -->
+                <div class="section-card">
+                    <h3>Thông tin ứng tuyển</h3>
+                    <div class="mb-2">
+                        <label asp-for="ApplicationDeadline" class="form-label required">Hạn nộp hồ sơ</label>
+                        <input asp-for="ApplicationDeadline" type="date" class="form-control" id="ApplicationDeadline" />
+                        <span asp-validation-for="ApplicationDeadline" class="text-danger small"></span>
+                    </div>
+                    <div class="mb-2">
+                        <label asp-for="ExpiryDate" class="form-label required">Ngày hết hạn tin</label>
+                        <input asp-for="ExpiryDate" type="date" class="form-control" id="ExpiryDate" />
+                        <span asp-validation-for="ExpiryDate" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <!-- Buttons -->
+                <div class="d-flex flex-column gap-2 mb-5">
+                    <button type="button" class="btn-post w-100" onclick="submitForm('Submit')"><i class="fas fa-paper-plane me-2"></i>Đăng tin tuyển dụng</button>
+                    <button type="button" class="btn-draft w-100" onclick="submitForm('Draft')"><i class="fas fa-save me-2"></i>Lưu nháp</button>
+                    <a asp-action="JobPostingList" class="btn btn-link text-muted text-center text-decoration-none">Hủy</a>
+                </div>
+
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Modal thêm nhóm nghề -->
+<div class="modal-category" id="catModal">
+    <div class="modal-backdrop-custom" onclick="closeCatModal()"></div>
+    <div class="modal-box">
+        <div class="d-flex justify-content-between align-items-start mb-1">
+            <div>
+                <h4 id="catModalTitle">Thêm nhóm nghề</h4>
+                <p id="catModalDesc">Nhập tên nhóm nghề mới để thêm vào hệ thống.</p>
+            </div>
+            <button class="btn-modal-cancel" style="padding:4px 8px;" onclick="closeCatModal()"><i class="fas fa-times"></i></button>
+        </div>
+        <input type="text" id="catModalInput" class="modal-input" placeholder="Tên nhóm..." />
+        <div id="catModalError" class="text-danger small mt-1" style="display:none;"></div>
+        <div class="modal-footer-btns">
+            <button class="btn-modal-cancel" onclick="closeCatModal()">Hủy</button>
+            <button class="btn-modal-ok" id="catModalOkBtn">Thêm mới</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+    // ---------- State ----------
+    const allSkills = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+        (ViewBag.Skills as List<RJMS.vn.edu.fpt.Models.Skill> ?? new List<RJMS.vn.edu.fpt.Models.Skill>())
+            .Select(s => new { id = s.Id, name = s.Name }).ToList()
+    ));
+    let selectedSkills = [];   // { id, name }
+
+    // ---------- Location ----------
+    (async function loadProvinces() {
+        try {
+            let data = await fetch('https://provinces.open-api.vn/api/v2/p/').then(r => r.json());
+            let $p = document.getElementById('ProvinceCode');
+            $p.innerHTML = '<option value="">Chọn tỉnh/thành phố</option>';
+            let prefilled = "@Model.ProvinceCode";
+            data.forEach(p => {
+                let o = new Option(p.name, p.code);
+                if (p.code == prefilled) o.selected = true;
+                $p.add(o);
+            });
+            if (prefilled) loadWards(prefilled);
+        } catch(e) {}
+    })();
+
+    async function loadWards(provinceCode) {
+        let $w = document.getElementById('WardCode');
+        $w.innerHTML = '<option value="">Đang tải...</option>';
+        try {
+            let data = await fetch(`https://provinces.open-api.vn/api/v2/w/?province=${provinceCode}`).then(r => r.json());
+            let prefilled = "@Model.WardCode";
+            $w.innerHTML = '<option value="">Chọn quận/huyện</option>';
+            data.forEach(w => {
+                let o = new Option(w.name, w.code);
+                if (w.code == prefilled) o.selected = true;
+                $w.add(o);
+            });
+        } catch(e) { $w.innerHTML = '<option value="">Không tải được</option>'; }
+    }
+
+    document.getElementById('ProvinceCode').addEventListener('change', function() {
+        let opt = this.options[this.selectedIndex];
+        document.getElementById('ProvinceName').value = opt.value ? opt.text : '';
+        if (this.value) loadWards(this.value);
+        else document.getElementById('WardCode').innerHTML = '<option value="">Chọn tỉnh trước</option>';
+    });
+
+    document.getElementById('WardCode').addEventListener('change', function() {
+        let opt = this.options[this.selectedIndex];
+        document.getElementById('WardName').value = opt.value ? opt.text : '';
+    });
+
+    // ---------- Deadline ----------
+    (function() {
+        let el = document.getElementById('ApplicationDeadline');
+        let today = new Date();
+        let max = new Date(); max.setDate(today.getDate() + 30);
+        el.min = today.toISOString().split('T')[0];
+        el.max = max.toISOString().split('T')[0];
+        if (!el.value || el.value === '0001-01-01') el.value = max.toISOString().split('T')[0];
+    })();
+
+    // ---------- Salary checkbox ----------
+    document.getElementById('ThoaThuan').addEventListener('change', function() {
+        let fields = document.getElementById('salaryFields');
+        fields.style.display = this.checked ? 'none' : 'block';
+        document.querySelectorAll('.salary-input').forEach(i => i.disabled = this.checked);
+    });
+
+    // ---------- Skills ----------
+    function renderSelectedSkills() {
+        let area = document.getElementById('selectedSkillsArea');
+        let ph = document.getElementById('noSkillPlaceholder');
+        let hiddenDiv = document.getElementById('skillHiddenInputs');
+        document.getElementById('skillCountDisplay').textContent = selectedSkills.length;
+
+        // Clear hidden inputs
+        hiddenDiv.innerHTML = '';
+        selectedSkills.forEach(s => {
+            let inp = document.createElement('input');
+            inp.type = 'hidden';
+            inp.name = 'SelectedSkillIds';
+            inp.value = s.id;
+            hiddenDiv.appendChild(inp);
+        });
+
+        // Render badges
+        area.innerHTML = '';
+        if (selectedSkills.length === 0) {
+            area.appendChild(document.createElement('span')).outerHTML = '';
+            ph = document.createElement('span');
+            ph.id = 'noSkillPlaceholder';
+            ph.style.fontSize = '.82rem';
+            ph.style.color = '#9ca3af';
+            ph.textContent = 'Chưa có kỹ năng nào được chọn';
+            area.appendChild(ph);
+        } else {
+            selectedSkills.forEach(s => {
+                let badge = document.createElement('span');
+                badge.className = 'skill-badge';
+                badge.innerHTML = `${s.name} <button onclick="removeSkill(${s.id})" type="button">&times;</button>`;
+                area.appendChild(badge);
+            });
+        }
+    }
+
+    function removeSkill(id) {
+        selectedSkills = selectedSkills.filter(s => s.id !== id);
+        renderSelectedSkills();
+    }
+
+    function addSkill(s) {
+        if (selectedSkills.length >= 5) { toastr.warning('Tối đa 5 kỹ năng từ danh sách!'); return; }
+        if (selectedSkills.find(x => x.id === s.id)) return;
+        selectedSkills.push(s);
+        renderSelectedSkills();
+    }
+
+    // Skill search
+    let searchEl = document.getElementById('skillSearchInput');
+    let dropdown = document.getElementById('skillDropdown');
+
+    searchEl.addEventListener('input', function() {
+        let q = this.value.toLowerCase().trim();
+        if (!q) { dropdown.style.display = 'none'; return; }
+        let filtered = allSkills.filter(s => s.name.toLowerCase().includes(q) && !selectedSkills.find(x => x.id === s.id));
+        dropdown.innerHTML = '';
+        filtered.slice(0, 15).forEach(s => {
+            let d = document.createElement('div');
+            d.className = 'skill-dropdown-item';
+            d.textContent = s.name;
+            d.onclick = () => { addSkill(s); searchEl.value = ''; dropdown.style.display='none'; };
+            dropdown.appendChild(d);
+        });
+        dropdown.style.display = filtered.length ? 'block' : 'none';
+    });
+
+    document.addEventListener('click', e => {
+        if (!e.target.closest('.skill-search-container')) dropdown.style.display = 'none';
+    });
+
+    // Validate NewSkills count
+    document.getElementById('NewSkillsInput').addEventListener('blur', function() {
+        let parts = this.value.split(',').map(s => s.trim()).filter(Boolean);
+        if (parts.length > 5) {
+            toastr.warning('Tối đa 5 kỹ năng mới, phần thừa sẽ bị bỏ qua.');
+        }
+    });
+
+    renderSelectedSkills();
+
+    // ---------- Category Cascade ----------
+    async function fetchCategories(level, parentId) {
+        let url = `/Recruiter/GetJobCategories?level=${level}`;
+        if (parentId) url += `&parentId=${parentId}`;
+        return await fetch(url).then(r => r.json());
+    }
+
+    function fillSelect(el, data, placeholder) {
+        el.innerHTML = `<option value="">${placeholder}</option>`;
+        if (data && data.length > 0) {
+            data.forEach(c => el.add(new Option(c.name, c.id)));
+        }
+        el.disabled = !data || data.length === 0;
+    }
+
+    document.getElementById('Cat1Select').addEventListener('change', async function() {
+        let val = this.value;
+        let c2 = document.getElementById('Cat2Select');
+        let c3 = document.getElementById('Cat3Select');
+        let add2 = document.getElementById('btnAddCat2');
+        let add3 = document.getElementById('btnAddCat3');
+
+        if (val) {
+            let data = await fetchCategories(2, val);
+            fillSelect(c2, data, 'Chọn nghề nghiệp...');
+            c2.disabled = false;
+            add2.style.opacity = '1'; add2.style.pointerEvents = 'auto';
+        } else {
+            c2.innerHTML = '<option value="">Chọn sau khi chọn Cấp 1...</option>'; c2.disabled = true;
+            add2.style.opacity = '.4'; add2.style.pointerEvents = 'none';
+        }
+        c3.innerHTML = '<option value="">Chọn sau khi chọn Cấp 2...</option>'; c3.disabled = true;
+        add3.style.opacity = '.4'; add3.style.pointerEvents = 'none';
+
+        // Set hidden value to level1 as fallback
+        document.getElementById('JobCategoryLevel1IdHidden').value = val;
+        document.getElementById('JobCategoryId').value = val || '0';
+    });
+
+    document.getElementById('Cat2Select').addEventListener('change', async function() {
+        let val = this.value;
+        let c3 = document.getElementById('Cat3Select');
+        let add3 = document.getElementById('btnAddCat3');
+
+        if (val) {
+            let data = await fetchCategories(3, val);
+            fillSelect(c3, data, 'Chọn vị trí chuyên môn...');
+            c3.disabled = false;
+            add3.style.opacity = '1'; add3.style.pointerEvents = 'auto';
+        } else {
+            c3.innerHTML = '<option value="">Chọn sau khi chọn Cấp 2...</option>'; c3.disabled = true;
+            add3.style.opacity = '.4'; add3.style.pointerEvents = 'none';
+        }
+
+        document.getElementById('JobCategoryLevel2IdHidden').value = val;
+        document.getElementById('JobCategoryId').value = val || document.getElementById('Cat1Select').value || '0';
+    });
+
+    document.getElementById('Cat3Select').addEventListener('change', function() {
+        let val = this.value;
+        document.getElementById('JobCategoryLevel3IdHidden').value = val;
+        document.getElementById('JobCategoryId').value = val || document.getElementById('Cat2Select').value || document.getElementById('Cat1Select').value || '0';
+    });
+
+    // ---------- Modal thêm nhóm nghề ----------
+    let _catModalLevel = 1, _catModalParentId = null, _catModalTarget = null;
+
+    function openCatModal(level, parentId, targetSelectId) {
+        if (level > 1 && !parentId) { toastr.warning('Vui lòng chọn cấp trên trước!'); return; }
+        _catModalLevel = level; _catModalParentId = parentId; _catModalTarget = targetSelectId;
+        let names = ['Nhóm nghề (Cấp 1)', 'Nghề nghiệp (Cấp 2)', 'Vị trí chuyên môn (Cấp 3)'];
+        document.getElementById('catModalTitle').textContent = 'Thêm ' + names[level-1];
+        document.getElementById('catModalDesc').textContent = `Nhập tên ${names[level-1]} mới để thêm vào hệ thống.`;
+        document.getElementById('catModalInput').value = '';
+        document.getElementById('catModalError').style.display = 'none';
+        document.getElementById('catModal').classList.add('show');
+        setTimeout(() => document.getElementById('catModalInput').focus(), 100);
+    }
+
+    function closeCatModal() { document.getElementById('catModal').classList.remove('show'); }
+
+    document.getElementById('catModalInput').addEventListener('keydown', e => { if (e.key === 'Enter') submitCatModal(); });
+
+    document.getElementById('catModalOkBtn').addEventListener('click', submitCatModal);
+
+    async function submitCatModal() {
+        let name = document.getElementById('catModalInput').value.trim();
+        let errEl = document.getElementById('catModalError');
+        if (!name) { errEl.textContent = 'Vui lòng nhập tên.'; errEl.style.display='block'; return; }
+        errEl.style.display = 'none';
+
+        document.getElementById('catModalOkBtn').disabled = true;
+        document.getElementById('catModalOkBtn').textContent = 'Đang lưu...';
+
+        try {
+            let res = await fetch('/Recruiter/CreateJobCategoryApi', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, level: _catModalLevel, parentId: _catModalParentId ? parseInt(_catModalParentId) : null })
+            }).then(r => r.json());
+
+            if (res.success) {
+                let sel = document.getElementById(_catModalTarget);
+                let opt = new Option(res.name, res.id, true, true);
+                sel.appendChild(opt);
+                sel.value = res.id;
+                sel.dispatchEvent(new Event('change'));
+                closeCatModal();
+                toastr.success(`Thêm "${res.name}" thành công!`);
+            }
+        } catch(e) {
+            toastr.error('Có lỗi xảy ra khi thêm danh mục, vui lòng thử lại.');
+        }
+        document.getElementById('catModalOkBtn').disabled = false;
+        document.getElementById('catModalOkBtn').textContent = 'Thêm mới';
+    }
+
+    // ---------- Submit ----------
+    function submitForm(actionType) {
+        document.getElementById('ActionType').value = actionType;
+        if (actionType === 'Submit') {
+            if (!confirm('Bạn có muốn đăng tin tuyển dụng ngay bây giờ?\n\nTin đăng sẽ được tính vào số lượt đăng tin của gói dịch vụ.')) return;
+        }
+        document.getElementById('jobForm').submit();
+    }
+    </script>
+}
