@@ -1,0 +1,259 @@
+@model List<RJMS.vn.edu.fpt.Models.DTOs.JobListItemDTO>
+@{
+    ViewData["Title"] = "Quản lý tin tuyển dụng";
+    Layout = "~/Views/Shared/_RecruiterLayout.cshtml";
+    string currentStatus = ViewBag.CurrentStatus ?? "Active";
+    string keyword = ViewBag.Keyword ?? "";
+}
+
+@section Styles {
+    <style>
+        .page-header-box {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        .page-title h1 { font-size: 1.5rem; font-weight: 700; color: #111827; margin: 0; }
+        .page-title p { font-size: 0.9rem; color: #6b7280; margin: 5px 0 0; }
+        
+        .btn-create-new {
+            background: #00b14f;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        .btn-create-new:hover { background: #009744; color: #fff; transform: translateY(-1px); }
+
+        .filter-section {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #e5e7eb;
+            margin-bottom: 24px;
+        }
+        .filter-form { display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap; }
+        .filter-group { display: flex; flex-direction: column; gap: 5px; }
+        .filter-group label { font-size: 0.8rem; font-weight: 600; color: #4b5563; }
+        .form-control-custom {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            min-width: 200px;
+        }
+        .btn-filter {
+            background: #111827;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-clear {
+            background: #f3f4f6;
+            color: #4b5563;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .data-table-card {
+            background: #fff;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
+        }
+        .data-table { width: 100%; border-collapse: collapse; }
+        .data-table th { background: #f9fafb; padding: 15px; font-size: 0.8rem; text-transform: uppercase; color: #6b7280; border-bottom: 1px solid #e5e7eb; text-align: left; }
+        .data-table td { padding: 15px; border-bottom: 1px solid #f3f4f6; vertical-align: middle; }
+        .job-info h4 { font-size: 1rem; font-weight: 700; color: #111827; margin: 0; }
+        .job-info span { font-size: 0.8rem; color: #6b7280; }
+        
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .status-active { background: #ecfdf5; color: #065f46; }
+        .status-draft { background: #f3f4f6; color: #374151; }
+        .status-expired { background: #fef2f2; color: #991b1b; }
+        
+        .action-btns { display: flex; gap: 8px; }
+        .btn-action {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+            color: #4b5563;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .btn-action:hover { background: #f9fafb; color: #00b14f; border-color: #00b14f; }
+        .btn-delete:hover { border-color: #ef4444; color: #ef4444; background: #fef2f2; }
+    </style>
+}
+
+<div class="container-fluid py-4">
+    <div class="page-header-box">
+        <div class="page-title">
+            <h1>Quản lý tin tuyển dụng</h1>
+            <p>Bạn có @Model.Count tin tuyển dụng trong danh sách</p>
+        </div>
+        <a asp-action="CreateJob" class="btn-create-new">
+            <i class="fas fa-plus"></i> Đăng tin mới
+        </a>
+    </div>
+
+    <!-- Filter -->
+    <div class="filter-section">
+        <form method="get" class="filter-form">
+            <div class="filter-group">
+                <label>Tìm kiếm</label>
+                <input type="text" name="keyword" value="@keyword" class="form-control-custom" placeholder="Tiêu đề công việc...">
+            </div>
+            <div class="filter-group">
+                <label>Trạng thái</label>
+                <select name="status" class="form-control-custom" style="min-width: 150px;">
+                    <option value="All" selected="@(currentStatus == "All")">Tất cả</option>
+                    <option value="Active" selected="@(currentStatus == "Active")">Đang hiển thị</option>
+                    <option value="Draft" selected="@(currentStatus == "Draft")">Tin nháp</option>
+                    <option value="Expired" selected="@(currentStatus == "Expired")">Hết hạn</option>
+                    <option value="Inactive" selected="@(currentStatus == "Inactive")">Đã tạm dừng</option>
+                </select>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn-filter">Lọc tin</button>
+                <a asp-action="JobPostingList" class="btn-clear text-center">Xóa lọc</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Table -->
+    <div class="data-table-card">
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="width: 35%">Tin tuyển dụng</th>
+                        <th>Địa điểm</th>
+                        <th>Lương</th>
+                        <th>Hạn nộp / Hết hạn</th>
+                        <th>Trạng thái</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Any())
+                    {
+                        foreach (var job in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="job-info">
+                                        <h4>@job.Title</h4>
+                                        <span>ID: #@job.Id.ToString("D4") • Đăng ngày: @job.CreatedAt?.ToString("dd/MM/yyyy")</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style="font-size: 0.9rem; color: #4b5563;">
+                                        <i class="fas fa-map-marker-alt text-muted me-1"></i>
+                                        @job.LocationName
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style="font-size: 0.9rem; font-weight: 600; color: #00b14f;">
+                                        @if (job.MinSalary.HasValue || job.MaxSalary.HasValue)
+                                        {
+                                            @($"{(job.MinSalary / 1000000):N0} - {(job.MaxSalary / 1000000):N0} tr")
+                                        }
+                                        else
+                                        {
+                                            <span>Thỏa thuận</span>
+                                        }
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style="font-size: 0.85rem; color: #4b5563;">
+                                        <div><i class="far fa-calendar-alt me-1"></i>Hạn: @job.ApplicationDeadline?.ToString("dd/MM/yyyy")</div>
+                                        <div class="mt-1 @(job.ExpiryDate < DateTime.Now ? "text-danger fw-bold" : "text-muted")">
+                                            <i class="fas fa-clock me-1"></i>Hết hạn: @job.ExpiryDate?.ToString("dd/MM/yyyy")
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    @{
+                                        var statusClass = job.Status switch
+                                        {
+                                            "Active" => "status-active",
+                                            "Draft" => "status-draft",
+                                            "Expired" => "status-expired",
+                                            "Inactive" => "status-expired", // Use same red style for inactive
+                                            _ => "status-draft"
+                                        };
+                                        var statusText = job.Status switch
+                                        {
+                                            "Active" => "Đang hiển thị",
+                                            "Draft" => "Tin nháp",
+                                            "Expired" => "Hết hạn",
+                                            "Inactive" => "Đã tạm dừng",
+                                            _ => job.Status
+                                        };
+                                    }
+                                    <span class="status-badge @statusClass">@statusText</span>
+                                </td>
+                                <td>
+                                    <div class="action-btns">
+                                        @if (job.Status == "Inactive")
+                                        {
+                                            var isExpired = job.ExpiryDate < DateTime.Now;
+                                            <form asp-action="ReactivateJob" method="post" style="display:inline;">
+                                                <input type="hidden" name="id" value="@job.Id" />
+                                                <button type="submit" class="btn-action" style="color: #00b14f;" title="Hiển thị lại" @(isExpired ? "disabled onclick=\"alert('Tin đã hết hạn, vui lòng chỉnh sửa ngày hết hạn trước!'); return false;\"" : "")>
+                                                    <i class="fas fa-play"></i>
+                                                </button>
+                                            </form>
+                                        }
+                                        <a asp-action="EditJob" asp-route-id="@job.Id" class="btn-action" title="Chỉnh sửa"><i class="fas fa-edit"></i></a>
+                                        @if (job.Status != "Inactive")
+                                        {
+                                            <form asp-action="DeleteJob" method="post" onsubmit="return confirm('Bạn có muốn tạm dừng tin tuyển dụng này không?')">
+                                                <input type="hidden" name="id" value="@job.Id" />
+                                                <button type="submit" class="btn-action btn-delete" title="Tạm dừng"><i class="fas fa-pause"></i></button>
+                                            </form>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-5">
+                                <div class="text-muted">
+                                    <i class="fas fa-folder-open fa-3x mb-3"></i>
+                                    <p>Không tìm thấy tin tuyển dụng nào phù hợp.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

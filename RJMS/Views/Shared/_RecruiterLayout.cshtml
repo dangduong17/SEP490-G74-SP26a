@@ -2,102 +2,190 @@
 @{
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
-
 @section Styles {
+    @await RenderSectionAsync("Styles", required: false)
     <style>
-        /* Remove default main padding */
+        /* Reset container styles inside the layout */
         main[role="main"] {
             padding: 0;
             margin: 0;
         }
 
-        /* Page content area */
-        .recruiter-content {
-            background: #f7f8fa;
-            min-height: calc(100vh - 70px);
-            padding: 28px 32px;
+        body {
+            line-height: 1.4;
         }
 
-        /* Page headline area */
-        .rpage-header {
+        /* Recruiter page wrapper */
+        .recruiter-page-wrapper {
             display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            margin-bottom: 24px;
+            flex-direction: column;
+            min-height: calc(100vh - 70px);
         }
 
-        .rpage-header h1 {
-            font-size: 1.6rem;
-            font-weight: 700;
+        .recruiter-body-wrapper {
+            display: flex;
+            flex: 1 0 auto;
+        }
+
+        /* Sidebar */
+        .recruiter-sidebar {
+            width: 250px;
+            min-width: 250px;
+            flex-shrink: 0;
+            border-right: 1px solid #e5e7eb;
+            background: #fff;
+            overflow-y: auto;
+        }
+
+        .recruiter-sidebar .nav-link {
+            color: #4b5563;
+            padding: 12px 20px;
+            border-left: 3px solid transparent;
+            font-weight: 500;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s;
+        }
+
+        .recruiter-sidebar .nav-link i {
+            width: 24px;
+            text-align: center;
+            color: #9ca3af;
+            font-size: 1.1rem;
+        }
+
+        .recruiter-sidebar .nav-link:hover {
+            background: #f9fafb;
             color: #111827;
-            margin: 0 0 4px;
         }
 
-        .rpage-header p {
-            font-size: 0.85rem;
+        .recruiter-sidebar .nav-link:hover i {
+            color: #111827;
+        }
+
+        .recruiter-sidebar .nav-link.active {
+            background: #f0fdf4;
+            color: #00b14f;
+            border-left-color: #00b14f;
+            font-weight: 600;
+        }
+
+        .recruiter-sidebar .nav-link.active i {
+            color: #00b14f;
+        }
+
+        .recruiter-sidebar .nav-section {
+            padding: 20px 20px 8px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #9ca3af;
+            letter-spacing: 0.05em;
+        }
+
+        .recruiter-sidebar-logo {
+            padding: 20px;
+            border-bottom: 1px solid #e5e7eb;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .recruiter-sidebar-logo i {
+            font-size: 1.5rem;
+            color: #00b14f;
+            background: #f0fdf4;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+        }
+
+        .recruiter-sidebar-logo > div h6 {
+            color: #111827;
+            font-weight: 700;
+            margin: 0 0 2px;
+            font-size: 0.95rem;
+        }
+
+        .recruiter-sidebar-logo > div p {
             color: #6b7280;
+            font-size: 0.75rem;
             margin: 0;
         }
 
-        .btn-post-job {
-            background: #00b14f;
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            padding: 10px 20px;
-            font-size: 0.875rem;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            white-space: nowrap;
-            cursor: pointer;
-            transition: background 0.2s;
-            text-decoration: none;
-        }
-
-        .btn-post-job:hover {
-            background: #009744;
-            color: #fff;
-        }
-
-        /* Breadcrumb */
-        .rpage-breadcrumb {
-            margin-bottom: 12px;
-            font-size: 0.8rem;
-            color: #9ca3af;
-        }
-
-        .rpage-breadcrumb a { color: #6b7280; }
-        .rpage-breadcrumb a:hover { color: #00b14f; }
-        .rpage-breadcrumb .sep { margin: 0 6px; }
-
-        /* Alert spacing */
-        .alert {
-            padding: 0.75rem 1rem;
-            margin-bottom: 1rem;
+        /* Content area */
+        .recruiter-content {
+            flex: 1;
+            background: #f4f5f5;
+            padding: 24px;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
         }
     </style>
-    @await RenderSectionAsync("Styles", required: false)
 }
 
-<!-- Page content -->
-<div class="recruiter-content">
-    @if (TempData["Success"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            @TempData["Success"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+<div class="recruiter-page-wrapper">
+    <div class="recruiter-body-wrapper">
+        <!-- Sidebar -->
+        <aside class="recruiter-sidebar">
+            <div class="recruiter-sidebar-logo">
+                <i class="fas fa-building"></i>
+                <div>
+                    <h6>Nhà tuyển dụng</h6>
+                    <p>Bảng điều khiển</p>
+                </div>
+            </div>
+            <nav class="nav flex-column pt-2 pb-4">
+                <span class="nav-section">Tổng quan</span>
+                <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "RecruiterDashboard" ? "active" : "")"
+                   asp-controller="Recruiter" asp-action="RecruiterDashboard">
+                    <i class="fas fa-chart-pie"></i> Bảng tin
+                </a>
+                
+                <span class="nav-section">Tuyển dụng</span>
+                <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() is "JobPostingList" or "CreateJob" ? "active" : "")"
+                   asp-controller="Recruiter" asp-action="JobPostingList">
+                    <i class="fas fa-briefcase"></i> Quản lý tin đăng
+                </a>
+                <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "CreateJob" ? "text-success fw-bold ps-4 border-start border-3 border-success bg-success bg-opacity-10" : "ps-4 text-muted")"
+                   asp-controller="Recruiter" asp-action="CreateJob" style="font-size: 0.85rem">
+                    <i class="fas fa-plus"></i> Đăng tin mới
+                </a>
+                <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Applications" ? "active" : "")"
+                   asp-controller="Recruiter" asp-action="Applications">
+                    <i class="fas fa-file-invoice"></i> Hồ sơ ứng tuyển
+                </a>
+                
+                <span class="nav-section">Tương tác</span>
+                <a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Chat" ? "active" : "")"
+                   asp-controller="Chat" asp-action="Index">
+                    <i class="fas fa-comments"></i> Tin nhắn
+                </a>
+                <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Candidates" ? "active" : "")"
+                   asp-controller="Recruiter" asp-action="Candidates">
+                    <i class="fas fa-search"></i> Tìm hồ sơ AI
+                </a>
+
+                <span class="nav-section">Tài khoản</span>
+                <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "EditProfile" ? "active" : "")"
+                   asp-controller="Recruiter" asp-action="EditProfile">
+                    <i class="fas fa-user-cog"></i> Thông tin công ty
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main content -->
+        <div class="recruiter-content">
+            @RenderBody()
         </div>
-    }
-    @if (TempData["Error"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            @TempData["Error"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
-    @RenderBody()
+    </div>
 </div>
 
 @section Scripts {
