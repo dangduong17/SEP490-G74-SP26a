@@ -104,6 +104,22 @@ namespace RJMS.Vn.Edu.Fpt.Repository
 
             _context.SubscriptionPeriods.Add(period);
             await _context.SaveChangesAsync();
+            
+            var planFeatures = await _context.PlanFeatures.Where(pf => pf.PlanId == planId).ToListAsync();
+            foreach (var feature in planFeatures)
+            {
+                var usage = new SubscriptionUsage
+                {
+                    PeriodId = period.Id,
+                    FeatureCode = feature.FeatureCode,
+                    UsedCount = 0
+                };
+                _context.SubscriptionUsages.Add(usage);
+            }
+            if (planFeatures.Any())
+            {
+                await _context.SaveChangesAsync();
+            }
 
             return true;
         }
