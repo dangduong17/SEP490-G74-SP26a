@@ -480,3 +480,59 @@ ADD ProvinceCode INT NULL,
     WardCode INT NULL,
     WardName NVARCHAR(100) NULL,
     Address NVARCHAR(500) NULL;
+
+
+
+    ALTER TABLE Locations
+ADD ProvinceCode INT NULL,
+    WardCode INT NULL,
+    WardName NVARCHAR(100) NULL,
+    Address NVARCHAR(500) NULL,
+    DetailAddress NVARCHAR(500) NULL;
+
+
+
+
+    ALTER TABLE JobCategories
+ADD ParentId INT NULL;
+
+ALTER TABLE JobCategories
+ADD Level INT NOT NULL DEFAULT 1;
+
+ALTER TABLE JobCategories
+ADD Slug NVARCHAR(200) NULL;
+
+ALTER TABLE JobCategories
+ADD CreatedAt DATETIME DEFAULT GETDATE();
+
+
+
+
+
+    ALTER TABLE JobCategories
+ADD ParentId INT NULL;
+
+ALTER TABLE JobCategories
+ADD Level INT NOT NULL DEFAULT 1;
+
+ALTER TABLE JobCategories
+ADD Slug NVARCHAR(200) NULL;
+
+ALTER TABLE JobCategories
+ADD CreatedAt DATETIME DEFAULT GETDATE();
+
+
+-- Cập nhật bảng Jobs
+ALTER TABLE Jobs ALTER COLUMN Description NVARCHAR(MAX);
+ALTER TABLE Jobs ALTER COLUMN Requirements NVARCHAR(MAX);
+ALTER TABLE Jobs ALTER COLUMN Benefits NVARCHAR(MAX);
+
+-- Cập nhật bảng Companies (Thông tin công ty)
+ALTER TABLE Companies ALTER COLUMN Description NVARCHAR(MAX);
+ALTER TABLE Companies ALTER COLUMN Benefits NVARCHAR(MAX);
+
+-- Cập nhật bảng Candidates (Hồ sơ ứng viên)
+ALTER TABLE Candidates ALTER COLUMN Summary NVARCHAR(MAX);
+
+-- Cập nhật bảng Applications (Đơn ứng tuyển)
+ALTER TABLE Applications ALTER COLUMN CoverLetter NVARCHAR(MAX);
