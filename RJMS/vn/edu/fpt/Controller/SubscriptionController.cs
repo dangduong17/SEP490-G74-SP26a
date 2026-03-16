@@ -53,7 +53,10 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         {
             var role = Request.Cookies["UserRole"];
             if (role != "Admin")
+            {
+                TempData["WarningToast"] = "Hành động yêu cầu quyền Quản trị viên.";
                 return RedirectToAction("Login", "Auth");
+            }
             return null;
         }
 
@@ -90,7 +93,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                 return View(model);
 
             await _subscriptionService.CreatePlanAsync(model);
-            TempData["Success"] = "Tạo gói đăng ký thành công.";
+            TempData["SuccessToast"] = "Tạo gói đăng ký thành công.";
 
             return RedirectToAction(nameof(ManageSubscription));
         }
@@ -119,7 +122,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                 return View(model);
 
             await _subscriptionService.UpdatePlanAsync(model);
-            TempData["Success"] = "Cập nhật gói đăng ký thành công.";
+            TempData["SuccessToast"] = "Cập nhật gói đăng ký thành công.";
 
             return RedirectToAction(nameof(ManageSubscription));
         }
@@ -132,7 +135,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             if (RequireAdmin() is { } redirect) return redirect;
 
             await _subscriptionService.TogglePlanStatusAsync(id);
-            TempData["Success"] = "Đã thay đổi trạng thái gói.";
+            TempData["SuccessToast"] = "Đã thay đổi trạng thái gói.";
             return RedirectToAction(nameof(ManageSubscription));
         }
 
@@ -146,9 +149,9 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             bool result = await _subscriptionService.DeletePlanAsync(id);
             
             if (result)
-                TempData["Success"] = "Đã xóa gói đăng ký.";
+                TempData["SuccessToast"] = "Đã xóa gói đăng ký.";
             else
-                TempData["Error"] = "Không thể xóa gói đang có người dùng hoặc không tồn tại.";
+                TempData["ErrorToast"] = "Không thể xóa gói đang có người dùng hoặc không tồn tại.";
 
             return RedirectToAction(nameof(ManageSubscription));
         }
