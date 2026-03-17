@@ -22,6 +22,9 @@ namespace RJMS.Vn.Edu.Fpt.Repository
         Task<RecruiterEditProfileViewModel?> GetRecruiterProfileForEditAsync(int userId);
         Task<bool> UpdateRecruiterProfileNewAsync(int userId, RecruiterEditProfileViewModel model);
 
+        Task<CompanyEditProfileViewModel?> GetCompanyProfileForEditAsync(int userId);
+        Task<bool> UpdateCompanyProfileAsync(int userId, CompanyEditProfileViewModel model);
+
         // ── Admin ─────────────────────────────────────────────────────────────
         Task<AdminEditProfileViewModel?> GetAdminProfileForEditAsync(int userId);
         Task<bool> UpdateAdminProfileAsync(int userId, AdminEditProfileViewModel model);

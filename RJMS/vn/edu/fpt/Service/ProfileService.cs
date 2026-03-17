@@ -8,10 +8,12 @@ namespace RJMS.Vn.Edu.Fpt.Service
     public class ProfileService : IProfileService
     {
         private readonly IProfileRepository _profileRepository;
+        private readonly ICloudinaryService _cloudinaryService;
 
-        public ProfileService(IProfileRepository profileRepository)
+        public ProfileService(IProfileRepository profileRepository, ICloudinaryService cloudinaryService)
         {
             _profileRepository = profileRepository;
+            _cloudinaryService = cloudinaryService;
         }
 
         // ── Candidate ──────────────────────────────────────────────────────────
@@ -69,7 +71,34 @@ namespace RJMS.Vn.Edu.Fpt.Service
 
         public async Task<bool> UpdateRecruiterProfileNewAsync(int userId, RecruiterEditProfileViewModel model)
         {
+            if (model.AvatarFile != null)
+            {
+                var avatarUrl = await _cloudinaryService.UploadImageAsync(model.AvatarFile, "avatars");
+                if (avatarUrl != null) model.Avatar = avatarUrl;
+            }
+
+            if (model.CompanyLogoFile != null)
+            {
+                var logoUrl = await _cloudinaryService.UploadImageAsync(model.CompanyLogoFile, "logos");
+                if (logoUrl != null) model.CompanyLogo = logoUrl;
+            }
+
             return await _profileRepository.UpdateRecruiterProfileNewAsync(userId, model);
+        }
+
+        public async Task<CompanyEditProfileViewModel?> GetCompanyProfileForEditAsync(int userId)
+        {
+            return await _profileRepository.GetCompanyProfileForEditAsync(userId);
+        }
+
+        public async Task<bool> UpdateCompanyProfileAsync(int userId, CompanyEditProfileViewModel model)
+        {
+            if (model.LogoFile != null)
+            {
+                var logoUrl = await _cloudinaryService.UploadImageAsync(model.LogoFile, "logos");
+                if (logoUrl != null) model.Logo = logoUrl;
+            }
+            return await _profileRepository.UpdateCompanyProfileAsync(userId, model);
         }
 
         // ── Candidate Edit Profile ────────────────────────────────────────────

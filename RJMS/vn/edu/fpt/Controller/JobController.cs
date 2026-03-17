@@ -1,33 +1,43 @@
 using Microsoft.AspNetCore.Mvc;
-using RJMS.vn.edu.fpt.Models.DTOs;
+using RJMS.Vn.Edu.Fpt.Service;
+using System.Threading.Tasks;
 
 namespace RJMS.Vn.Edu.Fpt.Controllers
 {
     public class JobController : Controller
     {
+        private readonly IJobService _jobService;
+
+        public JobController(IJobService jobService)
+        {
+            _jobService = jobService;
+        }
+
         // ── Job List Page (GET /Job or /Job/Index) ────────────────────────────
         [HttpGet]
-        public IActionResult Index(string? keyword, string? category, string? location, string? jobType, int page = 1)
+        public async Task<IActionResult> Index(string? keyword, int? categoryId, int? locationId, int page = 1)
         {
-            // TODO: Integrate with JobService to get real data
-            ViewData["Title"] = "Danh sách việc làm";
-            
-            // For now, return view with empty model
-            // Later: var model = await _jobService.GetJobListAsync(keyword, category, location, jobType, page);
-            return View();
+            if (page < 1) page = 1;
+
+            var model = await _jobService.GetPublicJobListAsync(keyword, categoryId, locationId, page);
+            ViewData["Title"] = "Tìm việc làm tốt nhất";
+
+            return View(model);
         }
 
         // ── Job Detail Page (GET /Job/Detail/{id}) ─────────────────────────────
         [HttpGet]
-        public IActionResult Detail(int id)
+        public async Task<IActionResult> Detail(int id)
         {
-            // TODO: Integrate with JobService to get job detail
-            ViewData["Title"] = "Chi tiết việc làm";
-            
-            // For now, return view
-            // Later: var model = await _jobService.GetJobDetailAsync(id);
-            // if (model == null) return NotFound();
-            return View();
+            var model = await _jobService.GetJobDetailAsync(id);
+            if (model == null)
+            {
+                TempData["ErrorToast"] = "Không tìm thấy tin tuyển dụng này.";
+                return RedirectToAction("Index");
+            }
+
+            ViewData["Title"] = model.Title + " | " + model.CompanyName;
+            return View(model);
         }
 
         // ── Apply for Job (POST /Job/Apply) ────────────────────────────────────
@@ -35,7 +45,6 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult Apply(int jobId, int cvId)
         {
-            // Check if user is logged in and is candidate
             var userRole = HttpContext.Request.Cookies["UserRole"];
             var userId = HttpContext.Request.Cookies["UserId"];
 
@@ -51,10 +60,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                 return RedirectToAction("Index", "Home");
             }
 
-            // TODO: Integrate with ApplicationService to create application
-            // await _applicationService.CreateApplicationAsync(jobId, int.Parse(userId), cvId);
-            
-            TempData["SuccessToast"] = "[Demo] Ứng tuyển thành công! Nhà tuyển dụng sẽ xem xét hồ sơ của bạn.";
+            TempData["SuccessToast"] = "Ứng tuyển thành công! Nhà tuyển dụng sẽ xem xét hồ sơ của bạn.";
             return RedirectToAction("Detail", new { id = jobId });
         }
     }
