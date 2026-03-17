@@ -25,6 +25,8 @@ builder.Services.AddScoped<IProfileRepository, ProfileRepository>();
 builder.Services.AddScoped<IProfileService, ProfileService>();
 builder.Services.AddScoped<IJobApplicationRepository, JobApplicationRepository>();
 builder.Services.AddScoped<IJobApplicationService, JobApplicationService>();
+builder.Services.AddScoped<IJobRepository, JobRepository>();
+builder.Services.AddScoped<IJobService, JobService>();
 builder.Services.AddScoped<ICandidateDashboardRepository, CandidateDashboardRepository>();
 builder.Services.AddScoped<ICandidateDashboardService, CandidateDashboardService>();
 builder.Services.AddScoped<IAdminRepository, AdminRepository>();
@@ -39,6 +41,7 @@ builder.Services.AddScoped<ICVService, CVService>();
 builder.Services.AddScoped<IChatRepository, ChatRepository>();
 builder.Services.AddScoped<IChatService, ChatService>();
 builder.Services.AddScoped<IJobCategoryService, JobCategoryService>();
+builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
 
 var app = builder.Build();
 
