@@ -53,6 +53,11 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
         [Required(ErrorMessage = "Vui lòng chọn ngày hết hạn tin")]
         public DateTime ExpiryDate { get; set; }
 
+        [Required(ErrorMessage = "Vui lòng chọn ngày hiển thị")]
+        public DateTime PublishDate { get; set; }
+
+        public string? Status { get; set; }
+
         public string? ActionType { get; set; } // "Submit" or "Draft"
     }
 

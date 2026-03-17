@@ -131,6 +131,7 @@
                 <select name="status" class="form-control-custom" style="min-width: 150px;">
                     <option value="All" selected="@(currentStatus == "All")">Tất cả</option>
                     <option value="Active" selected="@(currentStatus == "Active")">Đang hiển thị</option>
+                    <option value="Scheduled" selected="@(currentStatus == "Scheduled")">Đã lên lịch</option>
                     <option value="Draft" selected="@(currentStatus == "Draft")">Tin nháp</option>
                     <option value="Expired" selected="@(currentStatus == "Expired")">Hết hạn</option>
                     <option value="Inactive" selected="@(currentStatus == "Inactive")">Đã tạm dừng</option>
@@ -203,6 +204,7 @@
                                             "Draft" => "status-draft",
                                             "Expired" => "status-expired",
                                             "Inactive" => "status-expired", // Use same red style for inactive
+                                            "Scheduled" => "status-draft", // Let's use draft color (yellow/gray) for Scheduled
                                             _ => "status-draft"
                                         };
                                         var statusText = job.Status switch
@@ -211,6 +213,7 @@
                                             "Draft" => "Tin nháp",
                                             "Expired" => "Hết hạn",
                                             "Inactive" => "Đã tạm dừng",
+                                            "Scheduled" => "Đã lên lịch",
                                             _ => job.Status
                                         };
                                     }
