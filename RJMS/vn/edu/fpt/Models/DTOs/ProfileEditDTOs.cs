@@ -120,11 +120,15 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
         public string? Department { get; set; }
 
         public string? Avatar { get; set; }
+        public IFormFile? AvatarFile { get; set; }
 
         // Company info - now editable
         [Required(ErrorMessage = "Tên công ty là bắt buộc.")]
         [MaxLength(255)]
         public string CompanyName { get; set; } = string.Empty;
+
+        public string? CompanyLogo { get; set; }
+        public IFormFile? CompanyLogoFile { get; set; }
 
         [MaxLength(100)]
         public string? CompanyTaxCode { get; set; }
@@ -159,5 +163,50 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
         public string? WorkAddress { get; set; }
 
         public bool IsVerified { get; set; }
+    }
+
+    // ========== Company Edit Profile ==========
+    public class CompanyEditProfileViewModel
+    {
+        public int CompanyId { get; set; }
+
+        [Required(ErrorMessage = "Tên công ty là bắt buộc.")]
+        [MaxLength(255)]
+        public string Name { get; set; } = string.Empty;
+
+        public string? Logo { get; set; }
+        public IFormFile? LogoFile { get; set; }
+
+        [MaxLength(100)]
+        public string? TaxCode { get; set; }
+
+        [MaxLength(50)]
+        public string? CompanySize { get; set; }
+
+        [MaxLength(200)]
+        public string? Industry { get; set; }
+
+        [MaxLength(500)]
+        [Url(ErrorMessage = "URL website không hợp lệ")]
+        public string? Website { get; set; }
+
+        [EmailAddress(ErrorMessage = "Email công ty không hợp lệ")]
+        [MaxLength(100)]
+        public string? Email { get; set; }
+
+        [Phone]
+        [MaxLength(20)]
+        public string? Phone { get; set; }
+
+        public string? Description { get; set; }
+
+        // Location fields
+        public int? ProvinceCode { get; set; }
+        public string? ProvinceName { get; set; }
+        public int? WardCode { get; set; }
+        public string? WardName { get; set; }
+        
+        [MaxLength(500)]
+        public string? Address { get; set; }
     }
 }

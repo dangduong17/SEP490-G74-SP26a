@@ -288,7 +288,54 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             });
 
             TempData["SuccessToast"] = "Cập nhật hồ sơ thành công!";
-            return RedirectToAction("RecruiterDashboard", "Recruiter");
+            return RedirectToAction("EditProfileNew");
+        }
+
+        // ====== RECRUITER EDIT COMPANY PROFILE ======
+        [HttpGet]
+        public async Task<IActionResult> EditCompanyProfile()
+        {
+            if (RequireRecruiter() is { } redirect) return redirect;
+
+            var userId = GetCurrentUserId();
+            if (userId == null)
+                return RedirectToAction("Login", "Auth");
+
+            var model = await _profileService.GetCompanyProfileForEditAsync(userId.Value);
+            if (model == null)
+            {
+                TempData["ErrorToast"] = "Không tìm thấy thông tin công ty.";
+                return RedirectToAction("RecruiterDashboard", "Recruiter");
+            }
+
+            ViewData["Title"] = "Chỉnh sửa thông tin công ty";
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditCompanyProfile(CompanyEditProfileViewModel model)
+        {
+            if (RequireRecruiter() is { } redirect) return redirect;
+
+            var userId = GetCurrentUserId();
+            if (userId == null)
+                return RedirectToAction("Login", "Auth");
+
+            ViewData["Title"] = "Chỉnh sửa thông tin công ty";
+
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var success = await _profileService.UpdateCompanyProfileAsync(userId.Value, model);
+            if (!success)
+            {
+                ModelState.AddModelError(string.Empty, "Cập nhật thất bại. Vui lòng thử lại.");
+                return View(model);
+            }
+
+            TempData["SuccessToast"] = "Cập nhật thông tin công ty thành công!";
+            return RedirectToAction("EditCompanyProfile");
         }
 
         // ====== ADMIN EDIT PROFILE ======
