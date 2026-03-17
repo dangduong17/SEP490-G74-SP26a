@@ -1,514 +1,399 @@
+@model RJMS.vn.edu.fpt.Models.DTOs.JobDetailViewModel
 @{
-    ViewData["Title"] = "Chi tiết việc làm";
+    ViewData["Title"] = Model.Title + " - " + Model.CompanyName;
     Layout = "~/Views/Shared/_Layout.cshtml";
+    var userRole = Context.Request.Cookies["UserRole"];
+
+    string SalaryText()
+    {
+        if (Model.MinSalary.HasValue && Model.MaxSalary.HasValue)
+            return $"{Model.MinSalary.Value / 1000000:N0} - {Model.MaxSalary.Value / 1000000:N0} triệu";
+        if (Model.MaxSalary.HasValue)
+            return $"Tới {Model.MaxSalary.Value / 1000000:N0} triệu";
+        return "Thoả thuận";
+    }
+
+    // Build full location string
+    var locationParts = new System.Collections.Generic.List<string>();
+    if (!string.IsNullOrEmpty(Model.LocationAddress)) locationParts.Add(Model.LocationAddress);
+    if (!string.IsNullOrEmpty(Model.LocationWardName)) locationParts.Add(Model.LocationWardName);
+    if (!string.IsNullOrEmpty(Model.LocationName)) locationParts.Add(Model.LocationName);
+    var fullLocation = string.Join(", ", locationParts);
 }
 
 @section Styles {
 <style>
-    /* ===== Container ===== */
-    .job-detail-container {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 32px 20px;
-    }
+    body { background: #f5f5f5; }
+    .dw { max-width: 1140px; margin: 0 auto; padding: 28px 16px 60px; display: flex; gap: 24px; align-items: flex-start; }
 
-    /* ===== Breadcrumb ===== */
-    .breadcrumb-nav {
-        font-size: 0.85rem;
-        color: #9ca3af;
-        margin-bottom: 24px;
-    }
-    .breadcrumb-nav a {
-        color: #6b7280;
-        text-decoration: none;
-        transition: color 0.15s;
-    }
-    .breadcrumb-nav a:hover {
-        color: #00b14f;
-    }
-    .breadcrumb-nav strong {
-        color: #374151;
-    }
+    /* MAIN */
+    .dmain { flex: 1; min-width: 0; }
 
-    /* ===== Layout grid ===== */
-    .detail-grid {
-        display: grid;
-        grid-template-columns: 1fr 360px;
-        gap: 24px;
-    }
+    .card-box { background: #fff; border-radius: 14px; border: 1px solid #e5e7eb; margin-bottom: 20px; }
 
-    /* ===== Job header card ===== */
-    .job-header-card {
-        background: linear-gradient(135deg, #00b14f, #009744);
-        border-radius: 16px;
-        padding: 32px;
-        color: #fff;
-        margin-bottom: 24px;
-        position: relative;
-        overflow: hidden;
+    /* Hero */
+    .hero-body { padding: 28px; }
+    .hero-top { display: flex; gap: 18px; align-items: flex-start; }
+    .hero-logo {
+        width: 88px; height: 88px;
+        border: 1px solid #e5e7eb; border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        overflow: hidden; background: #fafafa; flex-shrink: 0;
     }
-    .job-header-card::before {
-        content: '';
-        position: absolute;
-        top: -50%;
-        right: -20%;
-        width: 400px;
-        height: 400px;
-        background: rgba(255,255,255,0.05);
-        border-radius: 50%;
-    }
-    .job-header-content {
-        position: relative;
-        z-index: 1;
-        display: grid;
-        grid-template-columns: 100px 1fr;
-        gap: 24px;
-        align-items: start;
-    }
-    .company-logo-large {
-        width: 100px;
-        height: 100px;
-        background: #fff;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-    .company-logo-large img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-    .company-logo-placeholder-large {
-        font-size: 2.5rem;
-        color: #9ca3af;
-    }
-    .job-header-info h1 {
-        font-size: 1.75rem;
-        font-weight: 700;
-        margin: 0 0 12px;
-        color: #fff;
-    }
-    .job-header-company {
-        font-size: 1.05rem;
-        margin-bottom: 16px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        opacity: 0.95;
-    }
-    .job-header-meta {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 20px;
-        font-size: 0.9rem;
-    }
-    .job-header-meta-item {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        opacity: 0.95;
-    }
+    .hero-logo img { max-width: 90%; max-height: 90%; object-fit: contain; }
+    .hero-info { flex: 1; }
+    .hero-info h1 { font-size: 1.45rem; font-weight: 800; color: #111827; margin: 0 0 6px; line-height: 1.3; }
+    .hero-co-link { color: #00b14f; font-size: 1rem; font-weight: 600; text-decoration: none; display: block; margin-bottom: 12px; }
+    .hero-co-link:hover { text-decoration: underline; color: #009744; }
+    .hero-meta { display: flex; flex-wrap: wrap; gap: 14px; }
+    .meta-tag { display: flex; align-items: center; gap: 6px; font-size: 0.9rem; color: #374151; }
+    .meta-tag i { color: #00b14f; }
+    .meta-tag.urgent { color: #ef4444; }
+    .meta-tag.urgent i { color: #ef4444; }
 
-    /* ===== Content card ===== */
-    .content-card {
-        background: #fff;
-        border: 1px solid #e5e7eb;
-        border-radius: 12px;
-        padding: 28px;
-        margin-bottom: 20px;
-    }
-    .content-card h2 {
-        font-size: 1.35rem;
-        font-weight: 700;
-        color: #111827;
-        margin: 0 0 20px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-    .content-card h2 i {
-        color: #00b14f;
-        font-size: 1.2rem;
-    }
-    .content-text {
-        font-size: 0.95rem;
-        color: #374151;
-        line-height: 1.8;
-    }
-    .content-text ul {
-        margin: 12px 0;
-        padding-left: 24px;
-    }
-    .content-text li {
-        margin-bottom: 8px;
-    }
-
-    /* ===== Sidebar ===== */
-    .sidebar-card {
-        background: #fff;
-        border: 1px solid #e5e7eb;
-        border-radius: 12px;
-        padding: 24px;
-        margin-bottom: 20px;
-        position: sticky;
-        top: 20px;
-    }
-    .sidebar-salary {
-        font-size: 1.75rem;
-        font-weight: 700;
-        color: #00b14f;
-        margin-bottom: 20px;
-        text-align: center;
-    }
-    .btn-apply-large {
-        width: 100%;
-        background: #00b14f;
-        color: #fff;
-        border: none;
-        border-radius: 10px;
-        padding: 14px 24px;
-        font-size: 1rem;
-        font-weight: 600;
-        cursor: pointer;
+    /* Apply row */
+    .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; padding: 20px 28px; border-top: 1px solid #f3f4f6; }
+    .btn-apply-big {
+        background: #00b14f; color: #fff; border: none; border-radius: 8px;
+        padding: 13px 36px; font-size: 1rem; font-weight: 700; cursor: pointer;
+        display: inline-flex; align-items: center; gap: 8px; text-decoration: none;
         transition: background 0.2s;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        margin-bottom: 12px;
     }
-    .btn-apply-large:hover {
-        background: #009744;
-    }
-    .btn-save-large {
-        width: 100%;
-        background: #fff;
-        color: #374151;
-        border: 1px solid #d1d5db;
-        border-radius: 10px;
-        padding: 12px 24px;
-        font-size: 0.95rem;
-        font-weight: 600;
-        cursor: pointer;
+    .btn-apply-big:hover { background: #009744; color: #fff; }
+    .btn-login-apply {
+        background: #fff; color: #00b14f; border: 2px solid #00b14f; border-radius: 8px;
+        padding: 12px 28px; font-size: 0.95rem; font-weight: 700; cursor: pointer;
+        display: inline-flex; align-items: center; gap: 8px; text-decoration: none;
         transition: all 0.2s;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
     }
-    .btn-save-large:hover {
-        background: #f9fafb;
-        border-color: #00b14f;
-        color: #00b14f;
+    .btn-login-apply:hover { background: #00b14f; color: #fff; }
+    .btn-save-job {
+        background: #fff; color: #374151; border: 1px solid #e5e7eb; border-radius: 8px;
+        padding: 13px 22px; font-size: 0.9rem; font-weight: 600; cursor: pointer;
+        display: inline-flex; align-items: center; gap: 7px; transition: all 0.2s;
     }
+    .btn-save-job:hover { border-color: #00b14f; color: #00b14f; }
 
-    .sidebar-divider {
-        height: 1px;
-        background: #e5e7eb;
-        margin: 20px 0;
-    }
+    /* Info grid */
+    .card-body { padding: 24px; }
+    .card-title { font-size: 1.1rem; font-weight: 700; color: #111827; margin: 0 0 18px; padding-bottom: 12px; border-bottom: 2px solid #f3f4f6; }
+    .info-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 16px; }
+    .info-row .lbl { font-size: 0.75rem; text-transform: uppercase; color: #9ca3af; font-weight: 700; letter-spacing: 0.04em; }
+    .info-row .val { font-size: 0.95rem; color: #1f2937; font-weight: 600; margin-top: 3px; }
+    .info-row .val.salary { color: #00b14f; font-size: 1.1rem; }
 
-    .sidebar-info-list {
-        display: grid;
-        gap: 14px;
-    }
-    .sidebar-info-item {
-        display: flex;
-        gap: 12px;
-    }
-    .sidebar-info-icon {
-        width: 40px;
-        height: 40px;
-        background: #f3f4f6;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #6b7280;
-        flex-shrink: 0;
-    }
-    .sidebar-info-content {
-        flex: 1;
-    }
-    .sidebar-info-label {
-        font-size: 0.8rem;
-        color: #9ca3af;
-        margin-bottom: 2px;
-    }
-    .sidebar-info-value {
-        font-size: 0.9rem;
-        font-weight: 600;
-        color: #374151;
-    }
+    /* Rich content */
+    .rich { font-size: 0.95rem; line-height: 1.8; color: #374151; }
+    .rich p { margin-bottom: 10px; }
+    .rich ul, .rich ol { padding-left: 20px; margin-bottom: 10px; }
+    .rich li { margin-bottom: 5px; }
 
-    /* ===== Skills tags ===== */
-    .skills-grid {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        margin-top: 16px;
-    }
-    .skill-tag {
-        display: inline-block;
-        padding: 8px 16px;
-        background: #ecfdf5;
-        color: #00b14f;
-        border: 1px solid #d1fae5;
-        border-radius: 8px;
-        font-size: 0.875rem;
-        font-weight: 600;
-    }
+    /* SIDEBAR */
+    .dside { width: 290px; flex-shrink: 0; position: sticky; top: 80px; }
 
-    /* ===== Company info card ===== */
-    .company-info-card {
-        background: #f9fafb;
-        border: 1px solid #e5e7eb;
-        border-radius: 12px;
-        padding: 20px;
-        margin-bottom: 20px;
-    }
-    .company-info-card h3 {
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: #111827;
-        margin: 0 0 16px;
-    }
-    .company-stat {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 10px 0;
-        border-bottom: 1px solid #e5e7eb;
-        font-size: 0.875rem;
-    }
-    .company-stat:last-child {
-        border-bottom: none;
-    }
-    .company-stat-label {
-        color: #6b7280;
-    }
-    .company-stat-value {
-        font-weight: 600;
-        color: #374151;
-    }
+    .side-box { background: #fff; border-radius: 14px; border: 1px solid #e5e7eb; margin-bottom: 18px; }
+    .side-box-inner { padding: 18px; }
+    .side-box-title { font-size: 0.9rem; font-weight: 700; color: #374151; margin: 0 0 14px; padding-bottom: 10px; border-bottom: 1px solid #f3f4f6; }
 
-    /* ===== Responsive ===== */
-    @@media (max-width: 992px) {
-        .detail-grid {
-            grid-template-columns: 1fr;
-        }
-        .sidebar-card {
-            position: static;
-        }
-        .job-header-content {
-            grid-template-columns: 80px 1fr;
-            gap: 16px;
-        }
-        .company-logo-large {
-            width: 80px;
-            height: 80px;
-        }
+    /* Quick stats */
+    .qs-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f9fafb; font-size: 0.875rem; }
+    .qs-row:last-child { border-bottom: none; }
+    .qs-row .k { color: #6b7280; }
+    .qs-row .v { font-weight: 600; color: #111827; }
+    .qs-row .v.red { color: #ef4444; }
+
+    /* Company card header */
+    .co-header {
+        background: linear-gradient(135deg, #1c3e2e 0%, #00b14f 100%);
+        border-radius: 14px 14px 0 0;
+        padding: 22px 18px;
+        display: flex; flex-direction: column; align-items: center; gap: 10px;
     }
+    .co-logo { width: 72px; height: 72px; border-radius: 10px; border: 2px solid rgba(255,255,255,0.3); overflow: hidden; background: #fff; display: flex; align-items: center; justify-content: center; }
+    .co-logo img { max-width: 90%; max-height: 90%; object-fit: contain; }
+    .co-header h4 { color: #fff; font-size: 0.95rem; font-weight: 700; margin: 0; text-align: center; }
+    .co-info-row { display: flex; gap: 9px; margin-bottom: 10px; font-size: 0.85rem; color: #4b5563; align-items: flex-start; }
+    .co-info-row i { color: #00b14f; width: 15px; margin-top: 2px; flex-shrink: 0; }
+    .co-info-row a { color: #00b14f; text-decoration: none; }
+    .co-info-row a:hover { text-decoration: underline; }
+    .co-footer-link { display: block; text-align: center; padding: 11px; border-top: 1px solid #f3f4f6; color: #00b14f; text-decoration: none; font-size: 0.875rem; font-weight: 600; transition: background 0.2s; border-radius: 0 0 14px 14px; }
+    .co-footer-link:hover { background: #f0fdf4; }
+
+    /* Skills tags */
+    .skills-wrap { display: flex; flex-wrap: wrap; gap: 7px; }
+    .skill-tag { background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; border-radius: 6px; padding: 4px 12px; font-size: 0.82rem; font-weight: 600; }
+
+    @@media (max-width: 960px) { .dw { flex-direction: column; } .dside { width: 100%; position: static; } .info-grid { grid-template-columns: 1fr; } }
 </style>
 }
 
-<div class="job-detail-container">
-    <!-- Breadcrumb -->
-    <div class="breadcrumb-nav">
-        <a asp-controller="Home" asp-action="Index">Trang chủ</a> › 
-        <a asp-controller="Job" asp-action="Index">Việc làm</a> › 
-        <strong>Senior Front-End Developer</strong>
-    </div>
+<div class="dw">
+    <!-- MAIN -->
+    <div class="dmain">
 
-    <!-- Job header -->
-    <div class="job-header-card">
-        <div class="job-header-content">
-            <div class="company-logo-large">
-                <div class="company-logo-placeholder-large">
-                    <i class="fas fa-building"></i>
-                </div>
-            </div>
-            <div class="job-header-info">
-                <h1>Senior Front-End Developer (ReactJS, NextJS)</h1>
-                <div class="job-header-company">
-                    <i class="fas fa-building"></i>
-                    <span>FPT Software</span>
-                </div>
-                <div class="job-header-meta">
-                    <div class="job-header-meta-item">
-                        <i class="fas fa-map-marker-alt"></i>
-                        <span>Hà Nội, Hồ Chí Minh</span>
+        <!-- Hero -->
+        <div class="card-box">
+            <div class="hero-body">
+                <div class="hero-top">
+                    <div class="hero-logo">
+                        <img src="@(string.IsNullOrEmpty(Model.CompanyLogo) ? "/images/logo_default.png" : Model.CompanyLogo)" alt="@Model.CompanyName" />
                     </div>
-                    <div class="job-header-meta-item">
-                        <i class="fas fa-briefcase"></i>
-                        <span>Full-time</span>
-                    </div>
-                    <div class="job-header-meta-item">
-                        <i class="fas fa-clock"></i>
-                        <span>Đăng 2 ngày trước</span>
-                    </div>
-                    <div class="job-header-meta-item">
-                        <i class="fas fa-eye"></i>
-                        <span>1,234 lượt xem</span>
+                    <div class="hero-info">
+                        <h1>@Model.Title</h1>
+                        <a href="#" class="hero-co-link">@Model.CompanyName</a>
+                        <div class="hero-meta">
+                            <div class="meta-tag">
+                                <i class="fas fa-money-bill-wave"></i> <strong>@SalaryText()</strong>
+                            </div>
+                            @if (!string.IsNullOrEmpty(Model.LocationName))
+                            {
+                                <div class="meta-tag"><i class="fas fa-map-marker-alt"></i> @Model.LocationName</div>
+                            }
+                            @if (!string.IsNullOrEmpty(Model.JobType))
+                            {
+                                <div class="meta-tag"><i class="fas fa-briefcase"></i> @Model.JobType</div>
+                            }
+                            @if (Model.ApplicationDeadline.HasValue)
+                            {
+                                var dl = (int)(Model.ApplicationDeadline.Value - DateTime.Now).TotalDays;
+                                <div class="meta-tag @(dl < 5 ? "urgent" : "")">
+                                    <i class="fas fa-clock"></i>
+                                    Còn @dl ngày để ứng tuyển
+                                </div>
+                            }
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- Main content grid -->
-    <div class="detail-grid">
-        <!-- Left column - Job details -->
-        <div>
-            <!-- Job description -->
-            <div class="content-card">
-                <h2><i class="fas fa-file-alt"></i> Mô tả công việc</h2>
-                <div class="content-text">
-                    <p>Chúng tôi đang tìm kiếm một Senior Front-End Developer có kinh nghiệm với ReactJS và NextJS để tham gia vào đội ngũ phát triển sản phẩm của chúng tôi.</p>
-                    <ul>
-                        <li>Phát triển và maintain các ứng dụng web sử dụng ReactJS, NextJS</li>
-                        <li>Tối ưu hiệu suất và trải nghiệm người dùng</li>
-                        <li>Làm việc chặt chẽ với team Backend và Designer</li>
-                        <li>Code review và mentor junior developers</li>
-                        <li>Tham gia vào việc thiết kế kiến trúc hệ thống</li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- Requirements -->
-            <div class="content-card">
-                <h2><i class="fas fa-clipboard-check"></i> Yêu cầu công việc</h2>
-                <div class="content-text">
-                    <ul>
-                        <li>Tối thiểu 3 năm kinh nghiệm với ReactJS</li>
-                        <li>Có kinh nghiệm với NextJS, TypeScript</li>
-                        <li>Hiểu rõ về HTML5, CSS3, JavaScript ES6+</li>
-                        <li>Kinh nghiệm với State Management (Redux, Context API, Zustand)</li>
-                        <li>Có kinh nghiệm với RESTful API, GraphQL</li>
-                        <li>Hiểu biết về responsive design và cross-browser compatibility</li>
-                        <li>Kỹ năng làm việc nhóm và giao tiếp tốt</li>
-                        <li>Đọc hiểu tài liệu tiếng Anh tốt</li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- Benefits -->
-            <div class="content-card">
-                <h2><i class="fas fa-gift"></i> Quyền lợi</h2>
-                <div class="content-text">
-                    <ul>
-                        <li>Mức lương cạnh tranh: 25-40 triệu (thỏa thuận theo năng lực)</li>
-                        <li>Thưởng hiệu suất hàng quý, thưởng dự án</li>
-                        <li>Review lương 2 lần/năm</li>
-                        <li>Bảo hiểm sức khỏe cao cấp cho nhân viên và gia đình</li>
-                        <li>13th month salary + performance bonus</li>
-                        <li>Môi trường làm việc chuyên nghiệp, năng động</li>
-                        <li>Được đào tạo và phát triển kỹ năng liên tục</li>
-                        <li>Team building, du lịch hàng năm</li>
-                        <li>Các hoạt động thể thao, giải trí</li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- Required skills -->
-            <div class="content-card">
-                <h2><i class="fas fa-code"></i> Kỹ năng yêu cầu</h2>
-                <div class="skills-grid">
-                    <span class="skill-tag">ReactJS</span>
-                    <span class="skill-tag">NextJS</span>
-                    <span class="skill-tag">TypeScript</span>
-                    <span class="skill-tag">Redux</span>
-                    <span class="skill-tag">HTML5/CSS3</span>
-                    <span class="skill-tag">RESTful API</span>
-                    <span class="skill-tag">Git</span>
-                    <span class="skill-tag">Responsive Design</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Right column - Sidebar -->
-        <div>
-            <!-- Apply card -->
-            <div class="sidebar-card">
-                <div class="sidebar-salary">25-40 triệu</div>
-                <button class="btn-apply-large">
-                    <i class="fas fa-paper-plane"></i>
-                    Ứng tuyển ngay
+            <div class="hero-actions">
+                @if (userRole == "Candidate")
+                {
+                    <button class="btn-apply-big" type="button">
+                        <i class="fas fa-paper-plane"></i> Ứng tuyển ngay
+                    </button>
+                }
+                else if (string.IsNullOrEmpty(userRole))
+                {
+                    <a href="@Url.Action("Login","Auth")" class="btn-login-apply">
+                        <i class="fas fa-sign-in-alt"></i> Đăng nhập để ứng tuyển
+                    </a>
+                }
+                else
+                {
+                    <span class="text-muted fst-italic" style="font-size:0.875rem;padding-top:4px;">
+                        Chức năng ứng tuyển chỉ dành cho ứng viên.
+                    </span>
+                }
+                <button class="btn-save-job" type="button">
+                    <i class="far fa-heart"></i> Lưu tin
                 </button>
-                <button class="btn-save-large">
-                    <i class="far fa-bookmark"></i>
-                    Lưu tin
-                </button>
-
-                <div class="sidebar-divider"></div>
-
-                <!-- Job info -->
-                <div class="sidebar-info-list">
-                    <div class="sidebar-info-item">
-                        <div class="sidebar-info-icon">
-                            <i class="fas fa-briefcase"></i>
-                        </div>
-                        <div class="sidebar-info-content">
-                            <div class="sidebar-info-label">Loại công việc</div>
-                            <div class="sidebar-info-value">Full-time</div>
-                        </div>
-                    </div>
-
-                    <div class="sidebar-info-item">
-                        <div class="sidebar-info-icon">
-                            <i class="fas fa-users"></i>
-                        </div>
-                        <div class="sidebar-info-content">
-                            <div class="sidebar-info-label">Số lượng tuyển</div>
-                            <div class="sidebar-info-value">3 người</div>
-                        </div>
-                    </div>
-
-                    <div class="sidebar-info-item">
-                        <div class="sidebar-info-icon">
-                            <i class="fas fa-map-marker-alt"></i>
-                        </div>
-                        <div class="sidebar-info-content">
-                            <div class="sidebar-info-label">Địa điểm</div>
-                            <div class="sidebar-info-value">Hà Nội, HCM</div>
-                        </div>
-                    </div>
-
-                    <div class="sidebar-info-item">
-                        <div class="sidebar-info-icon">
-                            <i class="fas fa-clock"></i>
-                        </div>
-                        <div class="sidebar-info-content">
-                            <div class="sidebar-info-label">Hạn nộp hồ sơ</div>
-                            <div class="sidebar-info-value" style="color:#ef4444;">Còn 15 ngày</div>
-                        </div>
-                    </div>
-                </div>
             </div>
+        </div>
 
-            <!-- Company info -->
-            <div class="company-info-card">
-                <h3><i class="fas fa-building"></i> Về công ty</h3>
-                <div class="company-stat">
-                    <span class="company-stat-label">Quy mô:</span>
-                    <span class="company-stat-value">1000+ nhân viên</span>
-                </div>
-                <div class="company-stat">
-                    <span class="company-stat-label">Lĩnh vực:</span>
-                    <span class="company-stat-value">Công nghệ thông tin</span>
-                </div>
-                <div class="company-stat">
-                    <span class="company-stat-label">Địa chỉ:</span>
-                    <span class="company-stat-value">Hà Nội</span>
-                </div>
-                <div class="company-stat">
-                    <span class="company-stat-label">Việc làm:</span>
-                    <span class="company-stat-value">24 tin đang tuyển</span>
+        <!-- Thông tin chung -->
+        <div class="card-box">
+            <div class="card-body">
+                <div class="card-title"><i class="fas fa-info-circle me-2 text-success"></i>Thông tin chung</div>
+                <div class="info-grid">
+                    <div class="info-row">
+                        <div class="lbl">Mức lương</div>
+                        <div class="val salary">@SalaryText()</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="lbl">Địa điểm</div>
+                        <div class="val">@(string.IsNullOrEmpty(fullLocation) ? "N/A" : fullLocation)</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="lbl">Hình thức</div>
+                        <div class="val">@(Model.JobType ?? "N/A")</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="lbl">Số lượng tuyển</div>
+                        <div class="val">@(Model.NumberOfPositions.HasValue ? $"{Model.NumberOfPositions} người" : "Không xác định")</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="lbl">Ngành nghề</div>
+                        <div class="val">@(Model.CategoryName ?? "N/A")</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="lbl">Hạn nộp hồ sơ</div>
+                        <div class="val">@(Model.ApplicationDeadline?.ToString("dd/MM/yyyy") ?? "N/A")</div>
+                    </div>
                 </div>
             </div>
         </div>
+
+        <!-- Mô tả -->
+        @if (!string.IsNullOrEmpty(Model.Description))
+        {
+            <div class="card-box">
+                <div class="card-body">
+                    <div class="card-title"><i class="fas fa-file-alt me-2 text-success"></i>Mô tả công việc</div>
+                    <div class="rich">@Html.Raw(Model.Description.Replace("\n", "<br/>"))</div>
+                </div>
+            </div>
+        }
+
+        <!-- Yêu cầu -->
+        @if (!string.IsNullOrEmpty(Model.Requirements))
+        {
+            <div class="card-box">
+                <div class="card-body">
+                    <div class="card-title"><i class="fas fa-check-circle me-2 text-success"></i>Yêu cầu ứng viên</div>
+                    <div class="rich">@Html.Raw(Model.Requirements.Replace("\n", "<br/>"))</div>
+                </div>
+            </div>
+        }
+
+        <!-- Quyền lợi -->
+        @if (!string.IsNullOrEmpty(Model.Benefits))
+        {
+            <div class="card-box">
+                <div class="card-body">
+                    <div class="card-title"><i class="fas fa-gift me-2 text-success"></i>Quyền lợi</div>
+                    <div class="rich">@Html.Raw(Model.Benefits.Replace("\n", "<br/>"))</div>
+                </div>
+            </div>
+        }
+
+        <!-- Địa điểm làm việc chi tiết -->
+        <div class="card-box">
+            <div class="card-body">
+                <div class="card-title"><i class="fas fa-map-marked-alt me-2 text-success"></i>Địa điểm làm việc</div>
+                <div class="d-flex align-items-start gap-2" style="font-size:0.95rem;color:#374151;">
+                    <i class="fas fa-map-marker-alt text-success mt-1" style="flex-shrink:0;"></i>
+                    <div>
+                        @if (!string.IsNullOrEmpty(fullLocation))
+                        {
+                            @fullLocation
+                        }
+                        else
+                        {
+                            <em class="text-muted">Chưa có thông tin địa điểm cụ thể</em>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
+
+    <!-- SIDEBAR -->
+    <aside class="dside">
+
+        <!-- Quick stats -->
+        <div class="side-box">
+            <div class="side-box-inner">
+                <div class="side-box-title"><i class="fas fa-chart-bar me-2 text-success"></i>Thông tin tuyển dụng</div>
+                @if (Model.ApplicationDeadline.HasValue)
+                {
+                    var dl = (int)(Model.ApplicationDeadline.Value - DateTime.Now).TotalDays;
+                    <div class="qs-row">
+                        <span class="k">Hạn nộp hồ sơ</span>
+                        <span class="v @(dl < 5 ? "red" : "")">@Model.ApplicationDeadline.Value.ToString("dd/MM/yyyy")</span>
+                    </div>
+                }
+                <div class="qs-row">
+                    <span class="k">Ngày đăng</span>
+                    <span class="v">@Model.CreatedAt?.ToString("dd/MM/yyyy")</span>
+                </div>
+                @if (Model.NumberOfPositions.HasValue)
+                {
+                    <div class="qs-row">
+                        <span class="k">Số lượng</span>
+                        <span class="v">@Model.NumberOfPositions người</span>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.JobType))
+                {
+                    <div class="qs-row">
+                        <span class="k">Hình thức</span>
+                        <span class="v">@Model.JobType</span>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.CategoryName))
+                {
+                    <div class="qs-row">
+                        <span class="k">Ngành nghề</span>
+                        <span class="v">@Model.CategoryName</span>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Skills — sidebar -->
+        @if (Model.Skills.Any())
+        {
+            <div class="side-box">
+                <div class="side-box-inner">
+                    <div class="side-box-title"><i class="fas fa-tools me-2 text-success"></i>Kỹ năng yêu cầu</div>
+                    <div class="skills-wrap">
+                        @foreach (var sk in Model.Skills)
+                        {
+                            <span class="skill-tag">@sk</span>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Company card -->
+        <div class="side-box">
+            <div class="co-header">
+                <div class="co-logo">
+                    <img src="@(string.IsNullOrEmpty(Model.CompanyLogo) ? "/images/logo_default.png" : Model.CompanyLogo)" alt="@Model.CompanyName" />
+                </div>
+                <h4>@Model.CompanyName</h4>
+            </div>
+            <div class="side-box-inner">
+                @if (!string.IsNullOrEmpty(Model.CompanySize))
+                {
+                    <div class="co-info-row"><i class="fas fa-users"></i><span>@Model.CompanySize nhân viên</span></div>
+                }
+                @if (!string.IsNullOrEmpty(Model.CompanyIndustry))
+                {
+                    <div class="co-info-row"><i class="fas fa-industry"></i><span>@Model.CompanyIndustry</span></div>
+                }
+                @if (!string.IsNullOrEmpty(Model.CompanyProvince))
+                {
+                    <div class="co-info-row"><i class="fas fa-map-marker-alt"></i><span>@Model.CompanyProvince</span></div>
+                }
+                @if (!string.IsNullOrEmpty(Model.CompanyWebsite))
+                {
+                    <div class="co-info-row">
+                        <i class="fas fa-globe"></i>
+                        <a href="@Model.CompanyWebsite" target="_blank" rel="noopener">@Model.CompanyWebsite</a>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.CompanyDescription))
+                {
+                    <p style="font-size:0.82rem;color:#6b7280;margin-top:8px;line-height:1.6;">
+                        @(Model.CompanyDescription.Length > 200 ? Model.CompanyDescription[..200] + "..." : Model.CompanyDescription)
+                    </p>
+                }
+            </div>
+            <a href="#" class="co-footer-link"><i class="fas fa-building me-1"></i> Xem trang công ty</a>
+        </div>
+
+        <!-- Actions again (sticky helpful) -->
+        @if (userRole == "Candidate")
+        {
+            <button class="btn-apply-big w-100 mb-2" type="button" style="justify-content:center;">
+                <i class="fas fa-paper-plane"></i> Ứng tuyển ngay
+            </button>
+        }
+        else if (string.IsNullOrEmpty(userRole))
+        {
+            <a href="@Url.Action("Login","Auth")" class="btn-login-apply w-100 mb-2" style="justify-content:center;">
+                <i class="fas fa-sign-in-alt"></i> Đăng nhập để ứng tuyển
+            </a>
+        }
+        <button class="btn-save-job w-100 mb-2" type="button" style="justify-content:center;">
+            <i class="far fa-heart"></i> Lưu tin
+        </button>
+
+        <a href="@Url.Action("Index","Job")" class="btn btn-outline-secondary w-100" style="font-size:0.875rem;">
+            <i class="fas fa-arrow-left me-2"></i> Quay lại danh sách
+        </a>
+    </aside>
 </div>
