@@ -399,7 +399,7 @@
         <h1>Recruiter Dashboard</h1>
         <p>Tổng quan hoạt động tuyển dụng của bạn.</p>
     </div>
-    <a href="#" class="btn-post-job">
+    <a asp-action="CreateJob" class="btn-post-job">
         <i class="fas fa-plus"></i> Đăng tin tuyển dụng
     </a>
 </div>
@@ -412,8 +412,8 @@
             <span class="rstat-trend">+12%</span>
         </div>
         <div class="rstat-value">@Model.ActiveJobPosts</div>
-        <div class="rstat-label">Active Job Posts</div>
-        <div class="rstat-sub">Posts currently live</div>
+        <div class="rstat-label">Tin tuyển dụng hoạt động</div>
+        <div class="rstat-sub">Tin đang hiển thị</div>
     </div>
     <div class="rstat-card">
         <div class="rstat-top">
@@ -421,8 +421,8 @@
             <span class="rstat-trend">+12%</span>
         </div>
         <div class="rstat-value">@Model.TotalApplications</div>
-        <div class="rstat-label">Total Applications</div>
-        <div class="rstat-sub">Across all active posts</div>
+        <div class="rstat-label">Tổng hồ sơ ứng tuyển</div>
+        <div class="rstat-sub">Trên tất cả các tin đăng</div>
     </div>
     <div class="rstat-card">
         <div class="rstat-top">
@@ -430,8 +430,8 @@
             <span class="rstat-trend">+12%</span>
         </div>
         <div class="rstat-value">@Model.InterviewsScheduled</div>
-        <div class="rstat-label">Interviews Scheduled</div>
-        <div class="rstat-sub">For this week</div>
+        <div class="rstat-label">Lịch hẹn phỏng vấn</div>
+        <div class="rstat-sub">Trong tuần này</div>
     </div>
     <div class="rstat-card">
         <div class="rstat-top">
@@ -439,8 +439,8 @@
             <span class="rstat-trend">+12%</span>
         </div>
         <div class="rstat-value">2.4k</div>
-        <div class="rstat-label">Profile Views</div>
-        <div class="rstat-sub">Company visibility</div>
+        <div class="rstat-label">Lượt xem hồ sơ</div>
+        <div class="rstat-sub">Độ hiển thị công ty</div>
     </div>
 </div>
 
@@ -455,10 +455,10 @@
             <div class="rchart-card">
                 <div class="rchart-card-header">
                     <div>
-                        <div class="rchart-card-title">Applications Overview</div>
-                        <div class="rchart-card-sub">Volume of candidates over the last 7 days</div>
+                        <div class="rchart-card-title">Tổng quan ứng tuyển</div>
+                        <div class="rchart-card-sub">Số lượng ứng viên trong 7 ngày qua</div>
                     </div>
-                    <button class="rchart-period-btn">Last 7 Days</button>
+                    <button class="rchart-period-btn">7 Ngày qua</button>
                 </div>
                 <canvas id="appOverviewChart" height="150"></canvas>
             </div>
@@ -467,8 +467,8 @@
             <div class="rchart-card">
                 <div class="rchart-card-header">
                     <div>
-                        <div class="rchart-card-title">Job Post Performance</div>
-                        <div class="rchart-card-sub">Views vs Clicks engagement trends</div>
+                        <div class="rchart-card-title">Hiệu quả tin tuyển dụng</div>
+                        <div class="rchart-card-sub">Xu hướng lượt xem vs lượt nhấn</div>
                     </div>
                 </div>
                 <canvas id="jobPerfChart" height="150"></canvas>
@@ -478,17 +478,17 @@
         <!-- Recent Applications -->
         <div class="rapp-card">
             <div class="rapp-header">
-                <span class="rapp-title">Recent Applications</span>
-                <a href="#" class="rapp-viewall">View All Applications</a>
+                <span class="rapp-title">Hồ sơ ứng tuyển gần đây</span>
+                <a asp-action="Applications" class="rapp-viewall">Xem tất cả ứng tuyển</a>
             </div>
             <table class="rapp-table">
                 <thead>
                     <tr>
-                        <th>Candidate Name</th>
-                        <th>Job Title</th>
-                        <th>Applied Date</th>
-                        <th>Status</th>
-                        <th>Action</th>
+                        <th>Tên ứng viên</th>
+                        <th>Vị trí tuyển dụng</th>
+                        <th>Ngày nộp</th>
+                        <th>Trạng thái</th>
+                        <th>Thao tác</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -506,7 +506,7 @@
                             <td><span class="abadge @app.StatusClass">@app.Status</span></td>
                             <td>
                                 <div class="rapp-action">
-                                    <a href="#" class="rapp-btn"><i class="fas fa-file-alt"></i> View CV</a>
+                                    <a asp-action="ViewCV" asp-route-id="@app.CvId" class="rapp-btn" target="_blank"><i class="fas fa-file-alt"></i> Xem CV</a>
                                     <a href="#" class="rapp-btn"><i class="fas fa-comment"></i> Chat</a>
                                 </div>
                             </td>
@@ -519,38 +519,33 @@
         <!-- Recent Job Posts -->
         <div class="rapp-card">
             <div class="rapp-header">
-                <span class="rapp-title">Your Recent Job Posts</span>
-                <a href="#" class="rapp-viewall">Manage All Jobs</a>
+                <span class="rapp-title">Bài đăng việc làm gần đây</span>
+                <a asp-action="JobPostingList" class="rapp-viewall">Quản lý tất cả tin tuyển dụng</a>
             </div>
             <table class="rjob-table">
                 <thead>
                     <tr>
-                        <th>Job Title</th>
-                        <th>Posted Date</th>
-                        <th>Applications</th>
-                        <th>Status</th>
-                        <th>Action</th>
+                        <th>Tiêu đề công việc</th>
+                        <th>Ngày đăng</th>
+                        <th>Ngày hết hạn</th>
+                        <th>Trạng thái</th>
+                        <th>Thao tác</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach (var job in Model.RecentJobPosts)
                     {
                         <tr>
-                            <td style="font-weight:600;color:#111827;">@job.JobTitle</td>
-                            <td>@job.PostedDate</td>
-                            <td>
-                                <div class="app-initials">
-                                    <div class="app-init-dot init-a">A</div>
-                                    <div class="app-init-dot init-b">B</div>
-                                    <div class="app-init-dot init-c">C</div>
-                                </div>
-                                <span style="font-size:0.78rem;color:#6b7280;margin-left:6px;">@job.Applications applicants</span>
+                            <td style="font-weight:600;color:#111827;">
+                                <a asp-action="EditJob" asp-route-id="@job.Id" style="color: #111827; text-decoration: none;">@job.JobTitle</a>
                             </td>
+                            <td>@job.PostedDate</td>
+                            <td>@job.ExpiryDate</td>
                             <td><span class="jbadge @job.StatusClass">@job.Status</span></td>
                             <td>
                                 <div class="rapp-action">
-                                    <a href="#" class="rapp-btn">Applications</a>
-                                    <a href="#" class="rapp-btn" title="More options"><i class="fas fa-ellipsis-v"></i></a>
+                                    <a asp-action="Applications" asp-route-jobId="@job.Id" class="rapp-btn">Ứng tuyển</a>
+                                    <a asp-action="EditJob" asp-route-id="@job.Id" class="rapp-btn" title="Chỉnh sửa"><i class="fas fa-edit"></i></a>
                                 </div>
                             </td>
                         </tr>
@@ -659,10 +654,10 @@
     new Chart(document.getElementById('jobPerfChart'), {
         type: 'line',
         data: {
-            labels: ['Week 1','Week 2','Week 3','Week 4'],
+            labels: ['Tuần 1','Tuần 2','Tuần 3','Tuần 4'],
             datasets: [
                 {
-                    label: 'Views',
+                    label: 'Lượt xem',
                     data: [405, 570, 735, 900],
                     borderColor: '#00b14f',
                     backgroundColor: 'rgba(0,177,79,0.07)',
@@ -673,7 +668,7 @@
                     fill: false,
                 },
                 {
-                    label: 'Clicks',
+                    label: 'Lượt nhấn',
                     data: [240, 330, 380, 460],
                     borderColor: '#3b82f6',
                     backgroundColor: 'rgba(59,130,246,0.07)',

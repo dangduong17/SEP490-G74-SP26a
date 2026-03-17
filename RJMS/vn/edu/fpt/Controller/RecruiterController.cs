@@ -45,6 +45,56 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
 
             if (userId > 0)
             {
+                var recruiter = await _context.Recruiters.FirstOrDefaultAsync(r => r.UserId == userId);
+                if (recruiter != null)
+                {
+                    model.ActiveJobPosts = await _context.Jobs.CountAsync(j => j.RecruiterId == recruiter.Id && j.Status == "Active");
+                    model.TotalApplications = await _context.Jobs
+                        .Where(j => j.RecruiterId == recruiter.Id)
+                        .SumAsync(j => j.ApplicationCount ?? 0);
+                    model.InterviewsScheduled = 0; // Future feature
+                    model.ProfileViews = 0; // Future feature
+                    
+                    var recentJobs = await _context.Jobs
+                        .Where(j => j.RecruiterId == recruiter.Id)
+                        .OrderByDescending(j => j.CreatedAt)
+                        .Take(5)
+                        .Select(j => new RecentJobPostItem
+                        {
+                            Id = j.Id,
+                            JobTitle = j.Title,
+                            PostedDate = j.CreatedAt.HasValue ? j.CreatedAt.Value.ToString("dd/MM/yyyy") : "",
+                            ExpiryDate = j.ExpiryDate.HasValue ? j.ExpiryDate.Value.ToString("dd/MM/yyyy") : "",
+                            Status = j.Status == "Active" ? "Đang hiển thị" : (j.Status == "Scheduled" ? "Đã lên lịch" : (j.Status == "Draft" ? "Tin nháp" : "Tạm dừng")),
+                            StatusClass = j.Status == "Active" ? "status-active-post" : (j.Status == "Draft" || j.Status == "Scheduled" ? "status-draft-post" : "status-expired-post")
+                        })
+                        .ToListAsync();
+                    
+                    model.RecentJobPosts = recentJobs;
+                    
+                    // Fetch recent applications - simplified for now
+                    model.RecentApplications = await _context.Applications
+                        .Include(a => a.Job)
+                        .Include(a => a.Candidate)
+                        .Where(a => a.Job.RecruiterId == recruiter.Id)
+                        .OrderByDescending(a => a.CreatedAt)
+                        .Take(5)
+                        .Select(a => new RecentApplicationItem
+                        {
+                            Id = a.Id,
+                            CandidateName = a.Candidate.FullName ?? "Ứng viên",
+                            JobTitle = a.Job.Title,
+                            AppliedDate = a.CreatedAt.HasValue ? a.CreatedAt.Value.ToString("dd/MM/yyyy") : "",
+                            Status = a.Status ?? "Mới",
+                            StatusClass = (a.Status == "Đang xem xét" || a.Status == "Reviewing") ? "status-reviewing" : 
+                                          (a.Status == "Đặt lịch hẹn" || a.Status == "Interview") ? "status-interview" : 
+                                          (a.Status == "Đã tuyển" || a.Status == "Hired") ? "status-hired" : 
+                                          (a.Status == "Từ chối" || a.Status == "Rejected") ? "status-rejected" : "status-new",
+                            CvId = a.Cvid
+                        })
+                        .ToListAsync();
+                }
+
                 var activeSubscription = await _context.Subscriptions
                     .Include(s => s.Plan)
                     .Where(s => s.UserId == userId && s.Status == "Active")
@@ -111,6 +161,27 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                 .Include(j => j.JobCategory)
                 .Include(j => j.Location)
                 .Where(j => j.RecruiterId == recruiter.Id);
+
+            // Auto-update Scheduled to Active if time reached, and Active to Expired if expired
+            var jobsToUpdate = await query.Where(j => 
+                (j.Status == "Scheduled" && j.CreatedAt <= DateTime.Now) ||
+                (j.Status == "Active" && j.ExpiryDate < DateTime.Now)).ToListAsync();
+
+            if (jobsToUpdate.Any())
+            {
+                foreach(var jobUpdate in jobsToUpdate)
+                {
+                    if (jobUpdate.Status == "Scheduled" && jobUpdate.CreatedAt <= DateTime.Now)
+                    {
+                        jobUpdate.Status = "Active";
+                    }
+                    if (jobUpdate.Status == "Active" && jobUpdate.ExpiryDate < DateTime.Now)
+                    {
+                        jobUpdate.Status = "Expired";
+                    }
+                }
+                await _context.SaveChangesAsync();
+            }
 
             // Filtering
             if (!string.IsNullOrEmpty(keyword))
@@ -198,10 +269,10 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                 return RedirectToAction(nameof(JobPostingList));
             }
 
-            job.Status = "Active";
+            job.Status = (job.CreatedAt.HasValue && job.CreatedAt.Value > DateTime.Now) ? "Scheduled" : "Active";
             await _context.SaveChangesAsync();
 
-            TempData["SuccessToast"] = "Đã hiển thị lại tin tuyển dụng thành công.";
+            TempData["SuccessToast"] = job.Status == "Scheduled" ? "Đã lên lịch hiển thị tin tuyển dụng thành công." : "Đã hiển thị lại tin tuyển dụng thành công.";
             return RedirectToAction(nameof(JobPostingList));
         }
 
@@ -240,6 +311,8 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                 Benefits = job.Benefits ?? "",
                 ApplicationDeadline = job.ApplicationDeadline ?? DateTime.Now.AddDays(30),
                 ExpiryDate = job.ExpiryDate ?? DateTime.Now.AddDays(30),
+                PublishDate = job.CreatedAt ?? DateTime.Now,
+                Status = job.Status,
                 ProvinceCode = job.Location?.ProvinceCode,
                 ProvinceName = job.Location?.CityName,
                 WardCode = job.Location?.WardCode,
@@ -334,6 +407,16 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                 ModelState.AddModelError("ExpiryDate", "Ngày hết hạn tin tối đa là 30 ngày kể từ thời điểm hiện tại.");
             }
 
+            if (model.PublishDate.Date < DateTime.Now.Date)
+            {
+                ModelState.AddModelError("PublishDate", "Ngày hiển thị không được trong quá khứ.");
+            }
+
+            if (model.PublishDate.Date > DateTime.Now.Date.AddDays(15))
+            {
+                ModelState.AddModelError("PublishDate", "Ngày hiển thị chỉ được thiết lập tối đa 15 ngày kể từ thời điểm hiện tại.");
+            }
+
             if (!ModelState.IsValid)
             {
                 TempData["ErrorToast"] = "Vui lòng kiểm tra lại thông tin!";
@@ -353,8 +436,30 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             job.Benefits = model.Benefits;
             job.ApplicationDeadline = model.ApplicationDeadline;
             job.ExpiryDate = model.ExpiryDate;
+            job.CreatedAt = model.PublishDate;
             job.LocationId = location.Id;
-            job.Status = isDraft ? "Draft" : "Active";
+
+            // Preserve chosen Status if editing manually instead of submitting draft/saving
+            if (isDraft)
+            {
+                job.Status = "Draft";
+            }
+            else
+            {
+                if (!string.IsNullOrEmpty(model.Status))
+                {
+                    job.Status = model.Status; // user manually picked status
+                    // Force Scheduled if they selected Active but publish date is future
+                    if ((job.Status == "Active" || job.Status == "Đang hiển thị") && model.PublishDate > DateTime.Now)
+                    {
+                        job.Status = "Scheduled";
+                    }
+                }
+                else
+                {
+                    job.Status = model.PublishDate > DateTime.Now ? "Scheduled" : "Active";
+                }
+            }
 
             // Update Skills
             _context.JobSkills.RemoveRange(job.JobSkills);
@@ -403,7 +508,8 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             var model = new JobSaveDTO
             {
                 ApplicationDeadline = DateTime.Now.AddDays(30),
-                ExpiryDate = DateTime.Now.AddDays(30)
+                ExpiryDate = DateTime.Now.AddDays(30),
+                PublishDate = DateTime.Now
             };
 
             if (recruiter?.Company != null)
@@ -537,7 +643,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                 ModelState.AddModelError("JobCategoryId", "Vui lòng chọn hoặc thêm nhóm nghề.");
             }
 
-            // Application Deadline & Expiry Validation
+            // Application Deadline & Expiry & Publish Date Validation
             if (model.ApplicationDeadline.Date > DateTime.Now.Date.AddDays(30))
             {
                 ModelState.AddModelError("ApplicationDeadline", "Hạn nộp hồ sơ tối đa là 30 ngày kể từ thời điểm hiện tại.");
@@ -546,8 +652,16 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             {
                 ModelState.AddModelError("ExpiryDate", "Ngày hết hạn tin tối đa là 30 ngày kể từ thời điểm hiện tại.");
             }
+            if (model.PublishDate.Date < DateTime.Now.Date)
+            {
+                ModelState.AddModelError("PublishDate", "Ngày hiển thị không được trong quá khứ.");
+            }
+            if (model.PublishDate.Date > DateTime.Now.Date.AddDays(15))
+            {
+                ModelState.AddModelError("PublishDate", "Ngày hiển thị chỉ được thiết lập tối đa 15 ngày kể từ thời điểm hiện tại.");
+            }
 
-            if (!ModelState.IsValid) 
+            if (!ModelState.IsValid)  
             {
                 TempData["ErrorToast"] = "Vui lòng kiểm tra lại thông tin đăng tin!";
                 ViewBag.Categories1 = await _context.JobCategories.Where(c => c.Level == 1).OrderBy(c => c.Name).ToListAsync();
@@ -571,8 +685,8 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                 NumberOfPositions = model.NumberOfPositions,
                 ApplicationDeadline = model.ApplicationDeadline == default ? DateTime.Now.AddDays(30) : model.ApplicationDeadline,
                 ExpiryDate = model.ExpiryDate == default ? DateTime.Now.AddDays(30) : model.ExpiryDate,
-                Status = isDraft ? "Draft" : "Active",
-                CreatedAt = DateTime.Now
+                Status = isDraft ? "Draft" : (model.PublishDate > DateTime.Now ? "Scheduled" : "Active"),
+                CreatedAt = model.PublishDate == default ? DateTime.Now : model.PublishDate
             };
 
             _context.Jobs.Add(job);
@@ -659,11 +773,58 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         }
 
         // ── Applications ──────────────────────────────────────────────────────
-        public IActionResult Applications()
+        public async Task<IActionResult> Applications(int? jobId, string? status, string? keyword)
         {
             if (RequireRecruiter() is { } redirect) return redirect;
+
+            var userIdStr = Request.Cookies["UserId"];
+            if (!int.TryParse(userIdStr, out int userId)) return RedirectToAction("Login", "Auth");
+
+            var recruiter = await _context.Recruiters.FirstOrDefaultAsync(r => r.UserId == userId);
+            if (recruiter == null) return RedirectToAction("Login", "Auth");
+
+            var query = _context.Applications
+                .Include(a => a.Job)
+                .Include(a => a.Candidate)
+                .ThenInclude(c => c.User)
+                .Where(a => a.Job.RecruiterId == recruiter.Id);
+
+            // Filter
+            if (jobId.HasValue) query = query.Where(a => a.JobId == jobId.Value);
+            if (!string.IsNullOrEmpty(status) && status != "All") query = query.Where(a => a.Status == status);
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                query = query.Where(a => (a.Candidate.FullName ?? "").Contains(keyword) || 
+                                       (a.Candidate.User.Email ?? "").Contains(keyword) ||
+                                       (a.Job.Title ?? "").Contains(keyword));
+            }
+
+            var applications = await query
+                .OrderByDescending(a => a.CreatedAt)
+                .Select(a => new ApplicationListItemDTO
+                {
+                    Id = a.Id,
+                    JobId = a.JobId,
+                    JobTitle = a.Job.Title,
+                    CandidateId = a.CandidateId,
+                    CandidateName = a.Candidate.FullName ?? "Ứng viên",
+                    CandidateEmail = a.Candidate.User.Email,
+                    CandidatePhone = a.Candidate.Phone,
+                    CandidateAvatar = a.Candidate.Avatar,
+                    AppliedDate = a.CreatedAt,
+                    Status = a.Status ?? "Mới",
+                    CoverLetter = a.CoverLetter,
+                    CvId = a.Cvid
+                })
+                .ToListAsync();
+
+            ViewBag.Jobs = await _context.Jobs.Where(j => j.RecruiterId == recruiter.Id).Select(j => new { j.Id, j.Title }).ToListAsync();
+            ViewBag.CurrentJobId = jobId;
+            ViewBag.CurrentStatus = status;
+            ViewBag.Keyword = keyword;
+
             ViewData["Title"] = "Danh sách ứng tuyển";
-            return View();
+            return View(applications);
         }
 
         // ── Candidates ────────────────────────────────────────────────────────
@@ -680,6 +841,39 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             if (RequireRecruiter() is { } redirect) return redirect;
             ViewData["Title"] = "Tin nhắn";
             return View();
+        }
+        [HttpPost]
+        public async Task<IActionResult> UpdateApplicationStatus(int id, string status)
+        {
+            if (RequireRecruiter() is { } redirect) return redirect;
+
+            var application = await _context.Applications.FindAsync(id);
+            if (application != null)
+            {
+                application.Status = status;
+                await _context.SaveChangesAsync();
+                TempData["SuccessToast"] = $"Đã cập nhật trạng thái ứng viên thành '{status}'";
+            }
+
+            return RedirectToAction("Applications");
+        }
+
+        public async Task<IActionResult> ViewCV(int id)
+        {
+            if (RequireRecruiter() is { } redirect) return redirect;
+
+            var cv = await _context.Cvs.FindAsync(id);
+            if (cv == null || string.IsNullOrEmpty(cv.FilePath))
+            {
+                TempData["ErrorToast"] = "Không tìm thấy file CV.";
+                return RedirectToAction("Applications");
+            }
+
+            // In a real scenario, you'd serve the file from the path
+            // For now, redirect to the file path if it's a URL or use PhysicalFile if it's a local path
+            if (cv.FilePath.StartsWith("http")) return Redirect(cv.FilePath);
+            
+            return File(cv.FilePath, "application/pdf");
         }
     }
 }

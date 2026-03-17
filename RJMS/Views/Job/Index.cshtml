@@ -1,674 +1,749 @@
+@model RJMS.vn.edu.fpt.Models.DTOs.PublicJobListViewModel
 @{
-    ViewData["Title"] = "Danh sách việc làm";
+    ViewData["Title"] = "Tìm việc làm tốt nhất";
     Layout = "~/Views/Shared/_Layout.cshtml";
+    var selectedCatIds = new HashSet<int>(new[] { Model.CategoryId ?? 0 }.Where(x => x != 0));
 }
 
 @section Styles {
 <style>
-    /* ===== Page container ===== */
-    .job-list-container {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 32px 20px;
-    }
+    body { background: #f5f5f5; }
+    .job-page-wrapper { max-width: 1200px; margin: 0 auto; padding: 30px 16px 60px; }
 
-    /* ===== Page header ===== */
-    .page-header {
-        text-align: center;
-        margin-bottom: 40px;
-    }
-    .page-header h1 {
-        font-size: 2.25rem;
-        font-weight: 700;
-        color: #111827;
-        margin: 0 0 12px;
-    }
-    .page-header p {
-        font-size: 1rem;
-        color: #6b7280;
-        margin: 0;
-    }
-
-    /* ===== Search bar ===== */
-    .search-section {
-        background: #fff;
-        border: 1px solid #e5e7eb;
-        border-radius: 16px;
-        padding: 28px;
-        margin-bottom: 32px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    }
-
-    .search-form {
-        display: grid;
-        grid-template-columns: 2fr 1fr 1fr 1fr auto;
-        gap: 12px;
-        align-items: end;
-    }
-
-    .form-group-search {
+    /* ── Search bar (dark pill) ── */
+    .search-bar-wrap {
+        background: #1c3e2e;
+        border-radius: 50px;
         display: flex;
-        flex-direction: column;
-        gap: 6px;
+        align-items: center;
+        padding: 8px 8px 8px 16px;
+        gap: 0;
+        margin-bottom: 24px;
     }
-    .form-group-search label {
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: #374151;
+    .search-segment {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 16px;
+        cursor: pointer;
+        flex-shrink: 0;
     }
-    .form-group-search input,
-    .form-group-search select {
-        padding: 11px 14px;
-        border: 1px solid #d1d5db;
-        border-radius: 8px;
-        font-size: 0.875rem;
-        transition: border-color 0.15s;
-    }
-    .form-group-search input:focus,
-    .form-group-search select:focus {
-        border-color: #00b14f;
+    .search-segment .seg-label { color: #a0d4b2; font-size: 0.875rem; font-weight: 600; white-space: nowrap; }
+    .search-divider { width: 1px; height: 28px; background: #2d5c3e; flex-shrink: 0; }
+    .kw-input {
+        flex: 1;
+        border: none;
+        background: transparent;
+        color: #fff;
+        font-size: 0.95rem;
         outline: none;
-        box-shadow: 0 0 0 3px rgba(0,177,79,0.1);
+        padding: 8px 16px;
+        min-width: 0;
     }
-
-    .btn-search {
+    .kw-input::placeholder { color: #6b7280; }
+    .loc-btn {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: transparent;
+        border: none;
+        color: #a0d4b2;
+        cursor: pointer;
+        padding: 8px 16px;
+        font-size: 0.875rem;
+        white-space: nowrap;
+    }
+    .btn-search-main {
         background: #00b14f;
         color: #fff;
         border: none;
-        border-radius: 8px;
-        padding: 11px 28px;
-        font-size: 0.875rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: background 0.2s;
-        white-space: nowrap;
-        height: 44px;
-    }
-    .btn-search:hover {
-        background: #009744;
-    }
-
-    /* ===== Stats bar ===== */
-    .stats-bar {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 24px;
-        padding-bottom: 16px;
-        border-bottom: 1px solid #e5e7eb;
-    }
-    .stats-text {
-        font-size: 0.875rem;
-        color: #6b7280;
-    }
-    .stats-text strong {
-        color: #111827;
+        border-radius: 50px;
+        padding: 12px 28px;
+        font-size: 0.95rem;
         font-weight: 700;
-    }
-    .sort-select {
-        padding: 8px 32px 8px 12px;
-        border: 1px solid #d1d5db;
-        border-radius: 8px;
-        font-size: 0.85rem;
-        color: #374151;
-        background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 8px center;
-        appearance: none;
         cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+        transition: background 0.2s;
+        margin-left: 8px;
     }
+    .btn-search-main:hover { background: #009744; }
 
-    /* ===== Job cards ===== */
-    .job-list {
-        display: grid;
-        gap: 16px;
-        margin-bottom: 32px;
-    }
+    /* ── Two-column layout ── */
+    .job-main-layout { display: flex; gap: 24px; align-items: flex-start; }
+
+    /* ── Sidebar ── */
+    .filter-sidebar { width: 260px; flex-shrink: 0; }
+    .filter-card { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 16px; border: 1px solid #e5e7eb; }
+    .filter-card h5 { font-size: 0.9rem; font-weight: 700; color: #111827; margin: 0 0 14px; padding-bottom: 10px; border-bottom: 1px solid #f3f4f6; }
+    .filter-item { display: flex; align-items: center; justify-content: space-between; padding: 6px 4px; border-radius: 6px; transition: background 0.15s; }
+    .filter-item:hover { background: #f9fafb; }
+    .filter-item a { text-decoration: none; color: #374151; font-size: 0.875rem; flex: 1; }
+    .filter-item a.active-filter { color: #00b14f; font-weight: 700; }
+    .filter-count { background: #f3f4f6; color: #6b7280; font-size: 0.72rem; padding: 2px 7px; border-radius: 20px; font-weight: 600; }
+
+    /* ── Job content ── */
+    .job-content { flex: 1; min-width: 0; }
+    .section-header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+    .section-title h2 { font-size: 1.3rem; font-weight: 800; color: #00b14f; margin: 0; }
+    .job-count-text { font-size: 0.82rem; color: #6b7280; margin-top: 2px; }
+
+    /* ── Job grid ── */
+    .job-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 32px; }
 
     .job-card {
         background: #fff;
         border: 1px solid #e5e7eb;
         border-radius: 12px;
-        padding: 24px;
-        display: grid;
-        grid-template-columns: 80px 1fr auto;
-        gap: 20px;
-        align-items: start;
-        transition: all 0.2s;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        transition: all 0.25s;
         text-decoration: none;
         color: inherit;
-    }
-    .job-card:hover {
-        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-        border-color: #00b14f;
-        transform: translateY(-2px);
-    }
-
-    .job-logo {
-        width: 80px;
-        height: 80px;
-        border: 1px solid #e5e7eb;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: #f9fafb;
-        overflow: hidden;
-        flex-shrink: 0;
-    }
-    .job-logo img {
-        width: 100%;
         height: 100%;
-        object-fit: cover;
     }
-    .job-logo-placeholder {
-        font-size: 1.5rem;
-        color: #9ca3af;
-    }
-
-    .job-info {
-        flex: 1;
-        min-width: 0;
-    }
-    .job-title {
-        font-size: 1.15rem;
+    .job-card:hover { border-color: #00b14f; box-shadow: 0 6px 18px rgba(0,177,79,0.1); transform: translateY(-3px); }
+    .card-top { display: flex; gap: 10px; align-items: flex-start; }
+    .logo-box { width: 52px; height: 52px; border: 1px solid #f3f4f6; border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; background: #fafafa; }
+    .logo-box img { max-width: 90%; max-height: 90%; object-fit: contain; }
+    .card-info { flex: 1; min-width: 0; }
+    .card-title {
+        font-size: 0.9rem;
         font-weight: 700;
-        color: #111827;
-        margin: 0 0 8px;
+        color: #1f2937;
+        line-height: 1.35;
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
+        margin: 0 0 4px;
+        height: 2.4rem;
     }
-    .job-company {
-        font-size: 0.9rem;
-        color: #6b7280;
-        margin-bottom: 12px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-    .job-company i {
-        color: #9ca3af;
-    }
+    .card-company { font-size: 0.75rem; color: #6b7280; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: auto; }
+    .card-badges { display: flex; gap: 5px; flex-wrap: wrap; }
+    .badge-pill { background: #f3f4f6; color: #4b5563; font-size: 0.75rem; font-weight: 600; padding: 4px 9px; border-radius: 4px; white-space: nowrap; }
+    .badge-pill.salary { background: #ecfdf5; color: #059669; }
+    .btn-heart { width: 32px; height: 32px; border-radius: 50%; border: 1px solid #e5e7eb; background: transparent; display: flex; align-items: center; justify-content: center; color: #9ca3af; cursor: pointer; flex-shrink: 0; transition: all 0.2s; }
+    .btn-heart:hover { background: #fff1f2; color: #f43f5e; border-color: #f43f5e; }
 
-    .job-meta {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 16px;
-        font-size: 0.85rem;
-        color: #6b7280;
-        margin-bottom: 12px;
-    }
-    .job-meta-item {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-    .job-meta-item i {
-        color: #9ca3af;
-        font-size: 0.8rem;
-    }
+    /* Active chip */
+    .active-chip { display: inline-flex; align-items: center; gap: 6px; background: #ecfdf5; color: #059669; border: 1px solid #6ee7b7; border-radius: 20px; padding: 4px 12px; font-size: 0.82rem; font-weight: 600; margin-bottom: 14px; }
+    .active-chip a { color: #059669; text-decoration: none; margin-left: 2px; }
 
-    .job-tags {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-    }
-    .job-tag {
-        display: inline-block;
-        padding: 4px 12px;
-        background: #f3f4f6;
-        color: #374151;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: 500;
-    }
+    /* ── Pagination ── */
+    .pagination-wrap { display: flex; justify-content: center; align-items: center; gap: 6px; }
+    .pg-btn { width: 36px; height: 36px; border-radius: 50%; border: 1px solid #e5e7eb; background: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; color: #374151; text-decoration: none; font-weight: 600; transition: all 0.2s; }
+    .pg-btn:hover { border-color: #00b14f; color: #00b14f; }
+    .pg-btn.active { background: #00b14f; border-color: #00b14f; color: #fff; }
+    .pg-btn.disabled { opacity: 0.4; pointer-events: none; }
+    .pg-info { font-size: 0.85rem; color: #6b7280; padding: 0 10px; }
 
-    .job-actions {
+    /* ══════════════════════════════════════════
+       CATEGORY MODAL
+    ══════════════════════════════════════════ */
+    .cat-modal-backdrop {
+        display: none;
+        position: fixed; inset: 0;
+        background: rgba(0,0,0,0.4);
+        z-index: 1050;
+        align-items: flex-start;
+        justify-content: center;
+        padding-top: 60px;
+    }
+    .cat-modal-backdrop.open { display: flex; }
+    .cat-modal {
+        background: #fff;
+        border-radius: 14px;
+        width: 1020px;
+        max-width: 96vw;
+        max-height: 80vh;
         display: flex;
         flex-direction: column;
-        gap: 12px;
-        align-items: flex-end;
-        flex-shrink: 0;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        animation: slideDown 0.2s ease;
     }
-    .job-salary {
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: #00b14f;
-        white-space: nowrap;
-    }
-    .job-deadline {
-        font-size: 0.8rem;
-        color: #ef4444;
+    @@keyframes slideDown { from { transform: translateY(-16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .cat-modal-head {
         display: flex;
         align-items: center;
-        gap: 4px;
+        justify-content: space-between;
+        padding: 18px 24px;
+        border-bottom: 1px solid #f3f4f6;
     }
-    .job-deadline i {
-        font-size: 0.75rem;
+    .cat-modal-head h4 { font-size: 1.05rem; font-weight: 700; margin: 0; color: #111827; }
+    .btn-close-modal { background: none; border: none; font-size: 1.3rem; color: #6b7280; cursor: pointer; line-height: 1; }
+    .cat-search-wrap {
+        padding: 14px 24px;
+        border-bottom: 1px solid #f3f4f6;
     }
-    .btn-apply {
-        background: #00b14f;
-        color: #fff;
-        border: none;
-        border-radius: 8px;
-        padding: 8px 20px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: background 0.2s;
-        text-decoration: none;
-        white-space: nowrap;
+    .cat-search-input {
+        width: 100%;
+        border: 1.5px solid #d1d5db;
+        border-radius: 30px;
+        padding: 9px 16px 9px 40px;
+        font-size: 0.9rem;
+        outline: none;
+        background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E") no-repeat 14px center;
+        transition: border-color 0.2s;
     }
-    .btn-apply:hover {
-        background: #009744;
-        color: #fff;
+    .cat-search-input:focus { border-color: #00b14f; box-shadow: 0 0 0 3px rgba(0,177,79,0.1); }
+    .cat-modal-body {
+        display: grid;
+        grid-template-columns: 260px 1fr 1fr;
+        flex: 1;
+        overflow: hidden;
+        min-height: 0;
     }
-    .btn-save {
+    .cat-col {
+        overflow-y: auto;
+        border-right: 1px solid #f3f4f6;
+        padding: 0;
+    }
+    .cat-col:last-child { border-right: none; }
+    .cat-col-header {
+        padding: 10px 16px;
+        font-size: 0.72rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #9ca3af;
+        position: sticky;
+        top: 0;
         background: #fff;
-        color: #6b7280;
-        border: 1px solid #d1d5db;
-        border-radius: 8px;
-        padding: 8px 16px;
-        font-size: 0.85rem;
+        border-bottom: 1px solid #f3f4f6;
+        z-index: 1;
+    }
+    .cat-group-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
         cursor: pointer;
-        transition: all 0.2s;
+        transition: background 0.15s;
+        border-radius: 0;
     }
-    .btn-save:hover {
-        background: #f9fafb;
-        border-color: #00b14f;
-        color: #00b14f;
-    }
+    .cat-group-item:hover { background: #f9fafb; }
+    .cat-group-item.selected { background: #f0fdf4; }
+    .cat-group-item.active-parent { background: #f0fdf4; }
+    .cat-group-item input[type=checkbox] { accent-color: #00b14f; width: 16px; height: 16px; cursor: pointer; flex-shrink: 0; }
+    .cat-group-item .cat-name { flex: 1; font-size: 0.9rem; color: #1f2937; font-weight: 500; }
+    .cat-group-item:hover .cat-name { color: #00b14f; }
+    .cat-group-item.active-parent .cat-name { color: #00b14f; font-weight: 700; }
+    .cat-arrow { color: #9ca3af; font-size: 0.75rem; }
 
-    /* ===== Empty state ===== */
-    .empty-state {
-        text-align: center;
-        padding: 60px 20px;
+    /* Right panel for children or empty state */
+    .cat-empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: #9ca3af;
+        font-size: 0.9rem;
+        gap: 10px;
+    }
+    .cat-empty-state i { font-size: 3rem; }
+
+    .cat-modal-foot {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 24px;
+        border-top: 1px solid #f3f4f6;
+        flex-shrink: 0;
+    }
+    .cat-modal-foot .hint { font-size: 0.82rem; color: #6b7280; }
+    .cat-modal-foot .hint a { color: #00b14f; }
+    .cat-modal-foot-actions { display: flex; gap: 10px; }
+    .btn-cat-clear { background: transparent; border: 1px solid #d1d5db; border-radius: 8px; padding: 8px 18px; color: #6b7280; cursor: pointer; font-size: 0.875rem; }
+    .btn-cat-cancel { background: transparent; border: 1px solid #d1d5db; border-radius: 8px; padding: 8px 18px; color: #6b7280; cursor: pointer; font-size: 0.875rem; }
+    .btn-cat-apply { background: #00b14f; color: #fff; border: none; border-radius: 8px; padding: 8px 24px; font-weight: 700; cursor: pointer; font-size: 0.875rem; }
+    .btn-cat-apply:hover { background: #009744; }
+
+    /* Location dropdown overlay */
+    .loc-overlay {
+        display: none;
+        position: fixed;
+        z-index: 1040;
         background: #fff;
         border: 1px solid #e5e7eb;
         border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        padding: 8px;
+        min-width: 220px;
+        max-height: 300px;
+        overflow-y: auto;
     }
-    .empty-state i {
-        font-size: 4rem;
-        color: #d1d5db;
-        margin-bottom: 16px;
-    }
-    .empty-state h3 {
-        font-size: 1.25rem;
-        font-weight: 600;
-        color: #374151;
-        margin-bottom: 8px;
-    }
-    .empty-state p {
-        font-size: 0.9rem;
-        color: #6b7280;
-    }
+    .loc-opt { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 0.875rem; color: #374151; }
+    .loc-opt:hover { background: #f0fdf4; color: #00b14f; }
+    .loc-opt.active { color: #00b14f; font-weight: 700; }
 
-    /* ===== Pagination ===== */
-    .pagination-wrapper {
-        display: flex;
-        justify-content: center;
-        gap: 8px;
-    }
-    .page-btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-width: 40px;
-        height: 40px;
-        padding: 0 12px;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        font-size: 0.875rem;
-        color: #374151;
-        text-decoration: none;
-        background: #fff;
-        cursor: pointer;
-        transition: all 0.15s;
-    }
-    .page-btn:hover {
-        border-color: #00b14f;
-        color: #00b14f;
-    }
-    .page-btn.active {
-        background: #00b14f;
-        border-color: #00b14f;
-        color: #fff;
-    }
-    .page-btn:disabled {
-        opacity: 0.4;
-        cursor: not-allowed;
-        pointer-events: none;
-    }
-
-    /* ===== Responsive ===== */
-    @@media (max-width: 992px) {
-        .search-form {
-            grid-template-columns: 1fr;
-        }
-        .job-card {
-            grid-template-columns: 60px 1fr;
-            gap: 16px;
-        }
-        .job-logo {
-            width: 60px;
-            height: 60px;
-        }
-        .job-actions {
-            grid-column: 2;
-            flex-direction: row;
-            justify-content: space-between;
-            align-items: center;
-        }
-    }
+    @@media (max-width: 1024px) { .job-grid { grid-template-columns: repeat(2,1fr); } .filter-sidebar { display: none; } }
+    @@media (max-width: 640px) { .job-grid { grid-template-columns: 1fr; } }
+    @@media (max-width: 768px) { .cat-modal-body { grid-template-columns: 1fr; } }
 </style>
 }
 
-<div class="job-list-container">
-    <!-- Page header -->
-    <div class="page-header">
-        <h1><i class="fas fa-briefcase" style="color:#00b14f;"></i> Tìm việc làm</h1>
-        <p>Khám phá hàng ngàn cơ hội nghề nghiệp từ các công ty hàng đầu</p>
-    </div>
-
-    <!-- Search section -->
-    <div class="search-section">
-        <form method="get" asp-action="Index" class="search-form">
-            <div class="form-group-search">
-                <label><i class="fas fa-search"></i> Từ khóa</label>
-                <input type="text" name="keyword" placeholder="Vị trí, công ty, kỹ năng..." />
-            </div>
-            <div class="form-group-search">
-                <label><i class="fas fa-list"></i> Danh mục</label>
-                <select name="category">
-                    <option value="">Tất cả danh mục</option>
-                    <option value="1">Công nghệ thông tin</option>
-                    <option value="2">Marketing</option>
-                    <option value="3">Kinh doanh</option>
-                    <option value="4">Kế toán</option>
-                    <option value="5">Nhân sự</option>
-                </select>
-            </div>
-            <div class="form-group-search">
-                <label><i class="fas fa-map-marker-alt"></i> Địa điểm</label>
-                <select name="location">
-                    <option value="">Tất cả địa điểm</option>
-                    <option value="1">Hà Nội</option>
-                    <option value="2">Hồ Chí Minh</option>
-                    <option value="3">Đà Nẵng</option>
-                    <option value="4">Lạng Sơn</option>
-                </select>
-            </div>
-            <div class="form-group-search">
-                <label><i class="fas fa-clock"></i> Loại hình</label>
-                <select name="jobType">
-                    <option value="">Tất cả</option>
-                    <option value="fulltime">Full-time</option>
-                    <option value="parttime">Part-time</option>
-                    <option value="remote">Remote</option>
-                    <option value="intern">Thực tập</option>
-                </select>
-            </div>
-            <button type="submit" class="btn-search">
-                <i class="fas fa-search"></i> Tìm kiếm
-            </button>
-        </form>
-    </div>
-
-    <!-- Stats and sort -->
-    <div class="stats-bar">
-        <div class="stats-text">
-            Hiển thị <strong>1-10</strong> trong <strong>234</strong> việc làm
+<!-- CATEGORY MODAL -->
+<div class="cat-modal-backdrop" id="catModalBackdrop">
+    <div class="cat-modal" role="dialog" aria-modal="true">
+        <div class="cat-modal-head">
+            <h4><i class="fas fa-th-large me-2 text-success"></i>Chọn Nhóm nghề, Nghề hoặc Chuyên môn</h4>
+            <button class="btn-close-modal" id="btnCloseCatModal" title="Đóng">×</button>
         </div>
-        <select class="sort-select">
-            <option>Mới nhất</option>
-            <option>Lương cao nhất</option>
-            <option>Sắp hết hạn</option>
-            <option>Phù hợp nhất</option>
-        </select>
-    </div>
+        <div class="cat-search-wrap">
+            <input type="text" class="cat-search-input" id="catSearchInput" placeholder="Nhập từ khóa tìm kiếm" />
+        </div>
+        <div class="cat-modal-body">
+            <!-- Column 1: Top-level groups -->
+            <div class="cat-col" id="colGroups">
+                <div class="cat-col-header">Nhóm nghề</div>
+                @foreach (var grp in Model.CategoryGroups)
+                {
+                    <div class="cat-group-item @(Model.CategoryId == grp.Id || grp.Children.Any(c => c.Id == Model.CategoryId) ? "active-parent" : "")"
+                         data-id="@grp.Id"
+                         data-has-children="@(grp.Children.Any() ? "true" : "false")"
+                         onclick="selectGroup(@grp.Id)">
+                        <input type="checkbox" id="chk_grp_@grp.Id"
+                               @(Model.CategoryId == grp.Id ? "checked" : "")
+                               onclick="event.stopPropagation(); toggleGroupCheck(@grp.Id, this.checked)" />
+                        <span class="cat-name">@grp.Name</span>
+                        @if (grp.Children.Any())
+                        {
+                            <i class="fas fa-chevron-right cat-arrow"></i>
+                        }
+                    </div>
+                }
+            </div>
 
-    <!-- Job list -->
-    <div class="job-list">
-        <!-- Sample Job Card 1 -->
-        <a href="@Url.Action("Detail", "Job", new { id = 1 })" class="job-card">
-            <div class="job-logo">
-                <div class="job-logo-placeholder">
-                    <i class="fas fa-building"></i>
-                </div>
-            </div>
-            <div class="job-info">
-                <h3 class="job-title">Senior Front-End Developer (ReactJS, NextJS)</h3>
-                <div class="job-company">
-                    <i class="fas fa-building"></i>
-                    <span>FPT Software</span>
-                </div>
-                <div class="job-meta">
-                    <div class="job-meta-item">
-                        <i class="fas fa-map-marker-alt"></i>
-                        <span>Hà Nội, Hồ Chí Minh</span>
-                    </div>
-                    <div class="job-meta-item">
-                        <i class="fas fa-briefcase"></i>
-                        <span>Full-time</span>
-                    </div>
-                    <div class="job-meta-item">
-                        <i class="fas fa-clock"></i>
-                        <span>Đăng 2 ngày trước</span>
+            <!-- Column 2: Children (Nghề) of selected group -->
+            <div class="cat-col" id="colChildren">
+                <div class="cat-col-header">Nghề</div>
+                <div id="childrenContent">
+                    <div class="cat-empty-state">
+                        <i class="far fa-compass"></i>
+                        <span>Vui lòng chọn Nhóm nghề</span>
                     </div>
                 </div>
-                <div class="job-tags">
-                    <span class="job-tag">ReactJS</span>
-                    <span class="job-tag">NextJS</span>
-                    <span class="job-tag">TypeScript</span>
-                </div>
             </div>
-            <div class="job-actions">
-                <div class="job-salary">25-40 triệu</div>
-                <div class="job-deadline">
-                    <i class="fas fa-clock"></i>
-                    <span>Còn 15 ngày</span>
-                </div>
-                <button class="btn-apply" onclick="event.preventDefault(); event.stopPropagation(); alert('Chức năng ứng tuyển');">
-                    <i class="fas fa-paper-plane"></i> Ứng tuyển
-                </button>
-            </div>
-        </a>
 
-        <!-- Sample Job Card 2 -->
-        <a href="@Url.Action("Detail", "Job", new { id = 2 })" class="job-card">
-            <div class="job-logo">
-                <div class="job-logo-placeholder">
-                    <i class="fas fa-building"></i>
-                </div>
-            </div>
-            <div class="job-info">
-                <h3 class="job-title">Marketing Manager - Digital Marketing</h3>
-                <div class="job-company">
-                    <i class="fas fa-building"></i>
-                    <span>Viettel Group</span>
-                </div>
-                <div class="job-meta">
-                    <div class="job-meta-item">
-                        <i class="fas fa-map-marker-alt"></i>
-                        <span>Hà Nội</span>
-                    </div>
-                    <div class="job-meta-item">
-                        <i class="fas fa-briefcase"></i>
-                        <span>Full-time</span>
-                    </div>
-                    <div class="job-meta-item">
-                        <i class="fas fa-clock"></i>
-                        <span>Đăng 5 ngày trước</span>
+            <!-- Column 3: Sub-children (Vị trí chuyên môn) -->
+            <div class="cat-col" id="colSubChildren">
+                <div class="cat-col-header">Vị trí chuyên môn</div>
+                <div id="subChildrenContent">
+                    <div class="cat-empty-state">
+                        <i class="far fa-compass"></i>
+                        <span>Vui lòng chọn Nghề</span>
                     </div>
                 </div>
-                <div class="job-tags">
-                    <span class="job-tag">Digital Marketing</span>
-                    <span class="job-tag">SEO/SEM</span>
-                    <span class="job-tag">Facebook Ads</span>
-                </div>
             </div>
-            <div class="job-actions">
-                <div class="job-salary">20-30 triệu</div>
-                <div class="job-deadline">
-                    <i class="fas fa-clock"></i>
-                    <span>Còn 8 ngày</span>
-                </div>
-                <button class="btn-apply" onclick="event.preventDefault(); event.stopPropagation(); alert('Chức năng ứng tuyển');">
-                    <i class="fas fa-paper-plane"></i> Ứng tuyển
-                </button>
+        </div>
+        <div class="cat-modal-foot">
+            <div class="hint">Bạn gặp vấn đề với Danh mục Nghề? <a href="#">Gửi góp ý</a></div>
+            <div class="cat-modal-foot-actions">
+                <button class="btn-cat-clear" onclick="clearCatSelection()">Bỏ chọn tất cả</button>
+                <button class="btn-cat-cancel" onclick="closeCatModal()">Huỷ</button>
+                <button class="btn-cat-apply" onclick="applyCatFilter()">Chọn</button>
             </div>
-        </a>
-
-        <!-- Sample Job Card 3 -->
-        <a href="@Url.Action("Detail", "Job", new { id = 3 })" class="job-card">
-            <div class="job-logo">
-                <div class="job-logo-placeholder">
-                    <i class="fas fa-building"></i>
-                </div>
-            </div>
-            <div class="job-info">
-                <h3 class="job-title">Full-Stack Developer (.NET Core + Angular)</h3>
-                <div class="job-company">
-                    <i class="fas fa-building"></i>
-                    <span>TMA Solutions</span>
-                </div>
-                <div class="job-meta">
-                    <div class="job-meta-item">
-                        <i class="fas fa-map-marker-alt"></i>
-                        <span>Hồ Chí Minh</span>
-                    </div>
-                    <div class="job-meta-item">
-                        <i class="fas fa-briefcase"></i>
-                        <span>Full-time</span>
-                    </div>
-                    <div class="job-meta-item">
-                        <i class="fas fa-clock"></i>
-                        <span>Đăng 1 tuần trước</span>
-                    </div>
-                </div>
-                <div class="job-tags">
-                    <span class="job-tag">.NET Core</span>
-                    <span class="job-tag">Angular</span>
-                    <span class="job-tag">SQL Server</span>
-                </div>
-            </div>
-            <div class="job-actions">
-                <div class="job-salary">18-35 triệu</div>
-                <div class="job-deadline">
-                    <i class="fas fa-clock"></i>
-                    <span>Còn 20 ngày</span>
-                </div>
-                <button class="btn-apply" onclick="event.preventDefault(); event.stopPropagation(); alert('Chức năng ứng tuyển');">
-                    <i class="fas fa-paper-plane"></i> Ứng tuyển
-                </button>
-            </div>
-        </a>
-
-        <!-- Sample Job Card 4 -->
-        <a href="@Url.Action("Detail", "Job", new { id = 4 })" class="job-card">
-            <div class="job-logo">
-                <div class="job-logo-placeholder">
-                    <i class="fas fa-building"></i>
-                </div>
-            </div>
-            <div class="job-info">
-                <h3 class="job-title">Business Analyst - Banking Domain</h3>
-                <div class="job-company">
-                    <i class="fas fa-building"></i>
-                    <span>Techcombank</span>
-                </div>
-                <div class="job-meta">
-                    <div class="job-meta-item">
-                        <i class="fas fa-map-marker-alt"></i>
-                        <span>Hà Nội, Hồ Chí Minh</span>
-                    </div>
-                    <div class="job-meta-item">
-                        <i class="fas fa-briefcase"></i>
-                        <span>Full-time</span>
-                    </div>
-                    <div class="job-meta-item">
-                        <i class="fas fa-clock"></i>
-                        <span>Đăng 3 ngày trước</span>
-                    </div>
-                </div>
-                <div class="job-tags">
-                    <span class="job-tag">Business Analysis</span>
-                    <span class="job-tag">Banking</span>
-                    <span class="job-tag">SQL</span>
-                </div>
-            </div>
-            <div class="job-actions">
-                <div class="job-salary">22-35 triệu</div>
-                <div class="job-deadline">
-                    <i class="fas fa-clock"></i>
-                    <span>Còn 12 ngày</span>
-                </div>
-                <button class="btn-apply" onclick="event.preventDefault(); event.stopPropagation(); alert('Chức năng ứng tuyển');">
-                    <i class="fas fa-paper-plane"></i> Ứng tuyển
-                </button>
-            </div>
-        </a>
-
-        <!-- Sample Job Card 5 -->
-        <a href="@Url.Action("Detail", "Job", new { id = 5 })" class="job-card">
-            <div class="job-logo">
-                <div class="job-logo-placeholder">
-                    <i class="fas fa-building"></i>
-                </div>
-            </div>
-            <div class="job-info">
-                <h3 class="job-title">UI/UX Designer - Mobile App Design</h3>
-                <div class="job-company">
-                    <i class="fas fa-building"></i>
-                    <span>Grab Vietnam</span>
-                </div>
-                <div class="job-meta">
-                    <div class="job-meta-item">
-                        <i class="fas fa-map-marker-alt"></i>
-                        <span>Hồ Chí Minh</span>
-                    </div>
-                    <div class="job-meta-item">
-                        <i class="fas fa-briefcase"></i>
-                        <span>Full-time</span>
-                    </div>
-                    <div class="job-meta-item">
-                        <i class="fas fa-clock"></i>
-                        <span>Đăng 4 ngày trước</span>
-                    </div>
-                </div>
-                <div class="job-tags">
-                    <span class="job-tag">UI/UX Design</span>
-                    <span class="job-tag">Figma</span>
-                    <span class="job-tag">Mobile Design</span>
-                </div>
-            </div>
-            <div class="job-actions">
-                <div class="job-salary">20-30 triệu</div>
-                <div class="job-deadline">
-                    <i class="fas fa-clock"></i>
-                    <span>Còn 18 ngày</span>
-                </div>
-                <button class="btn-apply" onclick="event.preventDefault(); event.stopPropagation(); alert('Chức năng ứng tuyển');">
-                    <i class="fas fa-paper-plane"></i> Ứng tuyển
-                </button>
-            </div>
-        </a>
-    </div>
-
-    <!-- Pagination -->
-    <div class="pagination-wrapper">
-        <button class="page-btn" disabled>
-            <i class="fas fa-chevron-left"></i>
-        </button>
-        <a href="#" class="page-btn active">1</a>
-        <a href="#" class="page-btn">2</a>
-        <a href="#" class="page-btn">3</a>
-        <a href="#" class="page-btn">4</a>
-        <a href="#" class="page-btn">5</a>
-        <span style="padding:0 8px;color:#9ca3af;">...</span>
-        <a href="#" class="page-btn">24</a>
-        <button class="page-btn">
-            <i class="fas fa-chevron-right"></i>
-        </button>
+        </div>
     </div>
 </div>
+
+<!-- LOCATION OVERLAY -->
+<div class="loc-overlay" id="locOverlay">
+    <div class="loc-opt @(Model.LocationId == null ? "active" : "")" data-id="" onclick="selectLocation('','Tất cả địa điểm')">
+        <i class="fas fa-globe-asia text-muted"></i> Tất cả địa điểm
+    </div>
+    @foreach (var loc in Model.Locations)
+    {
+        <div class="loc-opt @(Model.LocationId == loc.Id ? "active" : "")" data-id="@loc.Id" onclick="selectLocation('@loc.Id','@loc.Name')">
+            <i class="fas fa-map-marker-alt text-muted"></i> @loc.Name
+        </div>
+    }
+</div>
+
+<div class="job-page-wrapper">
+    <!-- Search bar -->
+    <form method="get" asp-action="Index" id="searchForm">
+        <input type="hidden" name="categoryId" id="hidCategoryId" value="@Model.CategoryId" />
+        <input type="hidden" name="locationId" id="hidLocationId" value="@Model.LocationId" />
+        <div class="search-bar-wrap">
+            <button type="button" class="search-segment" onclick="openCatModal()" style="background:transparent;border:none;" id="btnOpenCat">
+                <i class="fas fa-th-large" style="color:#00b14f;"></i>
+                <span class="seg-label" id="catLabel">
+                    @if (Model.CategoryId.HasValue)
+                    {
+                        var selCat = Model.Categories.FirstOrDefault(c => c.Id == Model.CategoryId);
+                        @(selCat?.Name ?? "Danh mục Nghề")
+                    }
+                    else
+                    {
+                        @("Danh mục Nghề")
+                    }
+                </span>
+            </button>
+            <div class="search-divider"></div>
+            <input type="text" name="keyword" class="kw-input"
+                   placeholder="Vị trí tuyển dụng, tên công ty..."
+                   value="@Model.Keyword" />
+            <div class="search-divider"></div>
+            <button type="button" class="loc-btn" id="btnOpenLoc">
+                <i class="fas fa-map-marker-alt" style="color:#00b14f;"></i>
+                <span id="locLabel">
+                    @if (Model.LocationId.HasValue)
+                    {
+                        var selLoc = Model.Locations.FirstOrDefault(l => l.Id == Model.LocationId);
+                        @(selLoc?.Name ?? "Địa điểm")
+                    }
+                    else
+                    {
+                        @("Địa điểm")
+                    }
+                </span>
+                <i class="fas fa-chevron-down" style="font-size:0.7rem;"></i>
+            </button>
+            <button type="submit" class="btn-search-main">
+                <i class="fas fa-search"></i> Tìm kiếm
+            </button>
+        </div>
+    </form>
+
+    <div class="job-main-layout">
+        <!-- Sidebar -->
+        <aside class="filter-sidebar">
+            <div class="filter-card">
+                <h5><i class="fas fa-list me-2 text-success"></i>Danh mục nghề</h5>
+                <div class="filter-item">
+                    <a href="@Url.Action("Index", new { keyword = Model.Keyword, locationId = Model.LocationId })"
+                       class="@(Model.CategoryId == null ? "active-filter" : "")">Tất cả ngành nghề</a>
+                </div>
+                @foreach (var grp in Model.CategoryGroups)
+                {
+                    <div class="filter-item">
+                        <a href="@Url.Action("Index", new { keyword = Model.Keyword, locationId = Model.LocationId, categoryId = grp.Id })"
+                           class="@(Model.CategoryId == grp.Id ? "active-filter" : "")">@grp.Name</a>
+                        <span class="filter-count">@grp.JobCount</span>
+                    </div>
+                    @foreach (var child in grp.Children)
+                    {
+                        <div class="filter-item" style="padding-left:14px;">
+                            <a href="@Url.Action("Index", new { keyword = Model.Keyword, locationId = Model.LocationId, categoryId = child.Id })"
+                               class="@(Model.CategoryId == child.Id ? "active-filter" : "")" style="font-size:0.82rem;color:#6b7280;">
+                                └ @child.Name
+                            </a>
+                            <span class="filter-count">@child.JobCount</span>
+                        </div>
+                    }
+                }
+            </div>
+            <div class="filter-card">
+                <h5><i class="fas fa-map-marker-alt me-2 text-success"></i>Địa điểm</h5>
+                <div class="filter-item">
+                    <a href="@Url.Action("Index", new { keyword = Model.Keyword, categoryId = Model.CategoryId })"
+                       class="@(Model.LocationId == null ? "active-filter" : "")">Tất cả</a>
+                </div>
+                @foreach (var loc in Model.Locations)
+                {
+                    <div class="filter-item">
+                        <a href="@Url.Action("Index", new { keyword = Model.Keyword, categoryId = Model.CategoryId, locationId = loc.Id })"
+                           class="@(Model.LocationId == loc.Id ? "active-filter" : "")">@loc.Name</a>
+                        <span class="filter-count">@loc.JobCount</span>
+                    </div>
+                }
+            </div>
+        </aside>
+
+        <!-- Job content -->
+        <div class="job-content">
+            <div class="section-header-row">
+                <div class="section-title">
+                    <h2>Việc làm tốt nhất</h2>
+                    <div class="job-count-text">Có <strong>@Model.TotalItems</strong> việc làm phù hợp</div>
+                </div>
+            </div>
+
+            @{
+                bool hasFilter = Model.CategoryId.HasValue || Model.LocationId.HasValue || !string.IsNullOrEmpty(Model.Keyword);
+            }
+            @if (hasFilter)
+            {
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+                    @if (!string.IsNullOrEmpty(Model.Keyword))
+                    {
+                        <span class="active-chip">
+                            <i class="fas fa-search"></i> @Model.Keyword
+                            <a href="@Url.Action("Index", new { categoryId = Model.CategoryId, locationId = Model.LocationId })"><i class="fas fa-times"></i></a>
+                        </span>
+                    }
+                    @if (Model.CategoryId.HasValue)
+                    {
+                        var cname = Model.Categories.FirstOrDefault(c => c.Id == Model.CategoryId)?.Name;
+                        <span class="active-chip">
+                            <i class="fas fa-briefcase"></i> @cname
+                            <a href="@Url.Action("Index", new { keyword = Model.Keyword, locationId = Model.LocationId })"><i class="fas fa-times"></i></a>
+                        </span>
+                    }
+                    @if (Model.LocationId.HasValue)
+                    {
+                        var lname = Model.Locations.FirstOrDefault(l => l.Id == Model.LocationId)?.Name;
+                        <span class="active-chip">
+                            <i class="fas fa-map-marker-alt"></i> @lname
+                            <a href="@Url.Action("Index", new { keyword = Model.Keyword, categoryId = Model.CategoryId })"><i class="fas fa-times"></i></a>
+                        </span>
+                    }
+                </div>
+            }
+
+            @if (Model.Jobs.Any())
+            {
+                <div class="job-grid">
+                    @foreach (var job in Model.Jobs)
+                    {
+                        <a href="@Url.Action("Detail", "Job", new { id = job.Id })" class="job-card">
+                            <div class="card-top">
+                                <div class="logo-box">
+                                    @if (!string.IsNullOrEmpty(job.CompanyLogo))
+                                    {
+                                        <img src="@job.CompanyLogo" alt="@job.CompanyName" />
+                                    }
+                                    else
+                                    {
+                                        <img src="~/images/logo_default.png" alt="Logo" />
+                                    }
+                                </div>
+                                <div class="card-info">
+                                    <h3 class="card-title" title="@job.Title">@job.Title</h3>
+                                    <div class="card-company" title="@job.CompanyName">@job.CompanyName.ToUpper()</div>
+                                </div>
+                            </div>
+                            <div class="card-footer">
+                                <div class="card-badges">
+                                    <span class="badge-pill salary">
+                                        @if (job.MinSalary.HasValue && job.MaxSalary.HasValue)
+                                        { @($"{job.MinSalary / 1000000:N0} - {job.MaxSalary / 1000000:N0} triệu") }
+                                        else if (job.MaxSalary.HasValue)
+                                        { @($"Tới {job.MaxSalary / 1000000:N0} triệu") }
+                                        else
+                                        { @("Thoả thuận") }
+                                    </span>
+                                    @if (!string.IsNullOrEmpty(job.LocationName))
+                                    {
+                                        <span class="badge-pill">@job.LocationName</span>
+                                    }
+                                </div>
+                                <button class="btn-heart" onclick="event.preventDefault();return false;" title="Lưu">
+                                    <i class="far fa-heart"></i>
+                                </button>
+                            </div>
+                        </a>
+                    }
+                </div>
+
+                @if (Model.TotalPages > 1)
+                {
+                    <div class="pagination-wrap">
+                        <a class="pg-btn @(Model.CurrentPage <= 1 ? "disabled" : "")"
+                           href="@Url.Action("Index", new { keyword=Model.Keyword, categoryId=Model.CategoryId, locationId=Model.LocationId, page=Model.CurrentPage-1 })">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                        @for (int i = Math.Max(1,Model.CurrentPage-2); i <= Math.Min(Model.TotalPages,Model.CurrentPage+2); i++)
+                        {
+                            <a class="pg-btn @(i==Model.CurrentPage?"active":"")"
+                               href="@Url.Action("Index", new { keyword=Model.Keyword, categoryId=Model.CategoryId, locationId=Model.LocationId, page=i })">@i</a>
+                        }
+                        <span class="pg-info">@Model.CurrentPage / @Model.TotalPages trang</span>
+                        <a class="pg-btn @(Model.CurrentPage >= Model.TotalPages ? "disabled" : "")"
+                           href="@Url.Action("Index", new { keyword=Model.Keyword, categoryId=Model.CategoryId, locationId=Model.LocationId, page=Model.CurrentPage+1 })">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="fas fa-search fa-4x text-muted mb-3 d-block"></i>
+                    <h4 class="text-muted">Không tìm thấy việc làm phù hợp</h4>
+                    <p class="text-muted">Hãy thử thay đổi từ khóa hoặc bộ lọc.</p>
+                    <a href="@Url.Action("Index")" class="btn btn-outline-success mt-2">Xem tất cả</a>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Embed category data as JSON for JS -->
+<script id="catData" type="application/json">
+@{
+    var catJson = System.Text.Json.JsonSerializer.Serialize(Model.CategoryGroups, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase });
+}
+@Html.Raw(catJson)
+</script>
+
+@section Scripts {
+<script>
+    // ── Data ──
+    const CAT_GROUPS = JSON.parse(document.getElementById('catData').textContent);
+    let selectedCatId = @(Model.CategoryId.HasValue ? Model.CategoryId.Value.ToString() : "null");
+    let selectedCatName = '@(Model.CategoryId.HasValue ? (Model.Categories.FirstOrDefault(c => c.Id == Model.CategoryId)?.Name ?? "") : "")';
+    let activeGroupId = null;
+
+    // ── Location overlay ──
+    const locBtn   = document.getElementById('btnOpenLoc');
+    const locOverlay = document.getElementById('locOverlay');
+    locBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        const hidden = locOverlay.style.display !== 'block';
+        locOverlay.style.display = hidden ? 'block' : 'none';
+        if (hidden) {
+            const r = locBtn.getBoundingClientRect();
+            locOverlay.style.top  = (r.bottom + window.scrollY + 6) + 'px';
+            locOverlay.style.left = r.left + 'px';
+        }
+    });
+    document.addEventListener('click', () => locOverlay.style.display = 'none');
+    locOverlay.addEventListener('click', e => e.stopPropagation());
+
+    function selectLocation(id, name) {
+        document.getElementById('hidLocationId').value = id;
+        document.getElementById('locLabel').textContent = name || 'Địa điểm';
+        locOverlay.style.display = 'none';
+    }
+
+    // ── Category modal ──
+    function openCatModal() {
+        document.getElementById('catModalBackdrop').classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+    function closeCatModal() {
+        document.getElementById('catModalBackdrop').classList.remove('open');
+        document.body.style.overflow = '';
+    }
+    document.getElementById('btnCloseCatModal').onclick = closeCatModal;
+    document.getElementById('catModalBackdrop').addEventListener('click', e => {
+        if (e.target === document.getElementById('catModalBackdrop')) closeCatModal();
+    });
+
+    function renderChildrenCol(groupId) {
+        const grp = CAT_GROUPS.find(g => g.id === groupId);
+        const col = document.getElementById('childrenContent');
+        const subCol = document.getElementById('subChildrenContent');
+        subCol.innerHTML = '<div class="cat-empty-state"><i class="far fa-compass"></i><span>Vui lòng chọn Nghề</span></div>';
+
+        if (!grp || !grp.children || grp.children.length === 0) {
+            col.innerHTML = '<div class="cat-empty-state"><i class="far fa-compass"></i><span>Không có nghề con</span></div>';
+            return;
+        }
+        col.innerHTML = '';
+        grp.children.forEach(child => {
+            const el = document.createElement('div');
+            el.className = 'cat-group-item';
+            if (selectedCatId === child.id) el.classList.add('active-parent');
+            el.dataset.id = child.id;
+            el.innerHTML = `
+                <input type="checkbox" ${selectedCatId == child.id ? 'checked' : ''} 
+                    onclick="event.stopPropagation(); toggleChildCheck(${child.id}, '${child.name.replace(/'/g,"\\'")}', this.checked)"/>
+                <span class="cat-name">${child.name}</span>
+                ${child.children && child.children.length > 0 ? '<i class="fas fa-chevron-right cat-arrow"></i>' : ''}
+            `;
+            el.onclick = () => { if (child.children && child.children.length > 0) renderSubChildrenCol(child.id); };
+            col.appendChild(el);
+        });
+    }
+
+    function renderSubChildrenCol(childId) {
+        const grp = CAT_GROUPS.find(g => g.children.some(c => c.id === childId));
+        if (!grp) return;
+        const child = grp.children.find(c => c.id === childId);
+        const col = document.getElementById('subChildrenContent');
+        if (!child || !child.children || child.children.length === 0) {
+            col.innerHTML = '<div class="cat-empty-state"><i class="far fa-compass"></i><span>Không có vị trí chuyên môn</span></div>';
+            return;
+        }
+        col.innerHTML = '';
+        child.children.forEach(sub => {
+            const el = document.createElement('div');
+            el.className = 'cat-group-item';
+            el.innerHTML = `
+                <input type="checkbox" ${selectedCatId == sub.id ? 'checked' : ''}
+                    onclick="event.stopPropagation(); toggleChildCheck(${sub.id}, '${sub.name.replace(/'/g,"\\'")}', this.checked)"/>
+                <span class="cat-name">${sub.name}</span>
+            `;
+            col.appendChild(el);
+        });
+    }
+
+    function selectGroup(id) {
+        activeGroupId = id;
+        // Highlight
+        document.querySelectorAll('#colGroups .cat-group-item').forEach(el => el.classList.remove('active-parent'));
+        const el = document.querySelector(`#colGroups [data-id="${id}"]`);
+        if (el) el.classList.add('active-parent');
+        renderChildrenCol(id);
+    }
+
+    function toggleGroupCheck(groupId, checked) {
+        if (checked) {
+            selectedCatId = groupId;
+            const grp = CAT_GROUPS.find(g => g.id === groupId);
+            selectedCatName = grp ? grp.name : '';
+            // Uncheck other group checkboxes
+            document.querySelectorAll('#colGroups input[type=checkbox]').forEach(cb => {
+                if (parseInt(cb.id.replace('chk_grp_','')) !== groupId) cb.checked = false;
+            });
+        } else {
+            if (selectedCatId === groupId) { selectedCatId = null; selectedCatName = ''; }
+        }
+    }
+
+    function toggleChildCheck(catId, catName, checked) {
+        if (checked) {
+            selectedCatId = catId;
+            selectedCatName = catName;
+            // Uncheck all other checkboxes in modal
+            document.querySelectorAll('.cat-modal input[type=checkbox]').forEach(cb => {
+                const val = parseInt(cb.closest('[data-id]')?.dataset.id);
+                if (val !== catId) cb.checked = false;
+            });
+        } else {
+            if (selectedCatId === catId) { selectedCatId = null; selectedCatName = ''; }
+        }
+    }
+
+    function clearCatSelection() {
+        selectedCatId = null;
+        selectedCatName = '';
+        document.querySelectorAll('.cat-modal input[type=checkbox]').forEach(cb => cb.checked = false);
+    }
+
+    function applyCatFilter() {
+        document.getElementById('hidCategoryId').value = selectedCatId ?? '';
+        document.getElementById('catLabel').textContent = selectedCatName || 'Danh mục Nghề';
+        closeCatModal();
+        document.getElementById('searchForm').submit();
+    }
+
+    // Cat search filter
+    document.getElementById('catSearchInput').addEventListener('input', function() {
+        const kw = this.value.toLowerCase();
+        document.querySelectorAll('#colGroups .cat-group-item').forEach(el => {
+            const name = el.querySelector('.cat-name')?.textContent.toLowerCase() ?? '';
+            el.style.display = !kw || name.includes(kw) ? '' : 'none';
+        });
+    });
+
+    // Init active group
+    const initCatId = @(Model.CategoryId.HasValue ? Model.CategoryId.Value.ToString() : "null");
+    if (initCatId) {
+        // find which group or child matches
+        const match = CAT_GROUPS.find(g => g.id === initCatId || g.children.some(c => c.id === initCatId));
+        if (match) { activeGroupId = match.id; }
+    }
+</script>
+}

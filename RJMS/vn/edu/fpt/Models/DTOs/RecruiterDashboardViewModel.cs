@@ -38,29 +38,32 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
         // ---- Recent Job Posts ----
         public List<RecentJobPostItem> RecentJobPosts { get; set; } = new()
         {
-            new() { JobTitle = "Senior Frontend Developer",   PostedDate = "2023-10-15", Applications = 142, Status = "Active",  StatusClass = "status-active-post" },
-            new() { JobTitle = "Product Designer (UI/UX)",   PostedDate = "2023-10-12", Applications = 86,  Status = "Active",  StatusClass = "status-active-post" },
-            new() { JobTitle = "Backend Developer (NodeJS)", PostedDate = "2023-10-05", Applications = 210, Status = "Active",  StatusClass = "status-active-post" },
-            new() { JobTitle = "Sales Executive",            PostedDate = "2023-09-28", Applications = 45,  Status = "Expired", StatusClass = "status-expired-post" },
-            new() { JobTitle = "Graphic Designer",           PostedDate = "2023-09-20", Applications = 112, Status = "Active",  StatusClass = "status-active-post" },
+            new() { JobTitle = "Senior Frontend Developer",   PostedDate = "2023-10-15", ExpiryDate = "2023-11-15", Status = "Active",  StatusClass = "status-active-post" },
+            new() { JobTitle = "Product Designer (UI/UX)",   PostedDate = "2023-10-12", ExpiryDate = "2023-11-12", Status = "Active",  StatusClass = "status-active-post" },
+            new() { JobTitle = "Backend Developer (NodeJS)", PostedDate = "2023-10-05", ExpiryDate = "2023-11-05", Status = "Active",  StatusClass = "status-active-post" },
+            new() { JobTitle = "Sales Executive",            PostedDate = "2023-09-28", ExpiryDate = "2023-10-28", Status = "Expired", StatusClass = "status-expired-post" },
+            new() { JobTitle = "Graphic Designer",           PostedDate = "2023-09-20", ExpiryDate = "2023-10-20", Status = "Active",  StatusClass = "status-active-post" },
         };
     }
 
     public class RecentApplicationItem
     {
+        public int Id { get; set; }
         public string CandidateName { get; set; } = string.Empty;
         public string JobTitle { get; set; } = string.Empty;
         public string AppliedDate { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
         public string StatusClass { get; set; } = string.Empty;
+        public int CvId { get; set; }
         public string Initials => CandidateName.Length > 0 ? CandidateName[0].ToString().ToUpper() : "?";
     }
 
     public class RecentJobPostItem
     {
+        public int Id { get; set; }
         public string JobTitle { get; set; } = string.Empty;
         public string PostedDate { get; set; } = string.Empty;
-        public int Applications { get; set; }
+        public string ExpiryDate { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
         public string StatusClass { get; set; } = string.Empty;
     }
