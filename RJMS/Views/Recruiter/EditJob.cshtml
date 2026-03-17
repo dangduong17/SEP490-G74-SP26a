@@ -245,6 +245,23 @@
                         <input asp-for="ExpiryDate" type="date" class="form-control" id="ExpiryDate" value="@Model.ExpiryDate.ToString("yyyy-MM-dd")" />
                         <span asp-validation-for="ExpiryDate" class="text-danger small"></span>
                     </div>
+                    <div class="mb-2">
+                        <label asp-for="PublishDate" class="form-label required">Ngày hiển thị / Đặt lịch đăng</label>
+                        <input asp-for="PublishDate" type="date" class="form-control" id="PublishDate" value="@Model.PublishDate.ToString("yyyy-MM-dd")" />
+                        <span asp-validation-for="PublishDate" class="text-danger small"></span>
+                        <div class="form-text text-muted" style="font-size: 0.8rem;">Tin sẽ được hiển thị từ ngày này (tối đa 15 ngày tới).</div>
+                    </div>
+                    <div class="mb-2">
+                        <label asp-for="Status" class="form-label">Trạng thái tin</label>
+                        <select asp-for="Status" class="form-select">
+                            <option value="Active">Đang hiển thị</option>
+                            <option value="Scheduled">Đã lên lịch</option>
+                            <option value="Inactive">Tạm dừng (Inactive)</option>
+                            <option value="Draft">Bản nháp</option>
+                            <option value="Expired">Hết hạn</option>
+                        </select>
+                        <span asp-validation-for="Status" class="text-danger small"></span>
+                    </div>
                 </div>
 
                 <!-- Buttons -->
@@ -372,6 +389,20 @@
         let opt = this.options[this.selectedIndex];
         document.getElementById('WardName').value = opt.value ? opt.text : '';
     });
+
+    // ---------- Deadline ----------
+    (function() {
+        let elApp = document.getElementById('ApplicationDeadline');
+        let elExp = document.getElementById('ExpiryDate');
+        let elPub = document.getElementById('PublishDate');
+        let today = new Date();
+        let maxApp = new Date(); maxApp.setDate(today.getDate() + 30);
+        let maxPub = new Date(); maxPub.setDate(today.getDate() + 15);
+
+        elApp.max = maxApp.toISOString().split('T')[0];
+        elExp.max = maxApp.toISOString().split('T')[0];
+        elPub.max = maxPub.toISOString().split('T')[0];
+    })();
 
     // ---------- Salary ----------
     document.getElementById('ThoaThuan').addEventListener('change', function() {
