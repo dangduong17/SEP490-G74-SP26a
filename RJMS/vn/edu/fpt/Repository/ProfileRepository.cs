@@ -263,7 +263,8 @@ namespace RJMS.Vn.Edu.Fpt.Repository
                 WardCode = company?.WardCode,
                 WardName = company?.WardName,
                 WorkAddress = company?.Address,
-                IsVerified = recruiter.IsVerified ?? false
+                IsVerified = recruiter.IsVerified ?? false,
+                CompanyLogo = company?.Logo
             };
         }
 
@@ -279,6 +280,8 @@ namespace RJMS.Vn.Edu.Fpt.Repository
             user.Phone = model.PhoneNumber;
             user.UpdatedAt = DateTimeHelper.NowVietnam;
 
+            if (!string.IsNullOrEmpty(model.Avatar)) user.Avatar = model.Avatar;
+
             // 2. Update Recruiter
             var recruiter = await _context.Recruiters.FirstOrDefaultAsync(r => r.UserId == userId);
             if (recruiter == null) return false;
@@ -286,6 +289,7 @@ namespace RJMS.Vn.Edu.Fpt.Repository
             recruiter.FullName = $"{model.FirstName} {model.LastName}".Trim();
             recruiter.Phone = model.PhoneNumber;
             recruiter.Position = model.Position;
+            if (!string.IsNullOrEmpty(model.Avatar)) recruiter.Avatar = model.Avatar;
 
             // 3. Update Company
             if (model.CompanyId.HasValue)
@@ -307,8 +311,68 @@ namespace RJMS.Vn.Edu.Fpt.Repository
                     company.WardName = model.WardName;
                     company.Address = model.WorkAddress;
                     company.UpdatedAt = DateTimeHelper.NowVietnam;
+                    if (!string.IsNullOrEmpty(model.CompanyLogo)) company.Logo = model.CompanyLogo;
                 }
             }
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<CompanyEditProfileViewModel?> GetCompanyProfileForEditAsync(int userId)
+        {
+            var recruiter = await _context.Recruiters
+                .Include(r => r.Company)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(r => r.UserId == userId);
+
+            if (recruiter == null || recruiter.Company == null) return null;
+
+            var company = recruiter.Company;
+            return new CompanyEditProfileViewModel
+            {
+                CompanyId = company.Id,
+                Name = company.Name,
+                Logo = company.Logo,
+                TaxCode = company.TaxCode,
+                CompanySize = company.CompanySize,
+                Industry = company.Industry,
+                Website = company.Website,
+                Email = company.Email,
+                Phone = company.Phone,
+                Description = company.Description,
+                ProvinceCode = company.ProvinceCode,
+                ProvinceName = company.ProvinceName,
+                WardCode = company.WardCode,
+                WardName = company.WardName,
+                Address = company.Address
+            };
+        }
+
+        public async Task<bool> UpdateCompanyProfileAsync(int userId, CompanyEditProfileViewModel model)
+        {
+            var recruiter = await _context.Recruiters.FirstOrDefaultAsync(r => r.UserId == userId);
+            if (recruiter == null || !recruiter.CompanyId.HasValue) return false;
+
+            var company = await _context.Companies.FirstOrDefaultAsync(c => c.Id == recruiter.CompanyId.Value);
+            if (company == null) return false;
+
+            company.Name = model.Name;
+            company.TaxCode = model.TaxCode;
+            company.CompanySize = model.CompanySize;
+            company.Industry = model.Industry;
+            company.Website = model.Website;
+            company.Email = model.Email;
+            company.Phone = model.Phone;
+            company.Description = model.Description;
+            company.ProvinceCode = model.ProvinceCode;
+            company.ProvinceName = model.ProvinceName;
+            company.WardCode = model.WardCode;
+            company.WardName = model.WardName;
+            company.Address = model.Address;
+            company.UpdatedAt = DateTimeHelper.NowVietnam;
+
+            if (!string.IsNullOrEmpty(model.Logo)) company.Logo = model.Logo;
 
             await _context.SaveChangesAsync();
             return true;

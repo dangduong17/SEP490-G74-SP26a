@@ -1,0 +1,230 @@
+@model List<RJMS.vn.edu.fpt.Models.DTOs.ApplicationListItemDTO>
+@using RJMS.vn.edu.fpt.Models.DTOs
+@{
+    ViewData["Title"] = "Quản lý hồ sơ ứng tuyển";
+    Layout = "~/Views/Shared/_RecruiterLayout.cshtml";
+    int? currentJobId = ViewBag.CurrentJobId;
+    string currentStatus = ViewBag.CurrentStatus ?? "All";
+    string keyword = ViewBag.Keyword ?? "";
+}
+
+@section Styles {
+    <style>
+        .page-header h1 { font-size: 1.5rem; font-weight: 700; color: #111827; margin: 0; }
+        .page-header p { font-size: 0.9rem; color: #6b7280; margin-top: 4px; }
+        
+        .filter-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #e5e7eb;
+            margin-bottom: 24px;
+        }
+        .filter-grid {
+            display: grid;
+            grid-template-columns: 1fr 200px 200px auto;
+            gap: 12px;
+            align-items: flex-end;
+        }
+        .filter-label { font-size: 0.8rem; font-weight: 600; color: #4b5563; margin-bottom: 4px; display: block; }
+        .form-control-custom {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            width: 100%;
+        }
+        .form-control-custom:focus { border-color: #00b14f; outline: none; box-shadow: 0 0 0 3px rgba(0,177,79,0.1); }
+        
+        .btn-filter { background: #111827; color: #fff; border: none; padding: 8px 24px; border-radius: 8px; font-weight: 600; }
+        .btn-filter:hover { background: #000; }
+
+        .app-table-card {
+            background: #fff;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
+        }
+        .app-table { width: 100%; border-collapse: collapse; }
+        .app-table th { background: #f9fafb; padding: 16px; font-size: 0.75rem; text-transform: uppercase; color: #6b7280; border-bottom: 2px solid #f3f4f6; text-align: left; }
+        .app-table td { padding: 16px; border-bottom: 1px solid #f3f4f6; vertical-align: middle; }
+        
+        .cand-info { display: flex; align-items: center; gap: 12px; }
+        .cand-avatar {
+            width: 42px; height: 42px; border-radius: 50%;
+            background: #f3f4f6; display: flex; align-items: center; justify-content: center;
+            font-weight: 700; color: #00b14f; border: 1px solid #e5e7eb;
+            object-fit: cover;
+        }
+        .cand-name { font-weight: 700; color: #111827; margin: 0; font-size: 0.95rem; }
+        .cand-sub { font-size: 0.8rem; color: #6b7280; }
+
+        .job-tag { font-weight: 600; color: #374151; font-size: 0.9rem; }
+        
+        .badge-status {
+            padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;
+        }
+        .bg-new { background: #eff6ff; color: #1d4ed8; }
+        .bg-review { background: #fefce8; color: #854d0e; }
+        .bg-interview { background: #fdf2f8; color: #9d174d; }
+        .bg-hired { background: #f0fdf4; color: #166534; }
+        .bg-rejected { background: #fef2f2; color: #991b1b; }
+
+        .action-btns { display: flex; gap: 8px; justify-content: flex-end; }
+        .btn-cv {
+            background: #fff; border: 1.5px solid #00b14f; color: #00b14f;
+            padding: 6px 14px; border-radius: 6px; font-size: 0.82rem; font-weight: 600;
+            text-decoration: none; transition: all 0.2s;
+        }
+        .btn-cv:hover { background: #00b14f; color: #fff; }
+        
+        .dropdown-toggle::after { display: none; }
+        .btn-more {
+            width: 32px; height: 32px; border-radius: 6px; border: 1px solid #e5e7eb;
+            display: flex; align-items: center; justify-content: center; color: #6b7280;
+        }
+        .btn-more:hover { background: #f9fafb; color: #111827; }
+
+        /* Empty state */
+        .empty-box { text-align: center; padding: 60px 20px; }
+        .empty-icon { font-size: 3rem; color: #d1d5db; margin-bottom: 16px; }
+    </style>
+}
+
+<div class="container-fluid py-4">
+    <div class="page-header mb-4">
+        <h1>Quản lý hồ sơ ứng tuyển</h1>
+        <p>Theo dõi và cập nhật trạng thái của các ứng viên nộp hồ sơ.</p>
+    </div>
+
+    <!-- Filter Card -->
+    <div class="filter-card">
+        <form method="get" class="filter-grid">
+            <div>
+                <label class="filter-label">Tìm kiếm</label>
+                <input type="text" name="keyword" value="@keyword" class="form-control-custom" placeholder="Tên ứng viên, vị trí tuyển dụng...">
+            </div>
+            <div>
+                <label class="filter-label">Tin tuyển dụng</label>
+                <select name="jobId" class="form-control-custom">
+                    <option value="">Tất cả tin đăng</option>
+                    @foreach (var job in ViewBag.Jobs)
+                    {
+                        <option value="@job.Id" selected="@(currentJobId == job.Id)">@job.Title</option>
+                    }
+                </select>
+            </div>
+            <div>
+                <label class="filter-label">Trạng thái</label>
+                <select name="status" class="form-control-custom">
+                    <option value="All" selected="@(currentStatus == "All")">Tất cả trạng thái</option>
+                    <option value="Mới" selected="@(currentStatus == "Mới")">Hồ sơ mới</option>
+                    <option value="Đang xem xét" selected="@(currentStatus == "Đang xem xét")">Đang xem xét</option>
+                    <option value="Đặt lịch hẹn" selected="@(currentStatus == "Đặt lịch hẹn")">Đặt lịch hẹn</option>
+                    <option value="Đã tuyển" selected="@(currentStatus == "Đã tuyển")">Đã tuyển</option>
+                    <option value="Từ chối" selected="@(currentStatus == "Từ chối")">Từ chối</option>
+                </select>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn-filter">Lọc hồ sơ</button>
+                <a asp-action="Applications" class="btn btn-light" style="border-radius:8px; padding: 8px 16px;">Xóa lọc</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Table Card -->
+    <div class="app-table-card">
+        <div class="table-responsive">
+            <table class="app-table">
+                <thead>
+                    <tr>
+                        <th style="width: 30%">Ứng viên</th>
+                        <th>Vị trí ứng tuyển</th>
+                        <th>Ngày nộp</th>
+                        <th>Trạng thái</th>
+                        <th class="text-end">Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        foreach (var app in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="cand-info">
+                                        @if (!string.IsNullOrEmpty(app.CandidateAvatar))
+                                        {
+                                            <img src="@app.CandidateAvatar" alt="Avatar" class="cand-avatar">
+                                        }
+                                        else
+                                        {
+                                            <div class="cand-avatar">@(app.CandidateName.Substring(0, 1).ToUpper())</div>
+                                        }
+                                        <div>
+                                            <h6 class="cand-name">@app.CandidateName</h6>
+                                            <div class="cand-sub">@app.CandidateEmail</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="job-tag">@app.JobTitle</div>
+                                    <div class="cand-sub">ID Tin: #@app.JobId.ToString("D4")</div>
+                                </td>
+                                <td>
+                                    <div class="cand-sub"><i class="far fa-calendar-alt me-1"></i> @app.AppliedDate?.ToString("dd/MM/yyyy HH:mm")</div>
+                                </td>
+                                <td>
+                                    @{
+                                        var statusClass = app.Status switch
+                                        {
+                                            "Mới" => "bg-new",
+                                            "Đang xem xét" => "bg-review",
+                                            "Đặt lịch hẹn" => "bg-interview",
+                                            "Đã tuyển" => "bg-hired",
+                                            "Từ chối" => "bg-rejected",
+                                            _ => "bg-light"
+                                        };
+                                    }
+                                    <span class="badge-status @statusClass">@app.Status</span>
+                                </td>
+                                <td>
+                                    <div class="action-btns">
+                                        <a href="/Recruiter/ViewCV/@app.CvId" target="_blank" class="btn-cv"><i class="fas fa-file-pdf me-1"></i> Xem CV</a>
+                                        
+                                        <div class="dropdown">
+                                            <button class="btn-more dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                                <i class="fas fa-ellipsis-v"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                                                <li><h6 class="dropdown-header">Cập nhật trạng thái</h6></li>
+                                                <li><form asp-action="UpdateApplicationStatus" method="post"><input type="hidden" name="id" value="@app.Id"/><input type="hidden" name="status" value="Đang xem xét"/><button type="submit" class="dropdown-item">Đang xem xét</button></form></li>
+                                                <li><form asp-action="UpdateApplicationStatus" method="post"><input type="hidden" name="id" value="@app.Id"/><input type="hidden" name="status" value="Đặt lịch hẹn"/><button type="submit" class="dropdown-item">Đặt lịch hẹn</button></form></li>
+                                                <li><form asp-action="UpdateApplicationStatus" method="post"><input type="hidden" name="id" value="@app.Id"/><input type="hidden" name="status" value="Đã tuyển"/><button type="submit" class="dropdown-item text-success">Đã tuyển</button></form></li>
+                                                <li><form asp-action="UpdateApplicationStatus" method="post"><input type="hidden" name="id" value="@app.Id"/><input type="hidden" name="status" value="Từ chối"/><button type="submit" class="dropdown-item text-danger">Từ chối</button></form></li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li><a class="dropdown-item" href="#"><i class="fas fa-comment shadow-sm me-2 text-muted"></i> Gửi tin nhắn</a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="5">
+                                <div class="empty-box">
+                                    <div class="empty-icon"><i class="fas fa-inbox"></i></div>
+                                    <h5 class="text-muted">Không có hồ sơ nào</h5>
+                                    <p class="text-muted small">Hãy kiểm tra lại bộ lọc hoặc quay lại sau.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
