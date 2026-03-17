@@ -536,3 +536,173 @@ ALTER TABLE Candidates ALTER COLUMN Summary NVARCHAR(MAX);
 
 -- Cập nhật bảng Applications (Đơn ứng tuyển)
 ALTER TABLE Applications ALTER COLUMN CoverLetter NVARCHAR(MAX);
+
+
+/* =====================================================
+CHAT SYSTEM
+===================================================== */
+
+-- Conversations
+CREATE TABLE Conversations
+(
+    Id INT IDENTITY PRIMARY KEY,
+
+    IsGroup BIT DEFAULT 0,
+
+    CreatedAt DATETIME2 DEFAULT GETDATE(),
+    UpdatedAt DATETIME2
+)
+GO
+
+
+-- Conversation Participants
+CREATE TABLE ConversationParticipants
+(
+    Id INT IDENTITY PRIMARY KEY,
+
+    ConversationId INT NOT NULL,
+    UserId INT NOT NULL,
+
+    JoinedAt DATETIME2 DEFAULT GETDATE(),
+
+    FOREIGN KEY (ConversationId) REFERENCES Conversations(Id) ON DELETE CASCADE,
+    FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE
+)
+GO
+
+
+-- Messages
+CREATE TABLE Messages
+(
+    Id INT IDENTITY PRIMARY KEY,
+
+    ConversationId INT NOT NULL,
+    SenderId INT NOT NULL,
+
+    Content NVARCHAR(MAX),
+
+    MessageType NVARCHAR(50) DEFAULT 'TEXT', -- TEXT / IMAGE / FILE / JOB / CV
+
+    CreatedAt DATETIME2 DEFAULT GETDATE(),
+
+    IsDeleted BIT DEFAULT 0,
+
+    FOREIGN KEY (ConversationId) REFERENCES Conversations(Id) ON DELETE CASCADE,
+    FOREIGN KEY (SenderId) REFERENCES Users(Id)
+)
+GO
+
+
+-- Message Reads (Seen ✔✔)
+CREATE TABLE MessageReads
+(
+    Id INT IDENTITY PRIMARY KEY,
+
+    MessageId INT NOT NULL,
+    UserId INT NOT NULL,
+
+    ReadAt DATETIME2,
+
+    FOREIGN KEY (MessageId) REFERENCES Messages(Id) ON DELETE CASCADE,
+    FOREIGN KEY (UserId) REFERENCES Users(Id)
+)
+GO
+
+
+-- Message Attachments (file, ảnh...)
+CREATE TABLE MessageAttachments
+(
+    Id INT IDENTITY PRIMARY KEY,
+
+    MessageId INT NOT NULL,
+
+    FileUrl NVARCHAR(500),
+    FileName NVARCHAR(255),
+    FileType NVARCHAR(50),
+
+    FOREIGN KEY (MessageId) REFERENCES Messages(Id) ON DELETE CASCADE
+)
+GO
+
+
+-- Conversation - Job mapping (cực quan trọng cho job platform)
+CREATE TABLE ConversationJobs
+(
+    Id INT IDENTITY PRIMARY KEY,
+
+    ConversationId INT NOT NULL,
+    JobId INT NULL,
+    ApplicationId INT NULL,
+
+    FOREIGN KEY (ConversationId) REFERENCES Conversations(Id) ON DELETE CASCADE,
+    FOREIGN KEY (JobId) REFERENCES Jobs(Id),
+    FOREIGN KEY (ApplicationId) REFERENCES Applications(Id)
+)
+GO
+
+
+
+/* =====================================================
+NOTIFICATION SYSTEM
+===================================================== */
+
+-- Notifications (dùng chung toàn hệ thống)
+CREATE TABLE Notifications
+(
+    Id INT IDENTITY PRIMARY KEY,
+
+    UserId INT NOT NULL,
+
+    Title NVARCHAR(255),
+    Content NVARCHAR(MAX),
+
+    Type NVARCHAR(50), 
+    -- CHAT, APPLICATION, SYSTEM, PAYMENT, JOB
+
+    IsRead BIT DEFAULT 0,
+
+    CreatedAt DATETIME2 DEFAULT GETDATE(),
+
+    FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE
+)
+GO
+
+
+-- Link notification tới entity cụ thể
+CREATE TABLE NotificationReferences
+(
+    Id INT IDENTITY PRIMARY KEY,
+
+    NotificationId INT NOT NULL,
+
+    ReferenceType NVARCHAR(50), 
+    -- MESSAGE, JOB, APPLICATION, PAYMENT
+
+    ReferenceId INT,
+
+    FOREIGN KEY (NotificationId) REFERENCES Notifications(Id) ON DELETE CASCADE
+)
+GO
+
+
+
+/* =====================================================
+INDEXES (TỐI ƯU PERFORMANCE)
+===================================================== */
+
+-- Messages
+CREATE INDEX IX_Messages_ConversationId ON Messages(ConversationId)
+GO
+
+CREATE INDEX IX_Messages_SenderId ON Messages(SenderId)
+GO
+
+-- Participants
+CREATE INDEX IX_ConversationParticipants_UserId 
+ON ConversationParticipants(UserId)
+GO
+
+-- Notifications
+CREATE INDEX IX_Notifications_UserId 
+ON Notifications(UserId)
+GO

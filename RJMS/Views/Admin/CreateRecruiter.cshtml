@@ -1,10 +1,33 @@
-﻿@model AdminCreateRecruiterViewModel
+@model AdminCreateRecruiterViewModel
 @{
     ViewData["Title"] = "Tạo nhà tuyển dụng";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
 }
 
-<form id="createRecruiterForm" asp-action="CreateRecruiter" method="post" class="row g-3" novalidate>
+<style>
+    .logo-preview-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        padding: 15px;
+        background: #f8fafc;
+        border: 1px dashed #cbd5e1;
+        border-radius: 8px;
+        margin-top: 10px;
+    }
+    .logo-preview {
+        max-width: 150px;
+        max-height: 100px;
+        object-fit: contain;
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 4px;
+        display: none;
+    }
+</style>
+
+<form id="createRecruiterForm" asp-action="CreateRecruiter" method="post" class="row g-3" novalidate enctype="multipart/form-data">
     @Html.AntiForgeryToken()
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
@@ -54,6 +77,15 @@
         <label asp-for="CompanyName" class="form-label">Tên công ty *</label>
         <input asp-for="CompanyName" class="form-control" />
         <span asp-validation-for="CompanyName" class="text-danger"></span>
+    </div>
+    <div class="col-md-6">
+        <label class="form-label">Logo công ty</label>
+        <input asp-for="CompanyLogoFile" type="file" class="form-control" accept="image/*" onchange="previewLogo(this)" />
+        <div class="logo-preview-container">
+            <img id="logoPreview" src="#" class="logo-preview" alt="Logo preview" />
+            <small class="text-muted">Xem trước logo</small>
+        </div>
+        <span asp-validation-for="CompanyLogoFile" class="text-danger"></span>
     </div>
     <div class="col-md-6">
         <label asp-for="CompanyTaxCode" class="form-label">Mã số thuế</label>
@@ -129,6 +161,20 @@
 
 @section Scripts {
     <script>
+        function previewLogo(input) {
+            var preview = document.getElementById('logoPreview');
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                }
+                reader.readAsDataURL(input.files[0]);
+            } else {
+                preview.style.display = 'none';
+            }
+        }
+
         (function () {
             var form = document.getElementById('createRecruiterForm');
             if (!form) return;

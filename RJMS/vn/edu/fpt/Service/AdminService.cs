@@ -8,10 +8,12 @@ namespace RJMS.Vn.Edu.Fpt.Service
     public class AdminService : IAdminService
     {
         private readonly IAdminRepository _repo;
+        private readonly ICloudinaryService _cloudinaryService;
 
-        public AdminService(IAdminRepository repo)
+        public AdminService(IAdminRepository repo, ICloudinaryService cloudinaryService)
         {
             _repo = repo;
+            _cloudinaryService = cloudinaryService;
         }
 
         public async Task<AdminDashboardViewModel> GetDashboardAsync()
@@ -182,9 +184,16 @@ namespace RJMS.Vn.Edu.Fpt.Service
             await _repo.CreateUserAsync(user);
             await AssignRoleAsync(user.Id, "Recruiter");
 
+            string? logoUrl = null;
+            if (model.CompanyLogoFile != null)
+            {
+                logoUrl = await _cloudinaryService.UploadImageAsync(model.CompanyLogoFile, "logos");
+            }
+
             var company = new Company
             {
                 Name = model.CompanyName,
+                Logo = logoUrl,
                 TaxCode = model.CompanyTaxCode,
                 CompanySize = model.CompanySize,
                 Industry = model.CompanyIndustry,
@@ -192,6 +201,11 @@ namespace RJMS.Vn.Edu.Fpt.Service
                 Email = model.CompanyEmail,
                 Phone = model.CompanyPhone ?? model.PhoneNumber,
                 Description = model.CompanyDescription,
+                ProvinceCode = model.ProvinceCode,
+                ProvinceName = model.ProvinceName,
+                WardCode = model.WardCode,
+                WardName = model.WardName,
+                Address = model.WorkAddress,
                 IsVerified = true,
                 VerifiedAt = DateTimeHelper.NowVietnam,
                 CreatedAt = DateTimeHelper.NowVietnam,

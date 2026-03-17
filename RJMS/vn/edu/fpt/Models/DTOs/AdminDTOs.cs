@@ -171,6 +171,8 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
         [MaxLength(255)]
         public string CompanyName { get; set; } = string.Empty;
 
+        public Microsoft.AspNetCore.Http.IFormFile? CompanyLogoFile { get; set; }
+
         [MaxLength(100)]
         public string? CompanyTaxCode { get; set; }
 

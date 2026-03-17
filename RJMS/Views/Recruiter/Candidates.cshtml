@@ -1,0 +1,41 @@
+@{
+    ViewData["Title"] = "Tìm hồ sơ AI";
+    Layout = "~/Views/Shared/_RecruiterLayout.cshtml";
+}
+
+<div class="card border-0 shadow-sm" style="border-radius: 12px; padding: 24px;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px;">
+        <div style="flex: 1;">
+            <h4 style="font-weight: 700; margin: 0; color: #111827;">
+                <i class="fas fa-search me-2 text-success"></i> Tìm hồ sơ với AI
+            </h4>
+            <p style="margin: 8px 0 0; color: #6b7280; font-size: 0.9rem;">
+                Hệ thống AI sẽ quét các hồ sơ trên hệ thống phù hợp nhất với mô tả công việc của bạn.
+            </p>
+        </div>
+        <div>
+            <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill" style="font-size: 0.85rem;">
+                Còn <strong>150</strong> lượt tìm kiếm
+            </span>
+        </div>
+    </div>
+
+    <div class="row g-3" style="margin-bottom: 24px;">
+        <div class="col-md-9">
+            <input type="text" class="form-control form-control-lg border-2 shadow-none" placeholder="Nhập tên khóa kỹ năng (vd: C#, React, Management...) hoặc link ảnh CV" style="font-size: 0.95rem; border-color: #d1d5db;" />
+        </div>
+        <div class="col-md-3">
+            <button class="btn btn-success btn-lg w-100 fw-bold d-flex align-items-center justify-content-center gap-2" style="background:#00b14f;">
+                <i class="fas fa-magic"></i> Tìm nhanh
+            </button>
+        </div>
+    </div>
+
+    <div class="mt-4 pt-4 border-top">
+        <div class="text-center py-5">
+            <i class="fas fa-robot text-muted opacity-25" style="font-size: 4rem; margin-bottom: 16px;"></i>
+            <h5 class="fw-bold text-secondary">Hãy nhập kỹ năng để AI gợi ý ứng viên</h5>
+            <p class="text-muted small">Thời gian tìm kiếm chỉ mất vài giây...</p>
+        </div>
+    </div>
+</div>
