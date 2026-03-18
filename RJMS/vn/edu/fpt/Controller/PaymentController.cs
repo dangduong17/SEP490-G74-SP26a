@@ -114,13 +114,13 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                         await _paymentService.ProcessPaymentFailureAsync(paymentId, transactionId);
                     }
                     TempData["ErrorToast"] = message;
-                    return RedirectToAction(nameof(PaymentFailed));
+                    return Content($"<script>window.location.href='{Url.Action(nameof(PaymentFailed), "Payment")}';</script>", "text/html");
                 }
 
                 if (paymentId == 0)
                 {
                     TempData["ErrorToast"] = "Không tìm thấy thông tin thanh toán";
-                    return RedirectToAction(nameof(PaymentFailed));
+                    return Content($"<script>window.location.href='{Url.Action(nameof(PaymentFailed), "Payment")}';</script>", "text/html");
                 }
 
                 // Process payment success: Update Payment, Subscription, Create Period, Invoice, Send Email
@@ -129,18 +129,18 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                 if (processed)
                 {
                     TempData["SuccessToast"] = "Thanh toán thành công! Gói dịch vụ đã được kích hoạt.";
-                    return RedirectToAction(nameof(PaymentSuccess), new { transactionId });
+                    return Content($"<script>window.location.href='{Url.Action(nameof(PaymentSuccess), "Payment", new { transactionId })}';</script>", "text/html");
                 }
                 else
                 {
                     TempData["ErrorToast"] = "Có lỗi xảy ra khi xử lý thanh toán";
-                    return RedirectToAction(nameof(PaymentFailed));
+                    return Content($"<script>window.location.href='{Url.Action(nameof(PaymentFailed), "Payment")}';</script>", "text/html");
                 }
             }
             catch (Exception ex)
             {
                 TempData["ErrorToast"] = $"Lỗi: {ex.Message}";
-                return RedirectToAction(nameof(PaymentFailed));
+                return Content($"<script>window.location.href='{Url.Action(nameof(PaymentFailed), "Payment")}';</script>", "text/html");
             }
         }
 

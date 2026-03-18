@@ -97,7 +97,10 @@ namespace RJMS.Vn.Edu.Fpt.Service
                 Level = c.Level,
                 JobCount = c.JobCount
             });
+            
             var roots = new List<JobFilterCategoryDTO>();
+            
+            // Build tree
             foreach (var cat in flat)
             {
                 if (cat.ParentId == null || !lookup.ContainsKey(cat.ParentId.Value))
@@ -105,9 +108,41 @@ namespace RJMS.Vn.Edu.Fpt.Service
                 else
                     lookup[cat.ParentId.Value].Children.Add(lookup[cat.Id]);
             }
+            
+            // Bubble up counts from leaves to roots
+            void BubbleUp(JobFilterCategoryDTO node)
+            {
+                foreach (var child in node.Children)
+                {
+                    BubbleUp(child);
+                }
+                if (node.Children.Any())
+                {
+                    node.JobCount += node.Children.Sum(c => c.JobCount);
+                }
+            }
+
             foreach (var r in roots)
-                if (r.Children.Any()) r.JobCount = r.Children.Sum(c => c.JobCount);
-            return roots;
+            {
+                BubbleUp(r);
+            }
+
+            // Prune branches with 0 count
+            void Prune(JobFilterCategoryDTO node)
+            {
+                node.Children = node.Children.Where(c => c.JobCount > 0).ToList();
+                foreach (var child in node.Children)
+                {
+                    Prune(child);
+                }
+            }
+
+            foreach (var r in roots)
+            {
+                Prune(r);
+            }
+
+            return roots.Where(r => r.JobCount > 0).ToList();
         }
     }
 }

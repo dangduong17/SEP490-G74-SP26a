@@ -71,7 +71,7 @@ namespace RJMS.Vn.Edu.Fpt.Service
                     {
                         HttpOnly = true,
                         Secure = true, // Should be true in production
-                        SameSite = SameSiteMode.Strict,
+                        SameSite = SameSiteMode.Lax,
                         Expires = loginDto.RememberMe
                             ? DateTime.Now.AddDays(30)
                             : DateTime.Now.AddHours(2)
