@@ -22,6 +22,9 @@ public partial class FindingJobsDbContext : DbContext
     public virtual DbSet<Company> Companies { get; set; }
 
     public virtual DbSet<Cv> Cvs { get; set; }
+    public virtual DbSet<CvTemplate> CvTemplates { get; set; }
+    public virtual DbSet<TemplateCategory> TemplateCategories { get; set; }
+    public virtual DbSet<CvData> CvDataSet { get; set; }
 
     public virtual DbSet<Invoice> Invoices { get; set; }
 
@@ -136,17 +139,62 @@ public partial class FindingJobsDbContext : DbContext
         modelBuilder.Entity<Cv>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__CVs__3214EC0781BB1121");
-
             entity.ToTable("CVs");
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
-            entity.Property(e => e.FilePath).HasMaxLength(500);
             entity.Property(e => e.Title).HasMaxLength(255);
             entity.Property(e => e.ViewCount).HasDefaultValue(0);
+            entity.Property(e => e.CvType).HasMaxLength(20).HasDefaultValue("UPLOAD");
+            entity.Property(e => e.FileUrl).HasMaxLength(500);
+            entity.Property(e => e.FileName).HasMaxLength(255);
+            entity.Property(e => e.LegacyFilePath).HasMaxLength(500).HasColumnName("LegacyFilePath");
+            entity.Property(e => e.IsDefault).HasDefaultValue(false);
 
             entity.HasOne(d => d.Candidate).WithMany(p => p.Cvs)
                 .HasForeignKey(d => d.CandidateId)
                 .HasConstraintName("FK__CVs__CandidateId__693CA210");
+
+            entity.HasOne(d => d.Template).WithMany()
+                .HasForeignKey(d => d.TemplateId)
+                .HasConstraintName("FK_CVs_Template")
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(d => d.CvData).WithOne(p => p.Cv)
+                .HasForeignKey<CvData>(d => d.CvId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<CvTemplate>(entity =>
+        {
+            entity.ToTable("CvTemplates");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.ThumbnailUrl).HasMaxLength(500);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+
+            entity.HasOne(d => d.Category)
+                  .WithMany(p => p.CvTemplates)
+                  .HasForeignKey(d => d.CategoryId)
+                  .HasConstraintName("FK_CvTemplates_Category");
+        });
+
+        modelBuilder.Entity<TemplateCategory>(entity =>
+        {
+            entity.ToTable("TemplateCategories");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.Description).HasMaxLength(500);
+            entity.Property(e => e.Slug).HasMaxLength(200);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+        });
+
+        modelBuilder.Entity<CvData>(entity =>
+        {
+            entity.ToTable("CvData");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.JsonData).HasColumnType("nvarchar(max)").IsRequired();
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
         });
 
         modelBuilder.Entity<Job>(entity =>
