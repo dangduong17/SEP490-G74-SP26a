@@ -706,3 +706,89 @@ GO
 CREATE INDEX IX_Notifications_UserId 
 ON Notifications(UserId)
 GO
+
+
+/* =====================================================
+CV MODULE (BUILDER & TEMPLATES)
+===================================================== */
+
+-- 1. Bảng lưu các Template CV của Admin
+IF OBJECT_ID('CvTemplates', 'U') IS NULL
+BEGIN
+    CREATE TABLE CvTemplates
+    (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        Name NVARCHAR(255) NOT NULL,
+        ThumbnailUrl NVARCHAR(500) NULL,
+        HtmlContent NVARCHAR(MAX) NULL,
+        CssContent NVARCHAR(MAX) NULL,
+        ConfigJson NVARCHAR(MAX) NULL,
+        IsActive BIT DEFAULT 1,
+        CreatedAt DATETIME2 DEFAULT GETDATE()
+    );
+END
+GO
+
+-- 2. Cập nhật bảng CVs để hỗ trợ cả Upload và Builder
+IF COL_LENGTH('CVs', 'CvType') IS NULL
+    ALTER TABLE CVs ADD CvType NVARCHAR(20) NOT NULL DEFAULT 'UPLOAD';
+GO
+
+IF COL_LENGTH('CVs', 'TemplateId') IS NULL
+    ALTER TABLE CVs ADD TemplateId INT NULL;
+GO
+
+IF COL_LENGTH('CVs', 'FileUrl') IS NULL
+    ALTER TABLE CVs ADD FileUrl NVARCHAR(500) NULL;
+GO
+
+IF COL_LENGTH('CVs', 'FileName') IS NULL
+    ALTER TABLE CVs ADD FileName NVARCHAR(255) NULL;
+GO
+
+IF COL_LENGTH('CVs', 'FileSize') IS NULL
+    ALTER TABLE CVs ADD FileSize INT NULL;
+GO
+
+IF COL_LENGTH('CVs', 'IsDefault') IS NULL
+    ALTER TABLE CVs ADD IsDefault BIT DEFAULT 0;
+GO
+
+IF COL_LENGTH('CVs', 'UpdatedAt') IS NULL
+    ALTER TABLE CVs ADD UpdatedAt DATETIME2 NULL;
+GO
+
+IF COL_LENGTH('CVs', 'ParsedText') IS NULL
+    ALTER TABLE CVs ADD ParsedText NVARCHAR(MAX) NULL;
+GO
+
+-- Đổi tên FilePath thành LegacyFilePath nếu cột cũ còn tồn tại
+IF COL_LENGTH('CVs', 'FilePath') IS NOT NULL AND COL_LENGTH('CVs', 'LegacyFilePath') IS NULL
+    EXEC sp_rename 'CVs.FilePath', 'LegacyFilePath', 'COLUMN';
+GO
+
+-- 3. Bảng lưu dữ liệu JSON cho các CV tạo bằng Builder
+IF OBJECT_ID('CvData', 'U') IS NULL
+BEGIN
+    CREATE TABLE CvData
+    (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        CvId INT NOT NULL UNIQUE,
+        JsonData NVARCHAR(MAX) NULL,
+        CreatedAt DATETIME2 DEFAULT GETDATE(),
+        UpdatedAt DATETIME2 DEFAULT GETDATE(),
+        FOREIGN KEY (CvId) REFERENCES CVs(Id) ON DELETE CASCADE
+    );
+END
+GO
+
+-- Link CVs tới Template
+IF NOT EXISTS (SELECT * FROM sys.foreign_keys WHERE name = 'FK_CVs_CvTemplates_TemplateId')
+BEGIN
+    ALTER TABLE CVs
+    ADD CONSTRAINT FK_CVs_CvTemplates_TemplateId FOREIGN KEY (TemplateId) REFERENCES CvTemplates(Id);
+END
+GO
+
+END
+GO
