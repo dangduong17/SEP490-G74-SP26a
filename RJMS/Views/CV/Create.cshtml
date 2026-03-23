@@ -1,0 +1,104 @@
+@model List<RJMS.vn.edu.fpt.Models.DTOs.CvTemplateViewModel>
+@{
+    ViewData["Title"] = "Chọn Template CV";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+<style>
+    body { background: #f5f5f5; }
+    .cr-wrap { max-width: 1000px; margin: 40px auto; padding: 0 16px 60px; }
+    .cr-header { margin-bottom: 28px; }
+    .cr-header h1 { font-size: 1.5rem; font-weight: 800; color: #111827; margin: 0 0 6px; }
+    .cr-header p { color: #6b7280; margin: 0; }
+    .tpl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 18px; margin-bottom: 32px; }
+    .tpl-card { border: 2.5px solid #e5e7eb; border-radius: 14px; overflow: hidden; cursor: pointer; transition: all 0.2s; background: #fff; }
+    .tpl-card:hover { border-color: #00b14f; box-shadow: 0 4px 20px rgba(0,177,79,0.12); transform: translateY(-2px); }
+    .tpl-card.selected { border-color: #00b14f; }
+    .tpl-card input[type=radio] { display: none; }
+    .tpl-thumb { width: 100%; aspect-ratio: 3/4; background: linear-gradient(135deg, #f0fdf4, #dcfce7); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .tpl-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .tpl-thumb .no-preview { font-size: 3.5rem; color: #00b14f; }
+    .tpl-footer { padding: 12px 14px; }
+    .tpl-name { font-size: 0.9rem; font-weight: 700; color: #111827; margin: 0 0 2px; }
+    .tpl-check { color: #00b14f; font-size: 0.8rem; display: none; }
+    .tpl-card.selected .tpl-check { display: inline-flex; align-items: center; gap: 4px; }
+    .cr-form { background: #fff; border-radius: 14px; border: 1px solid #e5e7eb; padding: 24px; }
+    .form-label { font-size: 0.875rem; font-weight: 600; color: #374151; display: block; margin-bottom: 6px; }
+    .form-control { width: 100%; border: 1.5px solid #d1d5db; border-radius: 8px; padding: 10px 14px; font-size: 0.9rem; outline: none; transition: border-color 0.2s; }
+    .form-control:focus { border-color: #00b14f; box-shadow: 0 0 0 3px rgba(0,177,79,0.1); }
+    .btn-submit { background: #00b14f; color: #fff; border: none; border-radius: 8px; padding: 12px 32px; font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: background 0.2s; }
+    .btn-submit:hover { background: #009744; }
+    .btn-submit:disabled { background: #d1d5db; cursor: not-allowed; }
+    .btn-back { display: inline-flex; align-items: center; gap: 6px; color: #6b7280; text-decoration: none; font-size: 0.875rem; margin-bottom: 20px; }
+    .btn-back:hover { color: #00b14f; }
+</style>
+}
+
+<div class="cr-wrap">
+    <a asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i> Quay lại</a>
+    <div class="cr-header">
+        <h1><i class="fas fa-layer-group me-2 text-success"></i>Chọn Template CV</h1>
+        <p>Chọn một mẫu CV phù hợp, sau đó điền thông tin của bạn.</p>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="text-center py-5 text-muted">
+            <i class="fas fa-layer-group fa-3x mb-3 d-block" style="color:#d1d5db;"></i>
+            <p>Chưa có template CV nào. Vui lòng liên hệ quản trị viên.</p>
+        </div>
+    }
+    else
+    {
+        <form asp-action="Create" method="post" id="createForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="templateId" id="selectedTemplateId" value="" />
+
+            <div class="tpl-grid">
+                @foreach (var tpl in Model)
+                {
+                    <div class="tpl-card" id="tpl_@tpl.Id" onclick="selectTemplate(@tpl.Id)">
+                        <div class="tpl-thumb">
+                            @if (!string.IsNullOrEmpty(tpl.ThumbnailUrl))
+                            {
+                                <img src="@tpl.ThumbnailUrl" alt="@tpl.Name" />
+                            }
+                            else
+                            {
+                                <i class="fas fa-file-alt no-preview"></i>
+                            }
+                        </div>
+                        <div class="tpl-footer">
+                            <p class="tpl-name">@tpl.Name</p>
+                            <span class="tpl-check"><i class="fas fa-check-circle"></i> Đã chọn</span>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="cr-form">
+                <div class="mb-3">
+                    <label class="form-label">Đặt tên cho CV</label>
+                    <input type="text" name="title" class="form-control" placeholder="VD: CV Backend .NET 2025" />
+                </div>
+                <button type="submit" class="btn-submit" id="btnCreate" disabled>
+                    <i class="fas fa-wand-magic-sparkles me-2"></i>Tạo CV
+                </button>
+                <span class="text-muted ms-3" style="font-size:0.82rem;" id="hintSelect">← Hãy chọn một template trước</span>
+            </div>
+        </form>
+    }
+</div>
+
+@section Scripts {
+<script>
+    function selectTemplate(id) {
+        document.querySelectorAll('.tpl-card').forEach(c => c.classList.remove('selected'));
+        document.getElementById('tpl_' + id).classList.add('selected');
+        document.getElementById('selectedTemplateId').value = id;
+        document.getElementById('btnCreate').disabled = false;
+        document.getElementById('hintSelect').style.display = 'none';
+    }
+</script>
+}
