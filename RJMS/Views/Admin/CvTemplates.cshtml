@@ -1,0 +1,92 @@
+@model List<RJMS.vn.edu.fpt.Models.DTOs.CvTemplateViewModel>
+@{
+    ViewData["Title"] = "Quản lý CV Template";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+<style>
+    .tpl-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .tpl-header h1 { font-size: 1.5rem; font-weight: 800; color: #111827; margin: 0; }
+    .btn-create { background: #00b14f; color: #fff; border: none; border-radius: 8px; padding: 10px 22px; font-size: 0.875rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; transition: background 0.2s; }
+    .btn-create:hover { background: #009744; color: #fff; }
+
+    .tpl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
+    .tpl-card { background: #fff; border-radius: 14px; border: 1.5px solid #e5e7eb; overflow: hidden; transition: box-shadow 0.2s; display: flex; flex-direction: column;}
+    .tpl-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+    .tpl-preview { width: 100%; aspect-ratio: 3/4; background: linear-gradient(135deg, #f8fafc, #f0fdf4); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; border-bottom: 1px solid #e5e7eb; }
+    .tpl-preview img { width: 100%; height: 100%; object-fit: cover; }
+    .tpl-preview .no-thumb { font-size: 3rem; color: #d1d5db; }
+    .tpl-badge { position: absolute; top: 8px; right: 8px; font-size: 0.7rem; font-weight: 700; padding: 3px 9px; border-radius: 20px; }
+    .badge-on { background: #dcfce7; color: #16a34a; }
+    .badge-off { background: #f3f4f6; color: #9ca3af; }
+    .tpl-body { padding: 16px; flex: 1; display: flex; flex-direction: column; }
+    .tpl-name { font-size: 1.1rem; font-weight: 800; color: #111827; margin: 0 0 6px; }
+    .tpl-cat { font-size: 0.85rem; color: #6b7280; margin: 0 0 6px; }
+    .tpl-date { font-size: 0.8rem; color: #9ca3af; margin: 0 0 16px; }
+    .tpl-actions { display: flex; gap: 8px; margin-top: auto; }
+    .btn-sm { padding: 6px 14px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; border: none; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; flex: 1; transition: all 0.15s; }
+    .btn-edit { background: #eff6ff; color: #3b82f6; }
+    .btn-edit:hover { background: #dbeafe; }
+    .btn-del { background: #fef2f2; color: #ef4444; }
+    .btn-del:hover { background: #fee2e2; }
+    .empty-state { text-align: center; padding: 70px 20px; background: #fff; border-radius: 14px; border: 2px dashed #e5e7eb; }
+    .empty-state h3 { color: #6b7280; font-size: 1.1rem; margin-bottom: 8px; }
+    .empty-state p { color: #9ca3af; font-size: 0.875rem; margin-bottom: 20px; }
+</style>
+}
+
+<div class="tpl-header">
+    <h1>Quản lý CV Template</h1>
+    <a asp-action="CvTemplateCreate" class="btn-create">Tạo template mới</a>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="empty-state">
+        <h3>Chưa có template nào</h3>
+        <p>Tạo template CV đầu tiên để người dùng có thể sử dụng.</p>
+        <a asp-action="CvTemplateCreate" class="btn-create">Tạo ngay</a>
+    </div>
+}
+else
+{
+    <div class="tpl-grid">
+        @foreach (var t in Model)
+        {
+            <div class="tpl-card">
+                <div class="tpl-preview">
+                    @if (!string.IsNullOrEmpty(t.ThumbnailUrl))
+                    {
+                        <img src="@t.ThumbnailUrl" alt="@t.Name" />
+                    }
+                    else
+                    {
+                        <!-- Placeholder hình document đơn giản CSS -->
+                        <div style="width:60px;height:80px;background:#fff;border:2px solid #e5e7eb;border-radius:4px;box-shadow:0 2px 5px rgba(0,0,0,0.05);position:relative;">
+                            <div style="width:30px;height:4px;background:#e5e7eb;position:absolute;top:15px;left:10px;border-radius:2px;"></div>
+                            <div style="width:40px;height:4px;background:#e5e7eb;position:absolute;top:25px;left:10px;border-radius:2px;"></div>
+                            <div style="width:25px;height:4px;background:#e5e7eb;position:absolute;top:35px;left:10px;border-radius:2px;"></div>
+                        </div>
+                    }
+                    <span class="tpl-badge @(t.IsActive ? "badge-on" : "badge-off")">
+                        @(t.IsActive ? "Đang dùng" : "Tắt")
+                    </span>
+                </div>
+                <div class="tpl-body">
+                    <p class="tpl-name">@t.Name</p>
+                    <p class="tpl-cat">Danh mục: @(t.CategoryName ?? "Không có")</p>
+                    <p class="tpl-date">Ngày tạo: @t.CreatedAt.ToString("dd/MM/yyyy")</p>
+                    <div class="tpl-actions">
+                        <a asp-action="CvTemplateEdit" asp-route-id="@t.Id" class="btn-sm btn-edit">Sửa</a>
+                        <form asp-action="CvTemplateDelete" method="post" style="display:inline; flex:1;" onsubmit="return confirm('Xoá template này?')">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@t.Id" />
+                            <button type="submit" class="btn-sm btn-del" style="width: 100%;">Xóa</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
