@@ -1,0 +1,230 @@
+@using System.Text.Json
+@model RJMS.vn.edu.fpt.Models.DTOs.CvTemplateViewModel
+@{
+    ViewData["Title"] = "Sửa CV Template";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml"; // Utilize admin layout
+    
+    // Fallback to empty JSON object string to prevent JS syntax error
+    var configJson = string.IsNullOrWhiteSpace(Model.ConfigJson) ? "{}" : Model.ConfigJson;
+}
+
+<div class="row pt-4">
+    <div class="col-md-8 mx-auto">
+        <div class="card shadow-sm border-0 rounded-3">
+            <div class="card-header bg-white border-bottom-0 pt-4 pb-0 px-4 d-flex justify-content-between align-items-center">
+                <h4 class="mb-0 fw-bold" style="color: #2563eb;">
+                    Chỉnh sửa Template
+                </h4>
+                <form method="post" action="@Url.Action("CvTemplateToggle", "Admin")">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <button type="submit" class="btn btn-sm @(Model.IsActive ? "btn-warning" : "btn-success")">
+                        <i class="fas @(Model.IsActive ? "fa-ban" : "fa-check") me-1"></i>
+                        @(Model.IsActive ? "Vô hiệu hóa" : "Kích hoạt")
+                    </button>
+                </form>
+            </div>
+            
+            <div class="card-body p-4">
+                <form id="templateForm" method="post" action="@Url.Action("CvTemplateEdit", "Admin")">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <input type="hidden" name="isActive" value="@(Model.IsActive ? "true" : "false")" />
+                    <input type="hidden" name="configJson" id="configJson" />
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary">Tên Template</label>
+                            <input type="text" name="name" class="form-control form-control-lg bg-light border-0" id="name" required value="@Model.Name" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary">Danh mục</label>
+                            <select name="categoryId" class="form-select form-select-lg bg-light border-0" id="categoryId">
+                                <option value="">-- Chọn danh mục --</option>
+                                @if (ViewBag.Categories != null)
+                                {
+                                    foreach (var c in (List<RJMS.vn.edu.fpt.Models.DTOs.TemplateCategoryViewModel>)ViewBag.Categories)
+                                    {
+                                        <option value="@c.Id" selected="@(c.Id == Model.CategoryId ? "selected" : null)">@c.Name</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary">Bố cục cơ bản</label>
+                            <select class="form-select bg-light border-0" id="layoutDef">
+                                <option value="one-column">Một cột truyền thống (Hiện đại)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary">Font chữ</label>
+                            <select class="form-select bg-light border-0" id="fontDef">
+                                <option value="Inter">Inter (Khuyên dùng)</option>
+                                <option value="Roboto">Roboto</option>
+                                <option value="Open Sans">Open Sans</option>
+                                <option value="Segoe UI">Segoe UI</option>
+                                <option value="Lora">Lora (Cổ điển)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold text-secondary">Màu chủ đạo</label>
+                        <div class="d-flex align-items-center gap-3">
+                            <input type="color" class="form-control form-control-color border-0 p-1" id="primaryColor" value="#2563eb" title="Chọn màu chủ đạo" style="width: 60px; height: 40px; cursor: pointer;">
+                            <span class="text-muted small">Màu nổi bật cho tiêu đề, viền và điểm nhấn</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold text-secondary d-block mb-3">Các thành phần (Blocks)</label>
+                        
+                        <div class="row row-cols-1 row-cols-sm-2 g-3">
+                            <div class="col">
+                                <div class="form-check p-3 border rounded bg-light disabled">
+                                    <input class="form-check-input ms-0 me-2" type="checkbox" value="header" checked disabled id="chkHeader">
+                                    <label class="form-check-label fw-medium" for="chkHeader">
+                                        <i class="fas fa-heading text-primary me-2"></i> Header (Bắt buộc)
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="col">
+                                <div class="form-check p-3 border rounded hover-shadow-sm transition-all">
+                                    <input class="form-check-input ms-0 me-2" type="checkbox" value="summary" id="chkSummary">
+                                    <label class="form-check-label fw-medium cursor-pointer" for="chkSummary">
+                                        <i class="fas fa-align-left text-primary me-2"></i> Giới thiệu
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="col">
+                                <div class="form-check p-3 border rounded hover-shadow-sm transition-all">
+                                    <input class="form-check-input ms-0 me-2" type="checkbox" value="experience" id="chkExp">
+                                    <label class="form-check-label fw-medium cursor-pointer" for="chkExp">
+                                        <i class="fas fa-briefcase text-primary me-2"></i> Kinh nghiệm
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="col">
+                                <div class="form-check p-3 border rounded hover-shadow-sm transition-all">
+                                    <input class="form-check-input ms-0 me-2" type="checkbox" value="education" id="chkEdu">
+                                    <label class="form-check-label fw-medium cursor-pointer" for="chkEdu">
+                                        <i class="fas fa-graduation-cap text-primary me-2"></i> Học vấn
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="col">
+                                <div class="form-check p-3 border rounded hover-shadow-sm transition-all">
+                                    <input class="form-check-input ms-0 me-2" type="checkbox" value="skills" id="chkSkills">
+                                    <label class="form-check-label fw-medium cursor-pointer" for="chkSkills">
+                                        <i class="fas fa-tools text-primary me-2"></i> Kỹ năng
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 pt-3 border-top mt-5">
+                        <a href="@Url.Action("CvTemplates", "Admin")" class="btn btn-light px-4">Hủy</a>
+                        <button type="button" class="btn btn-primary px-4 fw-medium" onclick="onSubmitForm()">
+                            <i class="fas fa-save me-1"></i> Cập nhật Template
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .hover-shadow-sm:hover {
+            box-shadow: 0 .125rem .25rem rgba(0,0,0,.075)!important;
+            border-color: #dee2e6!important;
+            background-color: #f8f9fa;
+        }
+        .transition-all {
+            transition: all 0.2s ease;
+        }
+        .cursor-pointer {
+            cursor: pointer;
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const rawConfig = @Html.Raw(configJson);
+            
+            // Set values if rawConfig is actually a valid template model
+            if (rawConfig && Object.keys(rawConfig).length > 0) {
+                if(rawConfig.layout) document.getElementById('layoutDef').value = rawConfig.layout;
+                
+                if(rawConfig.theme) {
+                    if(rawConfig.theme.primaryColor) document.getElementById('primaryColor').value = rawConfig.theme.primaryColor;
+                    if(rawConfig.theme.font) document.getElementById('fontDef').value = rawConfig.theme.font;
+                }
+
+                // Check sections
+                document.getElementById('chkSummary').checked = false;
+                document.getElementById('chkExp').checked = false;
+                document.getElementById('chkEdu').checked = false;
+                document.getElementById('chkSkills').checked = false;
+                
+                if (rawConfig.sections && Array.isArray(rawConfig.sections)) {
+                    rawConfig.sections.forEach(s => {
+                        if (s.type === 'summary') document.getElementById('chkSummary').checked = true;
+                        if (s.type === 'experience') document.getElementById('chkExp').checked = true;
+                        if (s.type === 'education') document.getElementById('chkEdu').checked = true;
+                        if (s.type === 'skills') document.getElementById('chkSkills').checked = true;
+                    });
+                }
+            } else {
+                // Default checked state if no config
+                document.getElementById('chkSummary').checked = true;
+                document.getElementById('chkExp').checked = true;
+                document.getElementById('chkEdu').checked = true;
+                document.getElementById('chkSkills').checked = true;
+            }
+        });
+
+        function onSubmitForm() {
+            var name = document.getElementById('name').value;
+            if(!name) { alert("Vui lòng nhập tên template!"); return; }
+
+            var sections = [];
+            sections.push({ type: "header", position: "top" });
+            
+            if(document.getElementById('chkSummary').checked)
+                sections.push({ type: "summary", position: "left" });
+                
+            if(document.getElementById('chkExp').checked)
+                sections.push({ type: "experience", position: "left" });
+                
+            if(document.getElementById('chkEdu').checked)
+                sections.push({ type: "education", position: "left" });
+                
+            if(document.getElementById('chkSkills').checked)
+                sections.push({ type: "skills", position: "left" });
+
+            var config = {
+                layout: document.getElementById('layoutDef').value,
+                theme: {
+                    primaryColor: document.getElementById('primaryColor').value,
+                    font: document.getElementById('fontDef').value
+                },
+                sections: sections
+            };
+
+            document.getElementById('configJson').value = JSON.stringify(config);
+            document.getElementById('templateForm').submit();
+        }
+    </script>
+}
