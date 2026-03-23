@@ -6,400 +6,251 @@
 
 @section Styles {
     <style>
-        body {
-            background-color: #f8f9fa;
-        }
-
-        .cv-page-container {
-            max-width: 1100px;
-            margin: 40px auto;
-            padding: 0 15px;
-        }
-
-        .cv-page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        body { background: #f3f5f7; }
+        .cv-wrap { max-width: 1000px; margin: 30px auto; padding: 0 16px 60px; }
+        
+        .cv-panel { 
+            background: #fff; 
+            border-radius: 12px; 
+            padding: 24px; 
             margin-bottom: 24px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
         }
 
-        .cv-page-header h1 {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #111827;
-            margin: 0 0 4px;
+        .cv-panel-header { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            margin-bottom: 24px; 
         }
 
-        .cv-page-header p {
-            color: #6b7280;
-            font-size: 0.9rem;
-            margin: 0;
+        .cv-panel-title { 
+            font-size: 1.25rem; 
+            font-weight: 800; 
+            color: #111827; 
+            margin: 0; 
         }
 
-        .btn-create-cv {
+        .btn-green-action {
             background: #00b14f;
             color: #fff;
             border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
-            font-weight: 600;
-            font-size: 0.9rem;
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            text-decoration: none;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             transition: all 0.2s;
-            text-decoration: none;
         }
 
-        .btn-create-cv:hover {
+        .btn-green-action:hover {
             background: #009744;
             color: #fff;
         }
 
-        /* CV Card Layout */
-        .cv-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 20px;
-            margin-bottom: 40px;
+        .cv-empty-state { 
+            text-align: center; 
+            padding: 30px 20px 40px; 
         }
 
-        .cv-card {
-            background: #fff;
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-            transition: all 0.3s ease;
+        .cv-empty-icon {
+            font-size: 3.5rem;
+            color: #d1d5db;
+            margin-bottom: 12px;
         }
 
-        .cv-card:hover {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-            border-color: #00b14f;
+        .cv-empty-text { 
+            color: #9ca3af; 
+            font-size: 0.95rem; 
+            font-weight: 500;
+            margin: 0; 
         }
 
-        .cv-card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 6px;
+        .cv-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
+            gap: 20px; 
         }
 
-        .cv-title {
-            font-size: 1.15rem;
-            font-weight: 700;
-            color: #111827;
-            margin: 0;
-            display: -webkit-box;
-            -webkit-line-clamp: 1;
-            -webkit-box-orient: vertical;
+        .cv-card { 
+            background: #fff; 
+            border-radius: 12px; 
+            border: 1px solid #e5e7eb; 
+            padding: 20px; 
+            display: flex; 
+            flex-direction: column; 
+            transition: all 0.2s; 
+            position: relative;
             overflow: hidden;
         }
+        
+        .cv-card:hover { 
+            border-color: #00b14f; 
+            box-shadow: 0 4px 16px rgba(0,177,79,0.08); 
+        }
 
-        .cv-updated {
-            font-size: 0.75rem;
-            color: #9ca3af;
+        .cv-card-folder-icon {
+            font-size: 3.5rem;
+            color: #a7f3d0;
+            margin-bottom: 16px;
+            line-height: 1;
+        }
+
+        .cv-card-title { 
+            font-size: 1.05rem; 
+            font-weight: 700; 
+            color: #111827; 
+            margin: 0 0 8px 0; 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+        }
+
+        .cv-card-meta { 
+            font-size: 0.85rem; 
+            color: #6b7280; 
+            line-height: 1.6; 
             margin-bottom: 16px;
         }
-
-        .cv-default-badge {
-            background: #f3f4f6;
-            color: #374151;
-            font-size: 0.7rem;
-            font-weight: 600;
-            padding: 2px 8px;
-            border-radius: 4px;
-            margin-left: 8px;
+        
+        .cv-card-actions { 
+            display: flex; gap: 8px; flex-wrap: wrap; margin-top: auto; 
         }
 
-        /* CV Info */
-        .cv-info {
-            margin-bottom: 16px;
-        }
-
-        .cv-info-name {
-            font-size: 0.95rem;
-            font-weight: 600;
-            color: #374151;
-            margin-bottom: 8px;
-        }
-
-        .cv-info p {
-            font-size: 0.85rem;
-            color: #6b7280;
-            margin-bottom: 6px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .cv-info p i {
-            color: #9ca3af;
-            width: 14px;
-            text-align: center;
-        }
-
-        /* Skills */
-        .cv-skills {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            margin-bottom: 20px;
-        }
-
-        .cv-skill-tag {
-            background: #f9fafb;
-            border: 1px solid #e5e7eb;
-            color: #4b5563;
-            font-size: 0.75rem;
-            padding: 3px 8px;
-            border-radius: 4px;
-        }
-
-        /* Card Actions */
-        .cv-actions {
-            display: flex;
-            gap: 10px;
-            border-top: 1px solid #f3f4f6;
-            padding-top: 16px;
-        }
-
-        .cv-btn {
+        .btn-sm-action { 
+            padding: 6px 14px; 
+            border-radius: 6px; 
+            font-size: 0.85rem; 
+            font-weight: 600; 
+            text-decoration: none; 
+            border: none; 
+            cursor: pointer; 
+            display: inline-flex; 
+            align-items: center; 
+            justify-content: center;
             flex: 1;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            padding: 8px 0;
-            border-radius: 6px;
-            font-size: 0.85rem;
-            font-weight: 500;
-            text-decoration: none;
-            transition: all 0.2s;
+            transition: all 0.2s; 
         }
 
-        .btn-view {
-            background: #f0fdf4;
-            color: #00b14f;
-            border: 1px solid #bbf7d0;
-        }
-
-        .btn-view:hover {
-            background: #dcfce7;
-            color: #00b14f;
-        }
-
-        .btn-edit, .btn-download {
-            background: #fff;
-            color: #4b5563;
-            border: 1px solid #d1d5db;
-        }
-
-        .btn-edit:hover, .btn-download:hover {
-            background: #f9fafb;
-            color: #111827;
-        }
-
-        /* Upload Section */
-        .upload-section {
-            background: #fff;
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            padding: 24px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-        }
-
-        .upload-title {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: #111827;
-            margin-bottom: 6px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .upload-title i {
-            color: #00b14f;
-        }
-
-        .upload-subtitle {
-            font-size: 0.85rem;
-            color: #6b7280;
-            margin-bottom: 20px;
-        }
-
-        .upload-box {
-            background: #f0fdf4;
-            border: 2px dashed #bbf7d0;
-            border-radius: 12px;
-            padding: 40px 20px;
-            text-align: center;
-            transition: all 0.3s;
-        }
-
-        .upload-box:hover {
-            background: #dcfce7;
-            border-color: #00b14f;
-            cursor: pointer;
-        }
-
-        .upload-icon {
-            width: 56px;
-            height: 56px;
-            background: #fff;
-            color: #00b14f;
-            border-radius: 50%;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            margin-bottom: 16px;
-            box-shadow: 0 2px 8px rgba(0, 177, 79, 0.15);
-        }
-
-        .upload-box h3 {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #111827;
-            margin-bottom: 8px;
-        }
-
-        .upload-box p {
-            font-size: 0.85rem;
-            color: #6b7280;
-            margin-bottom: 20px;
-        }
-
-        .btn-choose-file {
-            background: #fff;
-            color: #00b14f;
-            border: 1px solid #00b14f;
-            padding: 8px 20px;
-            border-radius: 6px;
-            font-weight: 600;
-            font-size: 0.9rem;
-            display: inline-block;
-            transition: all 0.2s;
-        }
-
-        .btn-choose-file:hover {
-            background: #f0fdf4;
-        }
-
-        .upload-note {
-            display: flex;
-            align-items: flex-start;
-            gap: 8px;
-            font-size: 0.8rem;
-            color: #6b7280;
-            margin-top: 16px;
-            padding-top: 16px;
-            border-top: 1px solid #f3f4f6;
-        }
-
+        .btn-primary-action { background: #f0fdf4; color: #00b14f; }
+        .btn-primary-action:hover { background: #dcfce7; }
+        
+        .btn-danger-action { background: #fef2f2; color: #ef4444; }
+        .btn-danger-action:hover { background: #fee2e2; }
     </style>
 }
 
-<div class="cv-page-container">
-    <div class="cv-page-header">
-        <div>
-            <h1>CV của tôi</h1>
-            <p>Quản lý các CV bạn đã tạo hoặc tải lên để ứng tuyển.</p>
+<div class="cv-wrap">
+    @{
+        var builderCvs = Model.Cvs.Where(c => c.CvType == "BUILDER").ToList();
+        var uploadCvs = Model.Cvs.Where(c => c.CvType == "UPLOAD").ToList();
+    }
+
+    <!-- NỘI DUNG TẠO CV TRÊN FINDING JOB (BUILDER) -->
+    <div class="cv-panel">
+        <div class="cv-panel-header">
+            <h2 class="cv-panel-title">CV đã tạo trên Finding Job</h2>
+            <a asp-action="Create" class="btn-green-action">
+                + Tạo CV
+            </a>
         </div>
-        <a href="#" class="btn-create-cv text-decoration-none">
-            <i class="fas fa-plus"></i> Tạo CV mới
-        </a>
-    </div>
 
-    <!-- Danh sách CV Component -->
-    <div class="cv-grid">
-        @if (Model != null && Model.Cvs.Any())
+        @if (!builderCvs.Any())
         {
-            foreach (var cv in Model.Cvs)
-            {
-                <div class="cv-card">
-                    <div class="cv-card-header">
-                        <div style="flex: 1;" class="d-flex align-items-center">
-                            <h3 class="cv-title" title="@cv.Title">@cv.Title</h3>
-                            @if (cv.IsDefault)
-                            {
-                                <span class="cv-default-badge">Mặc định</span>
-                            }
-                        </div>
-                        <div class="dropdown">
-                            <button class="btn btn-link text-muted p-0 border-0" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="margin-left: 10px;">
-                                <i class="fas fa-ellipsis-v"></i>
-                            </button>
-                            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
-                                <li><a class="dropdown-item" href="#">Đặt làm mặc định</a></li>
-                                <li><a class="dropdown-item text-danger" href="#">Xóa</a></li>
-                            </ul>
-                        </div>
-                    </div>
-                    
-                    <div class="cv-updated">
-                        Cập nhật lần cuối: @(cv.UpdatedAt?.ToString("dd/MM/yyyy") ?? "—")
-                    </div>
-
-                    <div class="cv-info">
-                        <div class="cv-info-name">@cv.CandidateName</div>
-                        <p><i class="fas fa-briefcase"></i> @cv.Position</p>
-                        <p><i class="fas fa-wrench"></i> @cv.Experience</p>
-                    </div>
-
-                    @if (cv.Skills.Any())
-                    {
-                        <div class="cv-skills">
-                            @foreach (var skill in cv.Skills)
-                            {
-                                <span class="cv-skill-tag">@skill</span>
-                            }
-                        </div>
-                    }
-
-                    <div class="cv-actions">
-                        <a href="@cv.FilePath" target="_blank" class="cv-btn btn-view">
-                            <i class="far fa-eye"></i> Xem
-                        </a>
-                        <a href="#" class="cv-btn btn-edit">
-                            <i class="fas fa-pencil-alt"></i> Sửa
-                        </a>
-                        <a href="@cv.FilePath" download class="cv-btn btn-download">
-                            <i class="fas fa-download"></i> Tải về
-                        </a>
-                    </div>
-                </div>
-            }
+            <div class="cv-empty-state">
+                <i class="fas fa-folder-open cv-empty-icon" style="opacity: 0.5;"></i>
+                <p class="cv-empty-text">Chưa có CV nào được tạo.</p>
+            </div>
         }
         else
         {
-            <div class="col-12 w-100 p-4 text-center text-muted" style="grid-column: 1 / -1; background: #fff; border-radius: 12px; border: 1px dashed #d1d5db; padding: 40px;">
-                <p class="mb-0">Bạn chưa có CV nào trong hệ thống.</p>
+            <div class="cv-grid">
+                @foreach (var cv in builderCvs)
+                {
+                    <div class="cv-card">
+                        <!-- Giả lập icon folder xanh lá nhạt cho CV card như trong ảnh TopCV -->
+                        <div class="cv-card-folder-icon">
+                            <i class="fas fa-folder"></i>
+                        </div>
+                        <h3 class="cv-card-title" title="@cv.Title">@cv.Title</h3>
+                        <div class="cv-card-meta">
+                            @if (cv.UpdatedAt.HasValue)
+                            {
+                                <span>Cập nhật lần cuối: @cv.UpdatedAt.Value.ToString("dd/MM/yyyy HH:mm")</span><br />
+                            }
+                            else if (cv.CreatedAt.HasValue)
+                            {
+                                <span>Ngày tạo: @cv.CreatedAt.Value.ToString("dd/MM/yyyy HH:mm")</span><br />
+                            }
+                        </div>
+                        <div class="cv-card-actions">
+                            <a asp-action="Edit" asp-route-id="@cv.Id" class="btn-sm-action btn-primary-action">Sửa</a>
+                            <form asp-action="Delete" method="post" style="display:inline; flex:1;" onsubmit="return confirm('Xoá CV này?')">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@cv.Id" />
+                                <button type="submit" class="btn-sm-action btn-danger-action" style="width: 100%;">Xoá</button>
+                            </form>
+                        </div>
+                    </div>
+                }
             </div>
         }
     </div>
 
-    <!-- Tải CV lên Component -->
-    <div class="upload-section mt-5">
-        <h2 class="upload-title"><i class="fas fa-upload"></i> Tải CV từ máy</h2>
-        <div style="padding-top: 15px;">
-             <h4 style="font-size: 1rem; font-weight: 600; color: #111827; margin-bottom: 6px;">Tải CV lên hệ thống</h4>
-             <p class="upload-subtitle">Tải lên CV PDF hoặc DOCX để sử dụng khi ứng tuyển vào các vị trí mong muốn.</p>
-
-             <div class="upload-box" onclick="document.getElementById('fileUpload').click();">
-                 <div class="upload-icon">
-                     <i class="fas fa-file-upload"></i>
-                 </div>
-                 <h3>Kéo thả file hoặc nhấn để tải lên</h3>
-                 <p>Định dạng hỗ trợ: PDF, DOCX (Tối đa 5MB)</p>
-                 <span class="btn-choose-file">Chọn tệp tin</span>
-                 <input type="file" id="fileUpload" style="display: none;" accept=".pdf,.doc,.docx" />
-             </div>
-
-             <div class="upload-note">
-                 <i class="fas fa-info-circle mt-1 text-muted"></i>
-                 <span>Ghi chú: CV tải lên nên được tối ưu cho hệ thống lọc tự động (ATS).</span>
-             </div>
+    <!-- NỘI DUNG TẢI LÊN (UPLOAD) -->
+    <div class="cv-panel">
+        <div class="cv-panel-header">
+            <h2 class="cv-panel-title">CV đã tải lên Finding Job</h2>
+            <a asp-action="Upload" class="btn-green-action">
+                &#8613; Tải CV lên
+            </a>
         </div>
+
+        @if (!uploadCvs.Any())
+        {
+            <div class="cv-empty-state">
+                <i class="fas fa-folder-open cv-empty-icon" style="opacity: 0.5;"></i>
+                <p class="cv-empty-text">Chưa có CV nào được tải lên.</p>
+            </div>
+        }
+        else
+        {
+            <div class="cv-grid">
+                @foreach (var cv in uploadCvs)
+                {
+                    <div class="cv-card">
+                        <!-- Giả lập icon folder xanh lá nhạt cho CV card như trong ảnh TopCV -->
+                        <div class="cv-card-folder-icon">
+                            <i class="fas fa-folder"></i>
+                        </div>
+                        <h3 class="cv-card-title" title="@cv.Title">@cv.Title</h3>
+                        <div class="cv-card-meta">
+                            @if (cv.UpdatedAt.HasValue)
+                            {
+                                <span>Tải lên lúc: @cv.UpdatedAt.Value.ToString("dd/MM/yyyy HH:mm")</span><br />
+                            }
+                            else if (cv.CreatedAt.HasValue)
+                            {
+                                <span>Tải lên lúc: @cv.CreatedAt.Value.ToString("dd/MM/yyyy HH:mm")</span><br />
+                            }
+                        </div>
+                        <div class="cv-card-actions">
+                            @if (!string.IsNullOrEmpty(cv.FileUrl))
+                            {
+                                <a href="@cv.FileUrl" target="_blank" class="btn-sm-action btn-primary-action">Tải xuống</a>
+                            }
+                            <form asp-action="Delete" method="post" style="display:inline; flex:1;" onsubmit="return confirm('Xoá CV này?')">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@cv.Id" />
+                                <button type="submit" class="btn-sm-action btn-danger-action" style="width: 100%;">Xoá</button>
+                            </form>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
     </div>
 </div>
