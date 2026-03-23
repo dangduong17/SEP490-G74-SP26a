@@ -1,0 +1,85 @@
+@model RJMS.vn.edu.fpt.Models.DTOs.CvUploadDTO
+@{
+    ViewData["Title"] = "Tải lên CV";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+<style>
+    body { background: #f5f5f5; }
+    .up-wrap { max-width: 560px; margin: 48px auto; padding: 0 16px 60px; }
+    .up-card { background: #fff; border-radius: 16px; border: 1px solid #e5e7eb; padding: 36px; }
+    .up-card h1 { font-size: 1.4rem; font-weight: 800; color: #111827; margin: 0 0 6px; }
+    .up-card p.sub { color: #6b7280; font-size: 0.9rem; margin-bottom: 28px; }
+    .form-label { font-size: 0.875rem; font-weight: 600; color: #374151; display: block; margin-bottom: 6px; }
+    .form-control { width: 100%; border: 1.5px solid #d1d5db; border-radius: 8px; padding: 10px 14px; font-size: 0.9rem; outline: none; transition: border-color 0.2s; }
+    .form-control:focus { border-color: #00b14f; box-shadow: 0 0 0 3px rgba(0,177,79,0.1); }
+    .mb-4 { margin-bottom: 20px; }
+    .drop-zone { border: 2px dashed #d1d5db; border-radius: 12px; padding: 40px; text-align: center; cursor: pointer; transition: all 0.2s; background: #fafafa; }
+    .drop-zone:hover, .drop-zone.dragover { border-color: #00b14f; background: #f0fdf4; }
+    .drop-zone i { font-size: 2.5rem; color: #d1d5db; display: block; margin-bottom: 10px; }
+    .drop-zone p { margin: 0; color: #6b7280; font-size: 0.9rem; }
+    .drop-zone p strong { color: #00b14f; }
+    #fileInput { display: none; }
+    .file-chosen { margin-top: 12px; font-size: 0.82rem; color: #00b14f; display: none; }
+    .btn-submit { width: 100%; background: #00b14f; color: #fff; border: none; border-radius: 8px; padding: 13px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: background 0.2s; margin-top: 24px; }
+    .btn-submit:hover { background: #009744; }
+    .btn-back { display: inline-flex; align-items: center; gap: 6px; color: #6b7280; text-decoration: none; font-size: 0.875rem; margin-bottom: 20px; }
+    .btn-back:hover { color: #00b14f; }
+    .hint { font-size: 0.78rem; color: #9ca3af; margin-top: 6px; }
+</style>
+}
+
+<div class="up-wrap">
+    <a asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i> Quay lại</a>
+    <div class="up-card">
+        <h1><i class="fas fa-upload me-2 text-success"></i>Tải lên CV</h1>
+        <p class="sub">Hỗ trợ định dạng PDF, DOC, DOCX. Tối đa 10MB.</p>
+
+        <form asp-action="Upload" method="post" enctype="multipart/form-data">
+            @Html.AntiForgeryToken()
+
+            <div class="mb-4">
+                <label class="form-label">Tên CV</label>
+                <input asp-for="Title" class="form-control" placeholder="VD: CV Backend .NET 2025" />
+                <p class="hint">Để trống sẽ dùng tên file làm tên CV.</p>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label">File CV <span style="color:#ef4444">*</span></label>
+                <div class="drop-zone" onclick="document.getElementById('fileInput').click()"
+                     ondragover="event.preventDefault(); this.classList.add('dragover')"
+                     ondragleave="this.classList.remove('dragover')"
+                     ondrop="handleDrop(event)">
+                    <i class="fas fa-file-upload"></i>
+                    <p>Kéo thả file vào đây hoặc <strong>click để chọn</strong></p>
+                    <p class="hint">PDF, DOC, DOCX — tối đa 10MB</p>
+                    <div class="file-chosen" id="fileChosen"><i class="fas fa-check-circle me-1"></i><span id="fileName"></span></div>
+                </div>
+                <input type="file" id="fileInput" name="File" accept=".pdf,.doc,.docx" onchange="showFileName(this)" />
+            </div>
+
+            <button type="submit" class="btn-submit"><i class="fas fa-cloud-upload-alt me-2"></i>Tải lên CV</button>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function showFileName(input) {
+        if (input.files && input.files[0]) {
+            document.getElementById('fileName').textContent = input.files[0].name;
+            document.getElementById('fileChosen').style.display = 'block';
+        }
+    }
+    function handleDrop(e) {
+        e.preventDefault();
+        e.currentTarget.classList.remove('dragover');
+        const dt = e.dataTransfer;
+        if (dt.files.length) {
+            document.getElementById('fileInput').files = dt.files;
+            showFileName(document.getElementById('fileInput'));
+        }
+    }
+</script>
+}
