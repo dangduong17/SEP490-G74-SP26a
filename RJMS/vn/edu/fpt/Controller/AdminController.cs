@@ -8,11 +8,13 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
     {
         private readonly IAdminService _adminService;
         private readonly IJobCategoryService _jobCategoryService;
+        private readonly ICVService _cvService;
 
-        public AdminController(IAdminService adminService, IJobCategoryService jobCategoryService)
+        public AdminController(IAdminService adminService, IJobCategoryService jobCategoryService, ICVService cvService)
         {
             _adminService = adminService;
             _jobCategoryService = jobCategoryService;
+            _cvService = cvService;
         }
 
         private IActionResult? RequireAdmin()
@@ -463,6 +465,150 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             {
                 ModelState.AddModelError(error.Key ?? string.Empty, error.Message);
             }
+        }
+
+        // ─────────────────────────────────────────────────────────
+        // CV TEMPLATES
+        // ─────────────────────────────────────────────────────────
+        [HttpGet]
+        public async Task<IActionResult> CvTemplates()
+        {
+            if (RequireAdmin() is { } r) return r;
+            var templates = await _cvService.GetAllTemplatesAsync();
+            return View(templates);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> CvTemplateCreate()
+        {
+            if (RequireAdmin() is { } r) return r;
+            ViewBag.Categories = await _cvService.GetAllCategoriesAsync();
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CvTemplateCreate(string name, int? categoryId, string? configJson)
+        {
+            if (RequireAdmin() is { } r) return r;
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                TempData["ErrorToast"] = "Tên Template không được để trống.";
+                return View();
+            }
+            var dto = new RJMS.vn.edu.fpt.Models.DTOs.CvTemplateCreateDTO
+            {
+                Name = name,
+                CategoryId = categoryId,
+                ConfigJson = configJson
+            };
+            var (success, message) = await _cvService.CreateTemplateAsync(dto);
+            if (success)
+            {
+                TempData["SuccessToast"] = message;
+                return RedirectToAction(nameof(CvTemplates));
+            }
+            TempData["ErrorToast"] = message;
+            return View();
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> CvTemplateEdit(int id)
+        {
+            if (RequireAdmin() is { } r) return r;
+            var tpl = await _cvService.GetTemplateByIdAsync(id);
+            if (tpl == null) { TempData["ErrorToast"] = "Không tìm thấy template."; return RedirectToAction(nameof(CvTemplates)); }
+            ViewBag.Categories = await _cvService.GetAllCategoriesAsync();
+            return View(tpl);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CvTemplateEdit(int id, string name, int? categoryId, string? configJson, bool isActive)
+        {
+            if (RequireAdmin() is { } r) return r;
+            var dto = new RJMS.vn.edu.fpt.Models.DTOs.CvTemplateEditDTO
+            {
+                Id = id,
+                Name = name,
+                CategoryId = categoryId,
+                ConfigJson = configJson,
+                IsActive = isActive
+            };
+            var (success, message) = await _cvService.UpdateTemplateAsync(dto);
+            TempData[success ? "SuccessToast" : "ErrorToast"] = message;
+            return RedirectToAction(nameof(CvTemplates));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CvTemplateToggle(int id)
+        {
+            if (RequireAdmin() is { } r) return r;
+            var (_, message) = await _cvService.ToggleTemplateActiveAsync(id);
+            TempData["SuccessToast"] = message;
+            return RedirectToAction(nameof(CvTemplates));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CvTemplateDelete(int id)
+        {
+            if (RequireAdmin() is { } r) return r;
+            var (_, message) = await _cvService.DeleteTemplateAsync(id);
+            TempData["SuccessToast"] = message;
+            return RedirectToAction(nameof(CvTemplates));
+        }
+
+        // ─────────────────────────────────────────────────────────
+        // TEMPLATE CATEGORIES
+        // ─────────────────────────────────────────────────────────
+        [HttpGet]
+        public async Task<IActionResult> TemplateCategories()
+        {
+            if (RequireAdmin() is { } r) return r;
+            var categories = await _cvService.GetAllCategoriesAsync();
+            return View(categories);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> TemplateCategoryCreate(RJMS.vn.edu.fpt.Models.DTOs.TemplateCategoryFormDTO dto)
+        {
+            if (RequireAdmin() is { } r) return r;
+            if (string.IsNullOrWhiteSpace(dto.Name)) {
+                TempData["ErrorToast"] = "Tên danh mục không được trống.";
+                return RedirectToAction(nameof(TemplateCategories));
+            }
+
+            var (success, message) = await _cvService.CreateCategoryAsync(dto);
+            TempData[success ? "SuccessToast" : "ErrorToast"] = message;
+            return RedirectToAction(nameof(TemplateCategories));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> TemplateCategoryEdit(RJMS.vn.edu.fpt.Models.DTOs.TemplateCategoryFormDTO dto)
+        {
+            if (RequireAdmin() is { } r) return r;
+            if (string.IsNullOrWhiteSpace(dto.Name)) {
+                TempData["ErrorToast"] = "Tên danh mục không được trống.";
+                return RedirectToAction(nameof(TemplateCategories));
+            }
+
+            var (success, message) = await _cvService.UpdateCategoryAsync(dto);
+            TempData[success ? "SuccessToast" : "ErrorToast"] = message;
+            return RedirectToAction(nameof(TemplateCategories));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> TemplateCategoryDelete(int id)
+        {
+            if (RequireAdmin() is { } r) return r;
+            var (success, message) = await _cvService.DeleteCategoryAsync(id);
+            TempData[success ? "SuccessToast" : "ErrorToast"] = message;
+            return RedirectToAction(nameof(TemplateCategories));
         }
     }
 }
