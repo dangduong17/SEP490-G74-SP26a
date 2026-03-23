@@ -863,17 +863,16 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             if (RequireRecruiter() is { } redirect) return redirect;
 
             var cv = await _context.Cvs.FindAsync(id);
-            if (cv == null || string.IsNullOrEmpty(cv.FilePath))
+            var fileUrl = cv?.FileUrl ?? cv?.LegacyFilePath;
+            if (cv == null || string.IsNullOrEmpty(fileUrl))
             {
                 TempData["ErrorToast"] = "Không tìm thấy file CV.";
                 return RedirectToAction("Applications");
             }
 
-            // In a real scenario, you'd serve the file from the path
-            // For now, redirect to the file path if it's a URL or use PhysicalFile if it's a local path
-            if (cv.FilePath.StartsWith("http")) return Redirect(cv.FilePath);
-            
-            return File(cv.FilePath, "application/pdf");
+            if (fileUrl.StartsWith("http")) return Redirect(fileUrl);
+
+            return File(fileUrl, "application/pdf");
         }
     }
 }
