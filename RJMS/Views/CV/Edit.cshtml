@@ -1,0 +1,353 @@
+@{
+    ViewData["Title"] = "Chỉnh sửa CV - " + Model.Title;
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <style>
+        :root {
+            --cv-primary: #1e3a5f;
+            --cv-bg-section: #f4f5f6;
+        }
+        /* Override body styles so it fits in the layout */
+        body { background: #f0f2f5; }
+
+        /* TOPBAR (Minimal) */
+        .ed-topbar { background: #fff; border-bottom: 1px solid #e5e7eb; padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 20px; border-radius: 8px; }
+        .topbar-left { display: flex; align-items: center; gap: 15px; }
+        .topbar-right { display: flex; align-items: center; gap: 10px; }
+        .btn-back { color: #6b7280; text-decoration: none; font-size: 0.9rem; font-weight: 500; }
+        .btn-back:hover { color: #1e3a5f; }
+        .cv-title-input { border: 1px solid transparent; background: transparent; font-size: 1.1rem; font-weight: 600; color: #111827; padding: 4px 8px; border-radius: 4px; }
+        .cv-title-input:hover, .cv-title-input:focus { border-color: #d1d5db; background: #fff; outline: none; }
+        .btn-save { background: #00b14f; color: #fff; border: none; padding: 8px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .btn-save:hover { background: #009744; }
+
+        /* EDITOR CONTAINER */
+        .ed-container { flex: 1; overflow-y: auto; padding: 40px 20px; display: flex; justify-content: center; }
+
+        /* A4 PAGE */
+        .a4-page {
+            width: 794px; min-height: 1123px; background: #fff; box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            position: relative; padding: 40px; color: #333; margin-bottom: 40px;
+        }
+
+        /* INLINE EDIT STYLES */
+        input.inline-input, textarea.inline-textarea {
+            width: 100%; border: 1px dashed transparent; background: transparent; font-family: inherit; font-size: inherit; color: inherit; font-weight: inherit; font-style: inherit; text-align: inherit; padding: 2px 4px; border-radius: 3px; resize: none; overflow: hidden;
+        }
+        input.inline-input:hover, textarea.inline-textarea:hover { border-color: #d1d5db; background: #f9fafb; }
+        input.inline-input:focus, textarea.inline-textarea:focus { border-color: #00b14f; background: #fff; outline: none; }
+        .placeholder-dashed { border-color: #ef4444 !important; color: #9ca3af; font-style: italic; }
+
+        /* TOPCV HEADER STYLE */
+        .cv-header-block { display: flex; gap: 30px; margin-bottom: 40px; align-items: flex-start; }
+        .avatar-box { width: 140px; height: 140px; background: #e5e7eb; border-radius: 50%; flex-shrink: 0; display: flex; justify-content: center; align-items: center; color: #9ca3af; font-size: 4rem; overflow: hidden; position: relative; cursor: pointer; }
+        .avatar-box img { width: 100%; height: 100%; object-fit: cover; }
+        .header-info { flex: 1; }
+        .name-box { margin-bottom: 5px; }
+        .name-input { font-size: 2.2rem; font-weight: 700; color: var(--cv-primary); text-transform: uppercase; margin: 0; }
+        .title-input { font-size: 1.1rem; color: #6b7280; font-style: italic; border-bottom: 2px solid #374151; padding-bottom: 8px; margin-bottom: 15px; width: 60%; }
+        
+        .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 20px; font-size: 0.85rem; }
+        .contact-item { display: flex; align-items: center; gap: 8px; }
+        .contact-icon { width: 16px; color: #4b5563; text-align: center; }
+
+        /* CV SECTION STYLE */
+        .cv-section { margin-bottom: 20px; }
+        .sec-title-wrap { background: var(--cv-bg-section); padding: 8px 15px; margin-bottom: 15px; margin-left: -40px; margin-right: -40px; position: relative; text-align: center; }
+        .sec-title { display: inline-block; font-size: 1.15rem; font-weight: 700; color: var(--cv-primary); text-transform: uppercase; margin: 0; letter-spacing: 0.5px; }
+        .btn-add-inline { position: absolute; right: 40px; top: 50%; transform: translateY(-50%); background: #00b14f; color: #fff; border: none; padding: 4px 12px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
+        .btn-add-inline:hover { background: #009744; }
+
+        /* SECTION ITEMS */
+        .cv-item { display: flex; gap: 20px; margin-bottom: 15px; position: relative; }
+        .cv-item:hover .item-actions { display: flex; }
+        .item-actions { position: absolute; right: -30px; top: 0; display: none; gap: 5px; }
+        .btn-item-del { background: #fee2e2; color: #ef4444; border: none; width: 24px; height: 24px; border-radius: 4px; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 0.75rem; }
+        .btn-item-del:hover { background: #fca5a5; color: #b91c1c; }
+
+        .time-col { width: 22%; flex-shrink: 0; font-style: italic; color: #6b7280; font-size: 0.9rem; }
+        .content-col { flex: 1; }
+        .item-title { font-weight: 700; color: #374151; font-size: 1rem; margin-bottom: 2px; }
+        .item-subtitle { color: #6b7280; font-style: italic; font-size: 0.9rem; margin-bottom: 6px; }
+        .item-desc { font-size: 0.9rem; color: #4b5563; line-height: 1.6; }
+
+    </style>
+}
+
+<div class="container py-4">
+    <div class="ed-topbar">
+        <div class="topbar-left">
+            <a href="@Url.Action("Index", "CV")" class="btn-back"><i class="fas fa-arrow-left me-2"></i> Quay lại</a>
+            <input type="text" id="sysTitleInput" class="cv-title-input" value="@Model.Title" placeholder="Tên tệp CV" />
+        </div>
+        <div class="topbar-right">
+            <span id="saveStatus" style="font-size:0.8rem; color:#6b7280; margin-right: 10px;">Đã lưu</span>
+            <button class="btn-save" id="btnSave" onclick="saveCvManual()">
+                <i class="fas fa-save me-1"></i> Lưu CV
+            </button>
+        </div>
+    </div>
+
+    <div class="ed-container">
+        <div class="a4-page" id="cvCanvas">
+            <!-- Rendered by JS -->
+        </div>
+    </div>
+</div>
+
+<form id="afForm" style="display:none">
+    @Html.AntiForgeryToken()
+</form>
+
+@section Scripts {
+    <script>
+    const CV_ID = @Model.CvId;
+    let cvData = @Html.Raw(Model.JsonData ?? "{}");
+    if(!cvData.Experiences) cvData.Experiences = [];
+    if(!cvData.Educations) cvData.Educations = [];
+
+    // Auto resize textarea
+    function autoResize(el) {
+        el.style.height = 'auto';
+        el.style.height = (el.scrollHeight) + 'px';
+    }
+
+    // Two-way binding helper
+    function updateData(key, value, arrName = null, arrIndex = -1) {
+        if(arrName && arrIndex >= 0) {
+            cvData[arrName][arrIndex][key] = value;
+        } else {
+            cvData[key] = value;
+        }
+        document.getElementById('saveStatus').innerText = 'Chưa lưu...';
+        debouncedSave();
+    }
+
+    function checkPlaceholder(el) {
+        if(!el.value.trim()) {
+            el.classList.add('placeholder-dashed');
+        } else {
+            el.classList.remove('placeholder-dashed');
+        }
+    }
+
+    function renderCV() {
+        const canvas = document.getElementById('cvCanvas');
+        
+        let html = `
+            <!-- HEADER -->
+            <div class="cv-header-block">
+                <div class="avatar-box">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="header-info">
+                    <div class="name-box">
+                        <input type="text" class="inline-input name-input" placeholder="HỌ VÀ TÊN" value="${cvData.FullName||''}" oninput="updateData('FullName', this.value); checkPlaceholder(this)" />
+                    </div>
+                    <div class="title-box">
+                        <input type="text" class="inline-input title-input" placeholder="Vị trí ứng tuyển" value="${cvData.Position||''}" oninput="updateData('Position', this.value); checkPlaceholder(this)" />
+                    </div>
+                    
+                    <div class="contact-grid">
+                        <div class="contact-item">
+                            <span class="contact-icon"><i class="fas fa-calendar-alt"></i></span>
+                            <input type="text" class="inline-input" placeholder="DD/MM/YY" value="${cvData.Dob||''}" oninput="updateData('Dob', this.value)" />
+                        </div>
+                        <div class="contact-item">
+                            <span class="contact-icon"><i class="fas fa-phone"></i></span>
+                            <input type="text" class="inline-input" placeholder="0123 456 789" value="${cvData.Phone||''}" oninput="updateData('Phone', this.value); checkPlaceholder(this)" />
+                        </div>
+                        <div class="contact-item">
+                            <span class="contact-icon"><i class="fas fa-user-alt"></i></span>
+                            <input type="text" class="inline-input" placeholder="Nam/Nữ" value="${cvData.Gender||''}" oninput="updateData('Gender', this.value)" />
+                        </div>
+                        <div class="contact-item">
+                            <span class="contact-icon"><i class="fas fa-envelope"></i></span>
+                            <input type="text" class="inline-input" placeholder="email@gmail.com" value="${cvData.Email||''}" oninput="updateData('Email', this.value); checkPlaceholder(this)" />
+                        </div>
+                        <div class="contact-item">
+                            <span class="contact-icon"><i class="fas fa-map-marker-alt"></i></span>
+                            <input type="text" class="inline-input" placeholder="Địa chỉ" value="${cvData.Address||''}" oninput="updateData('Address', this.value); checkPlaceholder(this)" />
+                        </div>
+                        <div class="contact-item">
+                            <span class="contact-icon"><i class="fas fa-link"></i></span>
+                            <input type="text" class="inline-input" placeholder="facebook.com/..." value="${cvData.Website||''}" oninput="updateData('Website', this.value)" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SUMMARY -->
+            <div class="cv-section">
+                <div class="sec-title-wrap">
+                    <h3 class="sec-title">Mục tiêu nghề nghiệp</h3>
+                </div>
+                <textarea class="inline-textarea item-desc" rows="3" placeholder="Mục tiêu nghề nghiệp của bạn, bao gồm mục tiêu ngắn hạn và dài hạn" oninput="autoResize(this); updateData('Summary', this.value); checkPlaceholder(this)">${cvData.Summary||''}</textarea>
+            </div>
+
+            <!-- EDUCATION -->
+            <div class="cv-section">
+                <div class="sec-title-wrap">
+                    <h3 class="sec-title">Học vấn</h3>
+                    <button class="btn-add-inline" onclick="addEdu()"><i class="fas fa-plus"></i> Thêm</button>
+                </div>
+                <div id="eduList"></div>
+            </div>
+
+            <!-- EXPERIENCE -->
+            <div class="cv-section">
+                <div class="sec-title-wrap">
+                    <h3 class="sec-title">Kinh nghiệm làm việc</h3>
+                    <button class="btn-add-inline" onclick="addExp()"><i class="fas fa-plus"></i> Thêm</button>
+                </div>
+                <div id="expList"></div>
+            </div>
+
+            <!-- SKILLS -->
+            <div class="cv-section">
+                <div class="sec-title-wrap">
+                    <h3 class="sec-title">Kỹ năng</h3>
+                </div>
+                <!-- TopCV style splits skills usually, but simple textarea is fine -->
+                <textarea class="inline-textarea item-desc" rows="3" placeholder="- Tên kỹ năng 1&#10;- Tên kỹ năng 2" oninput="autoResize(this); updateData('Skills', this.value); checkPlaceholder(this)">${cvData.Skills||''}</textarea>
+            </div>
+        `;
+
+        canvas.innerHTML = html;
+
+        // Render lists
+        renderEduList();
+        renderExpList();
+
+        // Trigger auto resize for all textareas
+        setTimeout(() => {
+            document.querySelectorAll('textarea').forEach(autoResize);
+            document.querySelectorAll('input, textarea').forEach(checkPlaceholder);
+        }, 50);
+    }
+
+    function renderEduList() {
+        const ct = document.getElementById('eduList');
+        let html = '';
+        cvData.Educations.forEach((edu, idx) => {
+            html += `
+            <div class="cv-item">
+                <div class="time-col">
+                    <input type="text" class="inline-input" placeholder="Bắt đầu - Kết thúc" value="${edu.Period||''}" oninput="updateData('Period', this.value, 'Educations', ${idx})" />
+                </div>
+                <div class="content-col">
+                    <div style="display:flex; align-items:center;">
+                        <input type="text" class="inline-input item-title" style="width:auto;flex:1" placeholder="Tên trường học" value="${edu.School||''}" oninput="updateData('School', this.value, 'Educations', ${idx})" />
+                        <span style="margin:0 8px; color:#9ca3af">|</span>
+                        <input type="text" class="inline-input item-subtitle" style="width:auto;flex:1; margin-bottom:0" placeholder="Ngành học / Môn học" value="${edu.Degree||''}" oninput="updateData('Degree', this.value, 'Educations', ${idx})" />
+                    </div>
+                </div>
+                <div class="item-actions">
+                    <button class="btn-item-del" onclick="delEdu(${idx})" title="Xóa"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>`;
+        });
+        ct.innerHTML = html || `<p class="text-center text-muted" style="font-size:0.9rem">Chưa có thông tin</p>`;
+    }
+
+    function renderExpList() {
+        const ct = document.getElementById('expList');
+        let html = '';
+        cvData.Experiences.forEach((exp, idx) => {
+            html += `
+            <div class="cv-item">
+                <div class="time-col">
+                    <input type="text" class="inline-input" placeholder="Bắt đầu - Kết thúc" value="${exp.Period||''}" oninput="updateData('Period', this.value, 'Experiences', ${idx})" />
+                </div>
+                <div class="content-col">
+                    <div style="display:flex; align-items:center;">
+                        <input type="text" class="inline-input item-title" style="width:auto;flex:1" placeholder="Tên công ty" value="${exp.Company||''}" oninput="updateData('Company', this.value, 'Experiences', ${idx})" />
+                        <span style="margin:0 8px; color:#9ca3af">|</span>
+                        <input type="text" class="inline-input item-subtitle" style="width:auto;flex:1; margin-bottom:0" placeholder="Vị trí công việc" value="${exp.Role||''}" oninput="updateData('Role', this.value, 'Experiences', ${idx})" />
+                    </div>
+                    <textarea class="inline-textarea item-desc mt-1" rows="2" placeholder="Mô tả kinh nghiệm làm việc của bạn..." oninput="autoResize(this); updateData('Description', this.value, 'Experiences', ${idx})">${exp.Description||''}</textarea>
+                </div>
+                <div class="item-actions">
+                    <button class="btn-item-del" onclick="delExp(${idx})" title="Xóa"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>`;
+        });
+        ct.innerHTML = html || `<p class="text-center text-muted" style="font-size:0.9rem">Chưa có thông tin</p>`;
+        setTimeout(() => ct.querySelectorAll('textarea').forEach(autoResize), 10);
+    }
+
+    function addEdu() {
+        cvData.Educations.push({});
+        renderEduList();
+        updateData('_stub', '');
+    }
+    function delEdu(idx) {
+        cvData.Educations.splice(idx, 1);
+        renderEduList();
+        updateData('_stub', '');
+    }
+
+    function addExp() {
+        cvData.Experiences.push({});
+        renderExpList();
+        updateData('_stub', '');
+    }
+    function delExp(idx) {
+        cvData.Experiences.splice(idx, 1);
+        renderExpList();
+        updateData('_stub', '');
+    }
+
+    // Auto save
+    let saveTimer;
+    function debouncedSave() {
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(() => saveCvApi(false), 3000);
+    }
+
+    async function saveCvApi(manual) {
+        const btn = document.getElementById('btnSave');
+        if(manual) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        }
+
+        const title = document.getElementById('sysTitleInput').value;
+        const token = document.querySelector('#afForm input[name="__RequestVerificationToken"]').value;
+        
+        const form = new FormData();
+        form.append('cvId', CV_ID);
+        form.append('jsonData', JSON.stringify(cvData));
+        form.append('title', title);
+        form.append('__RequestVerificationToken', token);
+
+        try {
+            await fetch('@Url.Action("Save", "CV")', {
+                method: 'POST',
+                body: form
+            });
+            document.getElementById('saveStatus').innerText = 'Đã lưu';
+            document.getElementById('saveStatus').style.color = '#059669';
+        } catch (e) {
+            console.error(e);
+            document.getElementById('saveStatus').innerText = 'Lỗi lưu!';
+            document.getElementById('saveStatus').style.color = '#ef4444';
+        }
+
+        if(manual) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-save me-1"></i> Lưu CV';
+        }
+    }
+
+    function saveCvManual() {
+        saveCvApi(true);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        renderCV();
+    });
+    </script>
+}
