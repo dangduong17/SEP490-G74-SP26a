@@ -41,5 +41,26 @@ namespace RJMS.Vn.Edu.Fpt.Service
 
             return uploadResult.SecureUrl.ToString();
         }
+
+        public async Task<string?> UploadRawAsync(IFormFile file, string folderName)
+        {
+            if (file == null || file.Length == 0) return null;
+
+            using var stream = file.OpenReadStream();
+            var uploadParams = new RawUploadParams
+            {
+                File = new FileDescription(file.FileName, stream),
+                Folder = folderName,
+                UseFilename = true,
+                UniqueFilename = true
+            };
+
+            var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+
+            if (uploadResult.Error != null)
+                return null;
+
+            return uploadResult.SecureUrl.ToString();
+        }
     }
 }
