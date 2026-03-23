@@ -208,6 +208,14 @@
                    asp-controller="Subscription" asp-action="ManageSubscription">
                     Quản lí gói Dịch vụ
                 </a>
+                <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() is "CvTemplates" or "CvTemplateCreate" or "CvTemplateEdit" ? "active" : "")"
+                   asp-controller="Admin" asp-action="CvTemplates">
+                    Quản lý CV Template
+                </a>
+                <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "TemplateCategories" ? "active" : "")"
+                   asp-controller="Admin" asp-action="TemplateCategories">
+                    Danh mục Template
+                </a>
             </nav>
         </aside>
 
