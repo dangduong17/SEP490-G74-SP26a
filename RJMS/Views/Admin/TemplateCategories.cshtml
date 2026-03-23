@@ -1,0 +1,137 @@
+@model List<RJMS.vn.edu.fpt.Models.DTOs.TemplateCategoryViewModel>
+@{
+    ViewData["Title"] = "Quản lý danh mục Template";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+<style>
+    .cat-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .cat-header h1 { font-size: 1.5rem; font-weight: 800; color: #111827; margin: 0; }
+    .btn-create { background: #00b14f; color: #fff; border: none; border-radius: 8px; padding: 10px 22px; font-size: 0.875rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; transition: background 0.2s; cursor: pointer; }
+    .btn-create:hover { background: #009744; color: #fff; }
+
+    .cat-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+    .cat-table th { background: #f9fafb; padding: 16px; font-size: 0.875rem; font-weight: 600; color: #374151; text-align: left; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #e5e7eb; }
+    .cat-table td { padding: 16px; vertical-align: middle; border-bottom: 1px solid #e5e7eb; font-size: 0.95rem; color: #111827; }
+    .cat-table tbody tr:last-child td { border-bottom: none; }
+    .cat-table tbody tr:hover { background: #f9fafb; }
+    
+    .btn-action { padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; text-decoration: none; border: none; cursor: pointer; display: inline-flex; align-items: center; transition: all 0.2s; }
+    .btn-primary-action { background: #eff6ff; color: #3b82f6; }
+    .btn-primary-action:hover { background: #dbeafe; }
+    .btn-danger-action { background: #fef2f2; color: #ef4444; }
+    .btn-danger-action:hover { background: #fee2e2; }
+
+    .empty-state { text-align: center; padding: 50px 20px; background: #fff; border-radius: 14px; border: 1.5px dashed #d1d5db; margin-bottom: 30px; }
+    .empty-state h3 { color: #6b7280; font-size: 1.1rem; margin-bottom: 8px; }
+    .empty-state p { color: #9ca3af; font-size: 0.875rem; margin-bottom: 0; }
+</style>
+}
+
+<div class="cat-header">
+    <h1>Quản lý danh mục Template</h1>
+    <button class="btn-create" data-bs-toggle="modal" data-bs-target="#createModal">
+        Thêm danh mục
+    </button>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="empty-state">
+        <h3>Chưa có danh mục nào</h3>
+        <p>Thêm danh mục mới để phân loại các CV Template.</p>
+    </div>
+}
+else
+{
+    <table class="cat-table">
+        <thead>
+            <tr>
+                <th>Tên danh mục</th>
+                <th>Mô tả</th>
+                <th>Số Template</th>
+                <th>Ngày tạo</th>
+                <th style="text-align: right;">Hành động</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var c in Model)
+            {
+                <tr>
+                    <td style="font-weight: 600;">@c.Name</td>
+                    <td style="color: #6b7280;">@(string.IsNullOrWhiteSpace(c.Description) ? "-" : c.Description)</td>
+                    <td>@c.TemplateCount</td>
+                    <td style="color: #6b7280;">@c.CreatedAt.ToString("dd/MM/yyyy")</td>
+                    <td style="text-align: right;">
+                        <button class="btn-action btn-primary-action me-2" data-bs-toggle="modal" data-bs-target="#editModal_@c.Id">Sửa</button>
+                        <form asp-action="TemplateCategoryDelete" method="post" style="display:inline;" onsubmit="return confirm('Xoá danh mục này? Các template bên trong sẽ không bị xóa.')">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@c.Id" />
+                            <button type="submit" class="btn-action btn-danger-action">Xoá</button>
+                        </form>
+                    </td>
+                </tr>
+
+                <!-- Modal Edit -->
+                <div class="modal fade" id="editModal_@c.Id" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <form asp-action="TemplateCategoryEdit" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="Id" value="@c.Id" />
+                                <div class="modal-header">
+                                    <h5 class="modal-title fw-bold">Sửa danh mục</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Tên danh mục <span class="text-danger">*</span></label>
+                                        <input type="text" name="Name" class="form-control" value="@c.Name" required />
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Mô tả</label>
+                                        <textarea name="Description" class="form-control" rows="3">@c.Description</textarea>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Đóng</button>
+                                    <button type="submit" class="btn btn-success" style="background: #00b14f;">Lưu lại</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            }
+        </tbody>
+    </table>
+}
+
+<!-- Modal Create -->
+<div class="modal fade" id="createModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="TemplateCategoryCreate" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Thêm danh mục mới</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Tên danh mục <span class="text-danger">*</span></label>
+                        <input type="text" name="Name" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Mô tả</label>
+                        <textarea name="Description" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-success" style="background: #00b14f;">Thêm mới</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
