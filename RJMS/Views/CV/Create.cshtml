@@ -2,103 +2,264 @@
 @{
     ViewData["Title"] = "Chọn Template CV";
     Layout = "~/Views/Shared/_Layout.cshtml";
+    
+    // Extract unique categories from templates
+    var cats = Model
+        .Where(x => x.CategoryId.HasValue && !string.IsNullOrEmpty(x.CategoryName))
+        .Select(x => new { x.CategoryId, x.CategoryName })
+        .Distinct()
+        .ToList();
 }
 
 @section Styles {
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
-    body { background: #f5f5f5; }
-    .cr-wrap { max-width: 1000px; margin: 40px auto; padding: 0 16px 60px; }
-    .cr-header { margin-bottom: 28px; }
-    .cr-header h1 { font-size: 1.5rem; font-weight: 800; color: #111827; margin: 0 0 6px; }
-    .cr-header p { color: #6b7280; margin: 0; }
-    .tpl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 18px; margin-bottom: 32px; }
-    .tpl-card { border: 2.5px solid #e5e7eb; border-radius: 14px; overflow: hidden; cursor: pointer; transition: all 0.2s; background: #fff; }
-    .tpl-card:hover { border-color: #00b14f; box-shadow: 0 4px 20px rgba(0,177,79,0.12); transform: translateY(-2px); }
-    .tpl-card.selected { border-color: #00b14f; }
-    .tpl-card input[type=radio] { display: none; }
-    .tpl-thumb { width: 100%; aspect-ratio: 3/4; background: linear-gradient(135deg, #f0fdf4, #dcfce7); display: flex; align-items: center; justify-content: center; overflow: hidden; }
-    .tpl-thumb img { width: 100%; height: 100%; object-fit: cover; }
-    .tpl-thumb .no-preview { font-size: 3.5rem; color: #00b14f; }
-    .tpl-footer { padding: 12px 14px; }
-    .tpl-name { font-size: 0.9rem; font-weight: 700; color: #111827; margin: 0 0 2px; }
-    .tpl-check { color: #00b14f; font-size: 0.8rem; display: none; }
-    .tpl-card.selected .tpl-check { display: inline-flex; align-items: center; gap: 4px; }
-    .cr-form { background: #fff; border-radius: 14px; border: 1px solid #e5e7eb; padding: 24px; }
-    .form-label { font-size: 0.875rem; font-weight: 600; color: #374151; display: block; margin-bottom: 6px; }
-    .form-control { width: 100%; border: 1.5px solid #d1d5db; border-radius: 8px; padding: 10px 14px; font-size: 0.9rem; outline: none; transition: border-color 0.2s; }
-    .form-control:focus { border-color: #00b14f; box-shadow: 0 0 0 3px rgba(0,177,79,0.1); }
-    .btn-submit { background: #00b14f; color: #fff; border: none; border-radius: 8px; padding: 12px 32px; font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: background 0.2s; }
-    .btn-submit:hover { background: #009744; }
-    .btn-submit:disabled { background: #d1d5db; cursor: not-allowed; }
-    .btn-back { display: inline-flex; align-items: center; gap: 6px; color: #6b7280; text-decoration: none; font-size: 0.875rem; margin-bottom: 20px; }
-    .btn-back:hover { color: #00b14f; }
+    body { background: #f0f2f5; font-family: 'Inter', sans-serif; }
+    .pg-wrap { max-width: 1100px; margin: 40px auto; padding: 0 16px 80px; }
+    .pg-head { text-align: center; margin-bottom: 30px; }
+    .pg-head h1 { font-size: 1.8rem; font-weight: 800; color: #111827; margin: 0 0 10px; }
+    .pg-head p { color: #64748b; margin: 0; font-size: 0.95rem; }
+
+    /* CATEGORY FILTER PILLS */
+    .cat-filters {
+        display: flex; gap: 12px; justify-content: center; margin-bottom: 40px; flex-wrap: wrap;
+    }
+    .cat-pill {
+        background: #fff; border: 1.5px solid #e5e7eb; border-radius: 50px;
+        padding: 8px 18px; font-size: 0.9rem; font-weight: 600; color: #4b5563;
+        cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px;
+    }
+    .cat-pill:hover { border-color: #00b14f; color: #00b14f; }
+    .cat-pill.active { background: #00b14f; color: #fff; border-color: #00b14f; }
+    .cat-pill.active .pill-dot { background: #fff; }
+    .pill-dot { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid currentColor; display: inline-block; }
+
+    /* GRID */
+    .tpl-grid {
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px;
+    }
+
+    /* MINI A4 CARD */
+    .tpl-card {
+        background: #e2e8f0; border-radius: 6px; padding: 16px; display: flex; align-items: center; justify-content: center;
+        aspect-ratio: 1/1.414; /* A4 proportion approx */
+        position: relative; overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05); user-select: none;
+    }
+
+    /* THE MINI A4 HTML CANVAS */
+    .mini-a4-wrap {
+        width: 794px; height: 1123px; background: #fff;
+        transform-origin: top left; position: absolute; top:0; left:0;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        pointer-events: none; /* purely visual */
+    }
+    .mini-sec { position: absolute; overflow: hidden; }
+
+    /* OVERLAY */
+    .tpl-overlay {
+        position: absolute; inset: 0; background: rgba(0,0,0,0.5);
+        display: flex; align-items: center; justify-content: center;
+        opacity: 0; transition: opacity 0.2s; cursor: pointer; z-index: 10;
+        backdrop-filter: blur(2px);
+    }
+    .tpl-card:hover .tpl-overlay { opacity: 1; }
+    
+    .btn-use {
+        background: #00b14f; color: #fff; border: none; padding: 12px 24px;
+        border-radius: 50px; font-weight: 700; font-size: 0.95rem;
+        transform: translateY(10px); transition: transform 0.2s;
+    }
+    .tpl-card:hover .btn-use { transform: translateY(0); }
+    .btn-use:hover { background: #009744; }
+
+    .tpl-lbl-wrap { margin-top: 12px; text-align: center; }
+    .tpl-name { font-weight: 700; color: #111827; font-size: 1rem; }
+    
+    .cv-wrap { height: 100%; width: 100%; box-sizing: border-box; }
+    /* Visual CV mocks matching Editor */
+    .cv-header{display:flex;gap:12px;padding:16px;background:#f8fafc;border-bottom:3px solid var(--pc, #2563eb);height:100%;width:100%;}
+    .cv-avatar{width:80px;height:80px;flex-shrink:0;border-radius:8px;background:#dde3ed;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+    .cv-avatar svg{width:42px;height:42px;color:#9aa5be}
+    .cv-name{font-size:1.4rem;font-weight:800;color:#111827;line-height:1.15;margin-bottom:4px}
+    .cv-jobtitle{font-size:.9rem;color:#64748b;margin-bottom:8px}
+    .cv-contacts{display:grid;grid-template-columns:1fr 1fr;gap:2px 10px}
+    .cv-citem{font-size:.72rem;color:#475569;display:flex;align-items:center;gap:4px}
+    
+    .cv-std{padding:16px; height:100%; width:100%; background:transparent;}
+    .cv-sec-head{font-size:.82rem;font-weight:800;text-transform:uppercase;color:#111827;border-bottom:2px solid var(--pc,#2563eb);padding-bottom:6px;margin-bottom:12px;margin-top:20px;}
+    .cv-row{display:grid;grid-template-columns:80px 1fr;gap:8px;margin-bottom:8px}
+    .cv-date{font-size:.72rem;color:#64748b;line-height:1.6}
+    .cv-company{font-size:.82rem;font-weight:700;color:#111827;display:block;}
+    .cv-pos{font-size:.75rem;font-style:italic;color:var(--pc,#2563eb);font-weight:600;display:block;}
+    .cv-desc{font-size:.72rem;color:#6b7280;line-height:1.6}
+    .cv-skills{display:flex;flex-wrap:wrap;gap:6px}
+    .cv-tag{background:#eff6ff;color:var(--pc);border:1px solid #bfdbfe;border-radius:14px;padding:3px 10px;font-size:.7rem;font-weight:600}
+    .cv-simple{font-size:.75rem;color:#475569;line-height:1.6}
 </style>
 }
 
-<div class="cr-wrap">
-    <a asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i> Quay lại</a>
-    <div class="cr-header">
-        <h1><i class="fas fa-layer-group me-2 text-success"></i>Chọn Template CV</h1>
-        <p>Chọn một mẫu CV phù hợp, sau đó điền thông tin của bạn.</p>
+<div class="pg-wrap">
+    <div class="pg-head">
+        <h1>Chọn Template CV</h1>
+        <p>Hàng ngàn mẫu CV chuyên nghiệp chuẩn ATS đang chờ bạn</p>
     </div>
 
     @if (!Model.Any())
     {
         <div class="text-center py-5 text-muted">
-            <i class="fas fa-layer-group fa-3x mb-3 d-block" style="color:#d1d5db;"></i>
-            <p>Chưa có template CV nào. Vui lòng liên hệ quản trị viên.</p>
+            <p>Hiện chưa có mẫu CV nào trong hệ thống.</p>
         </div>
     }
     else
     {
-        <form asp-action="Create" method="post" id="createForm">
-            @Html.AntiForgeryToken()
-            <input type="hidden" name="templateId" id="selectedTemplateId" value="" />
+        <form asp-action="Create" method="post" id="createForm" style="display:none;">
+            <input type="hidden" name="templateId" id="selectedTemplateId" />
+            <input type="hidden" name="title" id="autoTitle" value="CV Mới - @DateTime.Now.ToString("dd/MM/yyyy")" />
+        </form>
 
-            <div class="tpl-grid">
-                @foreach (var tpl in Model)
-                {
-                    <div class="tpl-card" id="tpl_@tpl.Id" onclick="selectTemplate(@tpl.Id)">
-                        <div class="tpl-thumb">
-                            @if (!string.IsNullOrEmpty(tpl.ThumbnailUrl))
-                            {
-                                <img src="@tpl.ThumbnailUrl" alt="@tpl.Name" />
-                            }
-                            else
-                            {
-                                <i class="fas fa-file-alt no-preview"></i>
-                            }
-                        </div>
-                        <div class="tpl-footer">
-                            <p class="tpl-name">@tpl.Name</p>
-                            <span class="tpl-check"><i class="fas fa-check-circle"></i> Đã chọn</span>
+        <div class="cat-filters">
+            <div class="cat-pill active" data-cat="0" onclick="filterCat(this, 0)">
+                <span class="pill-dot"></span> Tất cả
+            </div>
+            @foreach (var c in cats)
+            {
+                <div class="cat-pill" data-cat="@c.CategoryId" onclick="filterCat(this, @c.CategoryId)">
+                    <span class="pill-dot" style="border-radius:2px;"></span> @c.CategoryName
+                </div>
+            }
+        </div>
+
+        <div class="tpl-grid">
+            @foreach (var tpl in Model)
+            {
+                <div class="tpl-item" data-cat="@(tpl.CategoryId ?? 0)">
+                    <div class="tpl-card">
+                        <div class="mini-a4-wrap" id="mini_@tpl.Id" data-cfg="@tpl.ConfigJson"></div>
+                        <div class="tpl-overlay" onclick="selectAndSubmit(@tpl.Id)">
+                            <button type="button" class="btn-use">Dùng mẫu</button>
                         </div>
                     </div>
-                }
-            </div>
-
-            <div class="cr-form">
-                <div class="mb-3">
-                    <label class="form-label">Đặt tên cho CV</label>
-                    <input type="text" name="title" class="form-control" placeholder="VD: CV Backend .NET 2025" />
+                    <div class="tpl-lbl-wrap">
+                        <div class="tpl-name">@tpl.Name</div>
+                    </div>
                 </div>
-                <button type="submit" class="btn-submit" id="btnCreate" disabled>
-                    <i class="fas fa-wand-magic-sparkles me-2"></i>Tạo CV
-                </button>
-                <span class="text-muted ms-3" style="font-size:0.82rem;" id="hintSelect">← Hãy chọn một template trước</span>
-            </div>
-        </form>
+            }
+        </div>
     }
 </div>
 
 @section Scripts {
 <script>
-    function selectTemplate(id) {
-        document.querySelectorAll('.tpl-card').forEach(c => c.classList.remove('selected'));
-        document.getElementById('tpl_' + id).classList.add('selected');
-        document.getElementById('selectedTemplateId').value = id;
-        document.getElementById('btnCreate').disabled = false;
-        document.getElementById('hintSelect').style.display = 'none';
-    }
+function filterCat(btn, id){
+    document.querySelectorAll('.cat-pill').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    
+    document.querySelectorAll('.tpl-item').forEach(item => {
+        if(id === 0 || parseInt(item.dataset.cat) === id) item.style.display = 'block';
+        else item.style.display = 'none';
+    });
+}
+
+function selectAndSubmit(id){
+    document.getElementById('selectedTemplateId').value = id;
+    document.getElementById('createForm').submit();
+}
+
+// ── MINIATURE ENGINE ──
+const SEC = {
+  header: { defaultW: 750, defaultH: 150, html: `<div class="cv-wrap"><div class="cv-header"><div class="cv-avatar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></div><div style="flex:1;"><div class="cv-name">Nguyễn Văn Dũng</div><div class="cv-jobtitle">Business Development Executive</div><div class="cv-contacts"><span class="cv-citem">06/12/1998</span><span class="cv-citem">0123456789</span></div></div></div></div>` },
+  summary: { defaultW: 350, defaultH: 100, html: `<div class="cv-wrap"><div class="cv-std"><div class="cv-sec-head">MỤC TIÊU NGHỀ NGHIỆP</div><div class="cv-simple">Phát triển bản thân và trở thành chuyên gia trong lĩnh vực của mình...</div></div></div>` },
+  experience: { defaultW: 350, defaultH: 180, html: `<div class="cv-wrap"><div class="cv-std"><div class="cv-sec-head">KINH NGHIỆM LÀM VIỆC</div><div class="cv-row"><div class="cv-date">01/2022 – Nay</div><div><span class="cv-company">Công ty ABC</span><span class="cv-pos">Nhân viên</span><div class="cv-desc">Hoàn thành 120% KPI...</div></div></div></div></div>` },
+  education: { defaultW: 350, defaultH: 140, html: `<div class="cv-wrap"><div class="cv-std"><div class="cv-sec-head">HỌC VẤN</div><div class="cv-row"><div class="cv-date">2018 – 2022</div><div><span class="cv-company">Đại học FPT</span><span class="cv-pos">Kỹ thuật phần mềm</span><div class="cv-desc">GPA: 3.2 / 4.0</div></div></div></div></div>` },
+  skills: { defaultW: 350, defaultH: 120, html: `<div class="cv-wrap"><div class="cv-std"><div class="cv-sec-head">KỸ NĂNG</div><div class="cv-skills"><span class="cv-tag">C#</span><span class="cv-tag">.NET Core</span><span class="cv-tag">SQL</span></div></div></div>` },
+  awards: { defaultW: 350, defaultH: 120, html: `<div class="cv-wrap"><div class="cv-std"><div class="cv-sec-head">GIẢI THƯỞNG</div><div class="cv-row"><div class="cv-date">2023</div><div><span class="cv-company">Nhân viên xuất sắc</span></div></div></div></div>` },
+  certs: { defaultW: 350, defaultH: 120, html: `<div class="cv-wrap"><div class="cv-std"><div class="cv-sec-head">CHỨNG CHỈ</div><div class="cv-row"><div class="cv-date">2022</div><div><span class="cv-company">IELTS 7.0</span></div></div></div></div>` },
+  activities: { defaultW: 350, defaultH: 140, html: `<div class="cv-wrap"><div class="cv-std"><div class="cv-sec-head">HOẠT ĐỘNG</div><div class="cv-row"><div class="cv-date">2021 – 2022</div><div><span class="cv-company">Tổ chức ABC</span><span class="cv-pos">Tình nguyện viên</span></div></div></div></div>` },
+  refs: { defaultW: 350, defaultH: 100, html: `<div class="cv-wrap"><div class="cv-std"><div class="cv-sec-head">NGƯỜI GIỚI THIỆU</div><div class="cv-simple">N/A</div></div></div>` },
+  hobbies: { defaultW: 350, defaultH: 100, html: `<div class="cv-wrap"><div class="cv-std"><div class="cv-sec-head">SỞ THÍCH</div><div class="cv-simple">Đọc sách, Âm nhạc</div></div></div>` }
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Determine the precise visual scale from CSS card width to 794px A4
+    const cards = document.querySelectorAll('.tpl-card');
+    if(!cards.length) return;
+    
+    // Scale calculating (Observer so it resizes on screen squish)
+    const resizeObs = new ResizeObserver(entries => {
+        for(let ent of entries) {
+            let wrap = ent.target.querySelector('.mini-a4-wrap');
+            if(wrap) {
+                let rect = ent.target.getBoundingClientRect();
+                // We add some padding factor, e.g. scale * 0.9 to fit nicely
+                let scale = (rect.width / 794) * 0.95; 
+                wrap.style.transform = `scale(${scale})`;
+                // Center it using absolute offsets
+                let wActual = 794 * scale;
+                let hActual = 1123 * scale;
+                wrap.style.top = (rect.height - hActual)/2 + 'px';
+                wrap.style.left = (rect.width - wActual)/2 + 'px';
+            }
+        }
+    });
+
+    cards.forEach(card => resizeObs.observe(card));
+
+    // Render miniatures
+    document.querySelectorAll('.mini-a4-wrap').forEach(w => {
+        let jsonStr = w.dataset.cfg;
+        if(!jsonStr) return;
+        
+        try {
+            let cfg = JSON.parse(jsonStr);
+            let themePC = cfg.theme ? cfg.theme.primaryColor : '#2563eb';
+            let font = cfg.theme ? cfg.theme.font : 'Inter';
+            
+            w.style.fontFamily = `"${font}", sans-serif`;
+            w.style.setProperty('--pc', themePC);
+            
+            let htmlStr = '';
+            
+            // Build legacy layout gracefully
+            let pages = [];
+            if(cfg.pages && cfg.pages.length > 0) pages = cfg.pages;
+            else if(cfg.sections) pages = [{columns:0, sections: cfg.sections.map((s,i) => {
+                let d = SEC[s.type]||{defaultW:750,defaultH:150}; 
+                return {type:s.type, top: (i*160)+20, left:20, width: d.defaultW, height:d.defaultH};
+            })}];
+            
+            if(pages.length > 0) {
+                // Render ONLY PAGE 1 to represent thumbnail
+                let p1 = pages[0];
+                let secs = p1.sections;
+                
+                // If it's a legacy grid layout inside pages (columns > 0), translate its grid to positions
+                if(p1.columns > 0){
+                   let y1=20, y2=20;
+                   let newSecs = [];
+                   secs.forEach(s => {
+                      let top=s.top, left=s.left, sw=s.width, sh=s.height;
+                      if(top==null) {
+                          let d = SEC[s.type]||{defaultW:350,defaultH:150};
+                          if (p1.columns===2 && s.column===2) { left = 400; top = y2; y2 += d.defaultH+20; sw = 350; sh = d.defaultH; }
+                          else { left = 20; top = y1; y1 += d.defaultH+20; sw = p1.columns===2?350:750; sh = d.defaultH; }
+                      }
+                      newSecs.push({...s, top,left,width:sw,height:sh});
+                   });
+                   secs = newSecs;
+                }
+                
+                secs.forEach(s => {
+                    let top=s.top||10, left=s.left||10, sw=s.width||350, sh=s.height||100;
+                    let templateHTML = SEC[s.type] ? SEC[s.type].html : '';
+                    
+                    htmlStr += `<div class="mini-sec" style="top:${top}px; left:${left}px; width:${sw}px; height:${sh}px; ">` + templateHTML + `</div>`;
+                });
+            }
+            
+            w.innerHTML = htmlStr;
+        } catch(e) { }
+    });
+});
 </script>
 }
