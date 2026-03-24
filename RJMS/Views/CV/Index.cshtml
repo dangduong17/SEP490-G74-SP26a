@@ -189,7 +189,6 @@
                         <div class="cv-card-actions">
                             <a asp-action="Edit" asp-route-id="@cv.Id" class="btn-sm-action btn-primary-action">Sửa</a>
                             <form asp-action="Delete" method="post" style="display:inline; flex:1;" onsubmit="return confirm('Xoá CV này?')">
-                                @Html.AntiForgeryToken()
                                 <input type="hidden" name="id" value="@cv.Id" />
                                 <button type="submit" class="btn-sm-action btn-danger-action" style="width: 100%;">Xoá</button>
                             </form>
@@ -243,7 +242,6 @@
                                 <a href="@cv.FileUrl" target="_blank" class="btn-sm-action btn-primary-action">Tải xuống</a>
                             }
                             <form asp-action="Delete" method="post" style="display:inline; flex:1;" onsubmit="return confirm('Xoá CV này?')">
-                                @Html.AntiForgeryToken()
                                 <input type="hidden" name="id" value="@cv.Id" />
                                 <button type="submit" class="btn-sm-action btn-danger-action" style="width: 100%;">Xoá</button>
                             </form>
