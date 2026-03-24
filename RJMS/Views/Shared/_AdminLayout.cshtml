@@ -119,7 +119,14 @@
         flex: 1;
         background: #f4f6f8;
         padding: 24px;
-        min-width: 0; /* prevent flex overflow */
+        min-width: 0;
+        overflow: auto;
+    }
+    /* Builder pages need zero padding + no scroll at this level */
+    .admin-content--builder {
+        padding: 0 !important;
+        overflow: hidden !important;
+        background: #f1f5f9;
     }
 
     .admin-page-title {
@@ -220,14 +227,18 @@
         </aside>
 
         <!-- Main content -->
-        <div class="admin-content">
+        <div class="admin-content @(ViewData["HidePageTitle"] != null && (bool)ViewData["HidePageTitle"]! ? "admin-content--builder" : "")">
             @if (ViewData["HidePageTitle"] == null || !(bool)ViewData["HidePageTitle"]!)
             {
                 <div class="admin-page-title">@ViewData["Title"]</div>
+                <div class="admin-card">
+                    @RenderBody()
+                </div>
             }
-            <div class="admin-card">
+            else
+            {
                 @RenderBody()
-            </div>
+            }
         </div>
 
     </div>
