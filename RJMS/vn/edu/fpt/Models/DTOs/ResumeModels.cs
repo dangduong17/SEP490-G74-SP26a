@@ -100,13 +100,44 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
     }
 
     // ───────── Block Template Models ─────────
+    /// <summary>Top-level template JSON config – saved in CvTemplates.ConfigJson</summary>
     public class TemplateConfig
     {
+        /// <summary>Legacy flat layout (kept for backward compat). Prefer Pages.</summary>
         public string Layout { get; set; } = "one-column";
-        public List<CvSection> Sections { get; set; } = new List<CvSection>();
-        public ThemeConfig Theme { get; set; } = new ThemeConfig();
+        /// <summary>Legacy flat sections list. Populated when Pages is empty.</summary>
+        public List<CvSection>? Sections { get; set; }
+        public List<PageConfig> Pages { get; set; } = new();
+        public ThemeConfig Theme { get; set; } = new();
     }
 
+    public class PageConfig
+    {
+        /// <summary>1 or 2 columns</summary>
+        public int Columns { get; set; } = 1;
+        public List<SectionConfig> Sections { get; set; } = new();
+    }
+
+    public class SectionConfig
+    {
+        /// <summary>header | experience | education | skills | projects | summary</summary>
+        public string Type { get; set; } = string.Empty;
+        /// <summary>1-based column index</summary>
+        public int Column { get; set; } = 1;
+        /// <summary>Sort order within column</summary>
+        public int Order { get; set; } = 1;
+        
+        // For free-form absolute placement
+        public double? Top { get; set; }
+        public double? Left { get; set; }
+        public double? Width { get; set; }
+        public double? Height { get; set; }
+        
+        // Stores candidate-specific arbitrary HTML overrides
+        public string? Html { get; set; }
+    }
+
+    /// <summary>Legacy flat section – kept for old data</summary>
     public class CvSection
     {
         public string Type { get; set; } = string.Empty;
@@ -130,6 +161,9 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
         public string Skills { get; set; } = string.Empty;
         public List<ExperienceModel> Experiences { get; set; } = new List<ExperienceModel>();
         public List<EducationModel> Educations { get; set; } = new List<EducationModel>();
+        
+        // Allows candidates to override template's layout and customize section positions/pages
+        public TemplateConfig? CustomLayout { get; set; }
     }
 
     public class ExperienceModel
