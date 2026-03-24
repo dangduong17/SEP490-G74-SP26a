@@ -235,7 +235,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             });
 
             TempData["SuccessToast"] = "Cập nhật hồ sơ thành công!";
-            return RedirectToAction("CandidateDashboard", "Dashboard");
+            return RedirectToAction(nameof(EditCandidateProfile));
         }
 
         // ====== RECRUITER NEW EDIT PROFILE ======
