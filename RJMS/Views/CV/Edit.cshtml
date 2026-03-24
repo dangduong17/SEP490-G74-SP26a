@@ -1,353 +1,540 @@
+@using System.Text.Json
+@model RJMS.vn.edu.fpt.Models.DTOs.CvEditorViewModel
 @{
-    ViewData["Title"] = "Chỉnh sửa CV - " + Model.Title;
+    ViewData["Title"] = "Chỉnh sửa CV (Freeform)";
     Layout = "~/Views/Shared/_Layout.cshtml";
+    var baseConfigStr = string.IsNullOrWhiteSpace(Model.ConfigJson) ? "null" : Model.ConfigJson;
+    var dataStr = string.IsNullOrWhiteSpace(Model.JsonData) ? "{}" : Model.JsonData;
 }
-
 @section Styles {
-    <style>
-        :root {
-            --cv-primary: #1e3a5f;
-            --cv-bg-section: #f4f5f6;
-        }
-        /* Override body styles so it fits in the layout */
-        body { background: #f0f2f5; }
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+/* Hide global footer to make room for full-screen web app */
+footer, .footer { display: none !important; }
+body { overflow: hidden !important; background: #f0f2f5; }
 
-        /* TOPBAR (Minimal) */
-        .ed-topbar { background: #fff; border-bottom: 1px solid #e5e7eb; padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 20px; border-radius: 8px; }
-        .topbar-left { display: flex; align-items: center; gap: 15px; }
-        .topbar-right { display: flex; align-items: center; gap: 10px; }
-        .btn-back { color: #6b7280; text-decoration: none; font-size: 0.9rem; font-weight: 500; }
-        .btn-back:hover { color: #1e3a5f; }
-        .cv-title-input { border: 1px solid transparent; background: transparent; font-size: 1.1rem; font-weight: 600; color: #111827; padding: 4px 8px; border-radius: 4px; }
-        .cv-title-input:hover, .cv-title-input:focus { border-color: #d1d5db; background: #fff; outline: none; }
-        .btn-save { background: #00b14f; color: #fff; border: none; padding: 8px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: 0.2s; }
-        .btn-save:hover { background: #009744; }
+/* ══ SHELL ═══════════════════════════════════════════════════ */
+.shell{display:flex;flex-direction:column;height:calc(100vh - 74px);background:#f0f2f5;}
 
-        /* EDITOR CONTAINER */
-        .ed-container { flex: 1; overflow-y: auto; padding: 40px 20px; display: flex; justify-content: center; }
+/* ══ TOP BAR ════════════════════════════════════════════════ */
+.topbar{
+  height:54px;background:#fff;border-bottom:1px solid #e5e7eb;
+  display:flex;align-items:center;padding:0 18px;gap:14px;flex-shrink:0;z-index:300;
+  box-shadow:0 1px 3px rgba(0,0,0,.06);
+}
+.logo{font-size:1rem;font-weight:800;color:#00b14f;white-space:nowrap;letter-spacing:-.02em}
+.sep{width:1px;height:24px;background:#e5e7eb;flex-shrink:0}
+.name-input{
+  flex:1;max-width:300px;border:1.5px solid transparent;border-radius:8px;background:transparent;
+  padding:7px 12px;font-size:1rem;font-weight:600;color:#111;outline:none;font-family:inherit;
+}
+.name-input:hover,.name-input:focus{border-color:#e5e7eb;background:#fff}
+.name-input:focus{border-color:#00b14f}
 
-        /* A4 PAGE */
-        .a4-page {
-            width: 794px; min-height: 1123px; background: #fff; box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            position: relative; padding: 40px; color: #333; margin-bottom: 40px;
-        }
+.topbar-r{display:flex;align-items:center;gap:10px;margin-left:auto}
+.btn-ghost{background:none;border:1.5px solid #e5e7eb;border-radius:8px;padding:7px 16px;font-size:.82rem;font-weight:600;color:#6b7280;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;font-family:inherit}
+.btn-ghost:hover{border-color:#9ca3af;color:#374151}
+.btn-green{background:#00b14f;border:none;border-radius:8px;padding:8px 20px;font-size:.875rem;font-weight:700;color:#fff;cursor:pointer;font-family:inherit}
+.btn-green:hover{background:#009744}
 
-        /* INLINE EDIT STYLES */
-        input.inline-input, textarea.inline-textarea {
-            width: 100%; border: 1px dashed transparent; background: transparent; font-family: inherit; font-size: inherit; color: inherit; font-weight: inherit; font-style: inherit; text-align: inherit; padding: 2px 4px; border-radius: 3px; resize: none; overflow: hidden;
-        }
-        input.inline-input:hover, textarea.inline-textarea:hover { border-color: #d1d5db; background: #f9fafb; }
-        input.inline-input:focus, textarea.inline-textarea:focus { border-color: #00b14f; background: #fff; outline: none; }
-        .placeholder-dashed { border-color: #ef4444 !important; color: #9ca3af; font-style: italic; }
+/* ══ BODY ═══════════════════════════════════════════════════ */
+.body{display:flex;flex:1;overflow:hidden}
 
-        /* TOPCV HEADER STYLE */
-        .cv-header-block { display: flex; gap: 30px; margin-bottom: 40px; align-items: flex-start; }
-        .avatar-box { width: 140px; height: 140px; background: #e5e7eb; border-radius: 50%; flex-shrink: 0; display: flex; justify-content: center; align-items: center; color: #9ca3af; font-size: 4rem; overflow: hidden; position: relative; cursor: pointer; }
-        .avatar-box img { width: 100%; height: 100%; object-fit: cover; }
-        .header-info { flex: 1; }
-        .name-box { margin-bottom: 5px; }
-        .name-input { font-size: 2.2rem; font-weight: 700; color: var(--cv-primary); text-transform: uppercase; margin: 0; }
-        .title-input { font-size: 1.1rem; color: #6b7280; font-style: italic; border-bottom: 2px solid #374151; padding-bottom: 8px; margin-bottom: 15px; width: 60%; }
-        
-        .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 20px; font-size: 0.85rem; }
-        .contact-item { display: flex; align-items: center; gap: 8px; }
-        .contact-icon { width: 16px; color: #4b5563; text-align: center; }
+/* ══ LEFT PALETTE ═══════════════════════════════════════════ */
+.palette{
+  width:220px;flex-shrink:0;background:#fff;border-right:1px solid #e5e7eb;
+  overflow-y:auto;display:flex;flex-direction:column;
+}
+.pal-head{padding:14px 16px 8px;font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8}
+.pal-list{padding:0 10px 10px;display:flex;flex-direction:column;gap:4px}
+.pal-chip{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;
+  cursor:grab;user-select:none;font-size:.83rem;font-weight:600;color:#374151;
+  background:#f9fafb;border:1.5px solid transparent;transition:.12s;
+}
+.pal-chip:hover{background:#f0fdf4;border-color:#86efac;color:#15803d}
+.pal-chip:active{cursor:grabbing;opacity:.7}
+.pal-chip.singleton-used{opacity:.3;cursor:not-allowed;pointer-events:none}
+.pal-ic{
+  width:30px;height:30px;border-radius:7px;background:#f0fdf4;color:#00b14f;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  font-size:.7rem;font-weight:800;border:1px solid #bbf7d0;
+}
+.pal-div{border:none;border-top:1px solid #f1f5f9;margin:8px 14px}
+.pal-lbl{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#94a3b8;display:block;margin-bottom:3px;margin-left:14px;}
 
-        /* CV SECTION STYLE */
-        .cv-section { margin-bottom: 20px; }
-        .sec-title-wrap { background: var(--cv-bg-section); padding: 8px 15px; margin-bottom: 15px; margin-left: -40px; margin-right: -40px; position: relative; text-align: center; }
-        .sec-title { display: inline-block; font-size: 1.15rem; font-weight: 700; color: var(--cv-primary); text-transform: uppercase; margin: 0; letter-spacing: 0.5px; }
-        .btn-add-inline { position: absolute; right: 40px; top: 50%; transform: translateY(-50%); background: #00b14f; color: #fff; border: none; padding: 4px 12px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
-        .btn-add-inline:hover { background: #009744; }
-
-        /* SECTION ITEMS */
-        .cv-item { display: flex; gap: 20px; margin-bottom: 15px; position: relative; }
-        .cv-item:hover .item-actions { display: flex; }
-        .item-actions { position: absolute; right: -30px; top: 0; display: none; gap: 5px; }
-        .btn-item-del { background: #fee2e2; color: #ef4444; border: none; width: 24px; height: 24px; border-radius: 4px; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 0.75rem; }
-        .btn-item-del:hover { background: #fca5a5; color: #b91c1c; }
-
-        .time-col { width: 22%; flex-shrink: 0; font-style: italic; color: #6b7280; font-size: 0.9rem; }
-        .content-col { flex: 1; }
-        .item-title { font-weight: 700; color: #374151; font-size: 1rem; margin-bottom: 2px; }
-        .item-subtitle { color: #6b7280; font-style: italic; font-size: 0.9rem; margin-bottom: 6px; }
-        .item-desc { font-size: 0.9rem; color: #4b5563; line-height: 1.6; }
-
-    </style>
+/* ══ CANVAS ═════════════════════════════════════════════════ */
+.canvas{
+  flex:1;min-width:0;overflow:auto;background:#d8dce6;
+  display:flex;flex-direction:column;align-items:center;
+  padding:32px 24px 80px;gap:24px;
 }
 
-<div class="container py-4">
-    <div class="ed-topbar">
-        <div class="topbar-left">
-            <a href="@Url.Action("Index", "CV")" class="btn-back"><i class="fas fa-arrow-left me-2"></i> Quay lại</a>
-            <input type="text" id="sysTitleInput" class="cv-title-input" value="@Model.Title" placeholder="Tên tệp CV" />
-        </div>
-        <div class="topbar-right">
-            <span id="saveStatus" style="font-size:0.8rem; color:#6b7280; margin-right: 10px;">Đã lưu</span>
-            <button class="btn-save" id="btnSave" onclick="saveCvManual()">
-                <i class="fas fa-save me-1"></i> Lưu CV
-            </button>
-        </div>
-    </div>
+.pgwrap{display:flex;flex-direction:column;gap:6px;align-items:center}
+.pg-bar{
+  width:794px;display:flex;align-items:center;gap:10px;
+  font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#6b7280;
+}
 
-    <div class="ed-container">
-        <div class="a4-page" id="cvCanvas">
-            <!-- Rendered by JS -->
-        </div>
-    </div>
+/* A4 full size (Freeform) */
+.a4{
+  width:794px;height:1123px;
+  background:#fff;box-shadow:0 6px 32px rgba(0,0,0,.18);
+  border-radius:2px;position:relative;
+  transition:outline .1s;
+}
+.a4.dragover{outline:3px dashed #00b14f; background: #f0fdf4}
+
+/* Freeform elements */
+.cv-sec{
+  position:absolute;overflow:hidden;background:transparent;z-index:10;
+  border: 1px dashed transparent;
+}
+.cv-sec:hover{border: 1px dashed #cbd5e1; z-index:15;}
+.cv-sec:active{z-index:20;}
+
+.sec-bar{
+  position:absolute;top:0;left:0;right:0;display:flex;align-items:center;gap:4px;
+  padding:3px 8px;background:rgba(0,0,0,.08);border-bottom:1px solid #cbd5e1;
+  opacity:0;transition:opacity .15s;z-index:20;
+}
+.cv-sec:hover>.sec-bar{opacity:1}
+.drag-handle{cursor:move;color:#111;font-size:.9rem;margin-right:4px;padding:1px 4px;border-radius:3px;user-select:none;}
+.drag-handle:hover{background:#fff}
+.sec-rm{margin-left:auto;background:none;border:none;color:#ef4444;font-size:.78rem;font-weight:700;cursor:pointer;opacity:.8;padding:1px 5px;border-radius:4px;}
+.sec-rm:hover{background:#fff;opacity:1}
+.sec-lbl{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#475569}
+.cv-sec { touch-action: none; }
+.cv-content-wrap { width:100%; height:100%; box-sizing:border-box; }
+
+/* ══ CV STYLES ═════════════════════════════════════════════ */
+.cv-header{display:flex;gap:12px;padding:16px;background:#f8fafc;border-bottom:3px solid var(--pc, #2563eb);height:100%;width:100%;}
+.cv-avatar{width:80px;height:80px;flex-shrink:0;border-radius:8px;background:#dde3ed;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.cv-avatar svg{width:42px;height:42px;color:#9aa5be}
+.cv-name{font-size:1.4rem;font-weight:800;color:#111827;line-height:1.15;margin-bottom:4px}
+.cv-jobtitle{font-size:.9rem;color:#64748b;margin-bottom:8px}
+.cv-contacts{display:grid;grid-template-columns:1fr 1fr;gap:2px 10px}
+.cv-citem{font-size:.72rem;color:#475569;display:flex;align-items:center;gap:4px}
+.cv-dot{display:inline-block;width:4px;height:4px;border-radius:50%;background:#94a3b8;flex-shrink:0}
+
+.cv-std{padding:16px; height:100%; width:100%; background:transparent;}
+.cv-sec-head{
+  font-size:.82rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;
+  color:#111827;border-bottom:2px solid var(--pc,#2563eb);
+  padding-bottom:6px;margin-bottom:12px;margin-top:20px;
+}
+[contenteditable="true"]:hover{background:rgba(37,99,235,.04);border-radius:3px;cursor:text}
+[contenteditable="true"]:focus{outline:1.5px dashed #60a5fa;background:rgba(219,234,254,.25);border-radius:3px;box-shadow:none;}
+[contenteditable="true"][data-ph]:empty::before{content:attr(data-ph);color:#c4c9d4;font-style:italic}
+
+.cv-row{display:grid;grid-template-columns:80px 1fr;gap:8px;margin-bottom:8px}
+.cv-date{font-size:.72rem;color:#64748b;line-height:1.6}
+.cv-company{font-size:.82rem;font-weight:700;color:#111827;display:block;margin-bottom:2px}
+.cv-pos{font-size:.75rem;font-style:italic;color:var(--pc,#2563eb);font-weight:600;display:block;margin-bottom:4px}
+.cv-desc{font-size:.72rem;color:#6b7280;line-height:1.6}
+.cv-skills{display:flex;flex-wrap:wrap;gap:6px}
+.cv-tag{background:#eff6ff;color:var(--pc);border:1px solid #bfdbfe;border-radius:14px;padding:3px 10px;font-size:.7rem;font-weight:600}
+.cv-simple{font-size:.75rem;color:#475569;line-height:1.6}
+.cv-ph{font-size:.75rem;color:#aab0bc;font-style:italic;line-height:1.6}
+
+/* Smart guides */
+.snap-guide { position: absolute; background: #3b82f6; z-index: 100; pointer-events: none; }
+</style>
+}
+
+<form id="cvForm" method="post" action="@Url.Action("Save","CV")">
+  <input type="hidden" name="cvId" value="@Model.CvId"/>
+  <input type="hidden" name="jsonData" id="cvDataOutput"/>
+
+<div class="shell">
+<header class="topbar">
+  <span class="logo">Finding Job</span>
+  <span class="sep"></span>
+  <input class="name-input" name="title" id="cvTitle" type="text" value="@Model.Title" required placeholder="Tên tệp CV (vd: CV Phát Triển Mobile)"/>
+  <div class="topbar-r">
+    <a href="@Url.Action("Index","CV")" class="btn-ghost">← Thoát</a>
+    <button type="button" class="btn-green" onclick="saveCv()">Lưu CV</button>
+  </div>
+</header>
+
+<div class="body">
+<aside class="palette">
+  <div class="pal-head">Kéo thêm mục</div>
+  <div class="pal-list" id="palette">
+    <div class="pal-chip" draggable="true" data-type="header"><span class="pal-ic">H</span>Thông tin chính</div>
+    <div class="pal-chip" draggable="true" data-type="summary"><span class="pal-ic">MT</span>Mục tiêu NN</div>
+    <div class="pal-chip" draggable="true" data-type="experience"><span class="pal-ic">EX</span>Kinh nghiệm LV</div>
+    <div class="pal-chip" draggable="true" data-type="education"><span class="pal-ic">ED</span>Học vấn</div>
+    <div class="pal-chip" draggable="true" data-type="skills"><span class="pal-ic">SK</span>Kỹ năng</div>
+    <div class="pal-chip" draggable="true" data-type="awards"><span class="pal-ic">GI</span>Giải thưởng</div>
+    <div class="pal-chip" draggable="true" data-type="certs"><span class="pal-ic">CC</span>Chứng chỉ</div>
+    <div class="pal-chip" draggable="true" data-type="activities"><span class="pal-ic">HĐ</span>Hoạt động</div>
+    <div class="pal-chip" draggable="true" data-type="refs"><span class="pal-ic">GT</span>Người giới thiệu</div>
+    <div class="pal-chip" draggable="true" data-type="hobbies"><span class="pal-ic">SH</span>Sở thích</div>
+  </div>
+  <div class="pal-div"></div>
+  <span class="pal-lbl">Hướng dẫn</span>
+  <p style="font-size:.7rem;color:#64748b;margin:0 14px;line-height:1.6;">
+    Bấm trực tiếp vào các đoạn văn bản (có nét đứt khi hover) để chỉnh sửa nội dung thông tin nhé. Kéo thả vào giữa mép hoặc thanh viền trên cùng của 1 section để dời đi!
+  </p>
+</aside>
+
+<main class="canvas" id="canvas"></main>
 </div>
-
-<form id="afForm" style="display:none">
-    @Html.AntiForgeryToken()
+</div>
 </form>
 
 @section Scripts {
-    <script>
-    const CV_ID = @Model.CvId;
-    let cvData = @Html.Raw(Model.JsonData ?? "{}");
-    if(!cvData.Experiences) cvData.Experiences = [];
-    if(!cvData.Educations) cvData.Educations = [];
-
-    // Auto resize textarea
-    function autoResize(el) {
-        el.style.height = 'auto';
-        el.style.height = (el.scrollHeight) + 'px';
+<script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+<script>
+const SEC = {
+  header: {
+    label: 'Thông tin chính', singleton: true, defaultW: 750, defaultH: 150,
+    build: () => {
+      const w = div('cv-content-wrap'); 
+      w.innerHTML = `
+      <div class="cv-header">
+        <div class="cv-avatar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></div>
+        <div style="flex:1;min-width:0">
+          <div class="cv-name" contenteditable="true" spellcheck="false" data-ph="Họ Tên">Tên Của Bạn</div>
+          <div class="cv-jobtitle" contenteditable="true" spellcheck="false" data-ph="Vị trí ứng tuyển">Vị trí ứng tuyển</div>
+          <div class="cv-contacts">
+            <span class="cv-citem"><span class="cv-dot"></span><span contenteditable="true" spellcheck="false" data-ph="Ngày sinh">01/01/2000</span></span>
+            <span class="cv-citem"><span class="cv-dot"></span><span contenteditable="true" spellcheck="false" data-ph="Điện thoại">0123 456 789</span></span>
+            <span class="cv-citem"><span class="cv-dot"></span><span contenteditable="true" spellcheck="false" data-ph="Email">email@gmail.com</span></span>
+            <span class="cv-citem"><span class="cv-dot"></span><span contenteditable="true" spellcheck="false" data-ph="Địa chỉ">Quận 1, HCM</span></span>
+          </div>
+        </div>
+      </div>`;
+      return w;
     }
+  },
+  summary: {
+    label: 'Mục tiêu NN', defaultW: 350, defaultH: 100,
+    build: () => {
+      const w = div('cv-content-wrap');
+      w.innerHTML = `<div class="cv-std"><div class="cv-sec-head" contenteditable="true" spellcheck="false">MỤC TIÊU NGHỀ NGHIỆP</div><div contenteditable="true" spellcheck="false" class="cv-simple" data-ph="Mục tiêu nghề nghiệp...">Mục tiêu công việc ngắn hạn và dài hạn của bạn là gì?</div></div>`;
+      return w;
+    }
+  },
+  experience: {
+    label: 'Kinh nghiệm LV', defaultW: 350, defaultH: 180,
+    build: () => {
+      const w = div('cv-content-wrap');
+      w.innerHTML = `<div class="cv-std"><div class="cv-sec-head" contenteditable="true" spellcheck="false">KINH NGHIỆM LÀM VIỆC</div><div class="cv-row"><div class="cv-date" contenteditable="true" spellcheck="false">01/2022 – Hiện tại</div><div class="cv-main"><span class="cv-company" contenteditable="true" spellcheck="false" data-ph="Tên công ty">Tên công ty ABC</span><span class="cv-pos" contenteditable="true" spellcheck="false" data-ph="Vị trí">Vị trí làm việc</span><div class="cv-desc" contenteditable="true" spellcheck="false" data-ph="Mô tả công việc...">Mô tả chi tiết những công việc, trách nhiệm và thành tựu của bạn ở đây...</div></div></div></div>`;
+      return w;
+    }
+  },
+  education: {
+    label: 'Học vấn', defaultW: 350, defaultH: 140,
+    build: () => {
+      const w = div('cv-content-wrap');
+      w.innerHTML = `<div class="cv-std"><div class="cv-sec-head" contenteditable="true" spellcheck="false">HỌC VẤN</div><div class="cv-row"><div class="cv-date" contenteditable="true" spellcheck="false">2018 – 2022</div><div class="cv-main"><span class="cv-company" contenteditable="true" spellcheck="false" data-ph="Tên trường">Đại học của bạn</span><span class="cv-pos" contenteditable="true" spellcheck="false" data-ph="Ngành học">Ngành học chuyên môn</span><div class="cv-desc" contenteditable="true" spellcheck="false" data-ph="Thành tích...">GPA: x.y / 4.0 - Danh hiệu Sinh viên giỏi</div></div></div></div>`;
+      return w;
+    }
+  },
+  skills: {
+    label: 'Kỹ năng', defaultW: 350, defaultH: 120,
+    build: () => {
+      const w = div('cv-content-wrap');
+      w.innerHTML = `<div class="cv-std"><div class="cv-sec-head" contenteditable="true" spellcheck="false">KỸ NĂNG</div><div class="cv-skills"><span class="cv-tag" contenteditable="true" spellcheck="false">Kỹ năng mềm</span><span class="cv-tag" contenteditable="true" spellcheck="false">Tiếng Anh Cần Thiết</span><span class="cv-tag" contenteditable="true" spellcheck="false">Tin học VP</span></div></div>`;
+      return w;
+    }
+  },
+  awards: {
+    label: 'Giải thưởng', defaultW: 350, defaultH: 120,
+    build: () => {
+      const w = div('cv-content-wrap');
+      w.innerHTML = `<div class="cv-std"><div class="cv-sec-head" contenteditable="true" spellcheck="false">DANH HIỆU & GIẢI THƯỞNG</div><div class="cv-row"><div class="cv-date" contenteditable="true" spellcheck="false">2023</div><div class="cv-main"><span class="cv-company" contenteditable="true" spellcheck="false" data-ph="Tên giải thưởng">Tên Giải Thưởng Của Bạn</span></div></div></div>`;
+      return w;
+    }
+  },
+  certs: {
+    label: 'Chứng chỉ', defaultW: 350, defaultH: 120,
+    build: () => {
+      const w = div('cv-content-wrap');
+      w.innerHTML = `<div class="cv-std"><div class="cv-sec-head" contenteditable="true" spellcheck="false">CHỨNG CHỈ</div><div class="cv-row"><div class="cv-date" contenteditable="true" spellcheck="false">2022</div><div class="cv-main"><span class="cv-company" contenteditable="true" spellcheck="false" data-ph="Tên chứng chỉ">Chứng Chỉ Nghề / Ngoại Ngữ ABC</span></div></div></div>`;
+      return w;
+    }
+  },
+  activities: {
+    label: 'Hoạt động', defaultW: 350, defaultH: 140,
+    build: () => {
+      const w = div('cv-content-wrap');
+      w.innerHTML = `<div class="cv-std"><div class="cv-sec-head" contenteditable="true" spellcheck="false">HOẠT ĐỘNG</div><div class="cv-row"><div class="cv-date" contenteditable="true" spellcheck="false">2021 – 2022</div><div class="cv-main"><span class="cv-company" contenteditable="true" spellcheck="false" data-ph="Tên tổ chức">Tổ chức Hoạt động ABC</span><span class="cv-pos" contenteditable="true" spellcheck="false" data-ph="Vị trí">Thành viên Ban Truyền Thông</span></div></div></div>`;
+      return w;
+    }
+  },
+  refs: {
+    label: 'Người giới thiệu', defaultW: 350, defaultH: 120,
+    build: () => {
+      const w = div('cv-content-wrap');
+      w.innerHTML = `<div class="cv-std"><div class="cv-sec-head" contenteditable="true" spellcheck="false">NGƯỜI GIỚI THIỆU</div><div contenteditable="true" spellcheck="false" class="cv-ph" data-ph="Thông tin liên hệ...">Ghi chi tiết Anh/Chị cấp trên tham chiếu thông tin...</div></div>`;
+      return w;
+    }
+  },
+  hobbies: {
+    label: 'Sở thích', defaultW: 350, defaultH: 100,
+    build: () => {
+      const w = div('cv-content-wrap');
+      w.innerHTML = `<div class="cv-std"><div class="cv-sec-head" contenteditable="true" spellcheck="false">SỞ THÍCH</div><div contenteditable="true" spellcheck="false" class="cv-simple" data-ph="Sở thích...">Cầu lông, Yoga, Nấu ăn...</div></div>`;
+      return w;
+    }
+  },
+};
 
-    // Two-way binding helper
-    function updateData(key, value, arrName = null, arrIndex = -1) {
-        if(arrName && arrIndex >= 0) {
-            cvData[arrName][arrIndex][key] = value;
-        } else {
-            cvData[key] = value;
+function div(cls){ const d=document.createElement('div'); if(cls) d.className=cls; return d; }
+
+let cvDataObj = @Html.Raw(dataStr);
+let baseConfig = @Html.Raw(baseConfigStr);
+let activeTheme = { primaryColor: '#2563eb', font: 'Inter' };
+
+// Initialize pages from CustomLayout if candidate has saved, otherwise hydrate from baseConfig
+let pages = [];
+if (cvDataObj.CustomLayout && cvDataObj.CustomLayout.pages && cvDataObj.CustomLayout.pages.length > 0) {
+  pages = cvDataObj.CustomLayout.pages;
+  if(cvDataObj.CustomLayout.theme) activeTheme = cvDataObj.CustomLayout.theme;
+} else if (baseConfig && baseConfig.pages && baseConfig.pages.length > 0) {
+  // Candidate hasn't saved CustomLayout yet, read template Config
+  pages = baseConfig.pages.map(p => {
+    // Migration helper matching Admin page (grid -> absolute translation)
+    if(p.columns > 0) {
+      let y1 = 20, y2 = 20;
+      const newSecs = p.sections.map((s) => {
+        let top = s.top, left = s.left, w = s.width, h = s.height;
+        if(top == null) {
+          const def = SEC[s.type] || {defaultW: 350, defaultH: 150};
+          if (p.columns===2 && s.column===2) { left = 400; top = y2; y2 += def.defaultH + 20; w = 350; h = def.defaultH; }
+          else { left = 20; top = y1; y1 += def.defaultH + 20; w = p.columns===2 ? 350 : 750; h = def.defaultH; }
         }
-        document.getElementById('saveStatus').innerText = 'Chưa lưu...';
-        debouncedSave();
+        return { type: s.type, top, left, width: w, height: h };
+      });
+      return { columns: 0, sections: newSecs };
     }
+    return p;
+  });
+  if(baseConfig.theme) activeTheme = baseConfig.theme;
+} else if (baseConfig && baseConfig.sections) {
+  let y = 20;
+  pages = [{ columns: 0, sections: baseConfig.sections.map((s) => {
+    const def = SEC[s.type] || {defaultW: 750, defaultH: 150};
+    const r = { type: s.type, top: y, left: 20, width: def.defaultW, height: def.defaultH };
+    y += def.defaultH + 20;
+    return r;
+  })}];
+}
 
-    function checkPlaceholder(el) {
-        if(!el.value.trim()) {
-            el.classList.add('placeholder-dashed');
-        } else {
-            el.classList.remove('placeholder-dashed');
-        }
+document.addEventListener('DOMContentLoaded', ()=>{ 
+  setupNativeDrag();
+  renderCanvas();
+  applyTheme(); 
+});
+
+function applyTheme(){
+  document.documentElement.style.setProperty('--pc', activeTheme.primaryColor);
+  document.querySelectorAll('.a4').forEach(a=>a.style.fontFamily = `'${activeTheme.font}',sans-serif`);
+  document.querySelectorAll('.cv-sec-head').forEach(h=>h.style.borderBottomColor=activeTheme.primaryColor);
+  document.querySelectorAll('.cv-header').forEach(h=>h.style.borderBottomColor=activeTheme.primaryColor);
+  document.querySelectorAll('.cv-tag').forEach(t=>{ t.style.color=activeTheme.primaryColor; t.style.background=activeTheme.primaryColor+'15'; t.style.borderColor=activeTheme.primaryColor+'40'; });
+  document.querySelectorAll('.cv-pos').forEach(p=>p.style.color=activeTheme.primaryColor);
+}
+
+function setupNativeDrag(){
+  document.querySelectorAll('.pal-chip[draggable]').forEach(chip=>{
+    chip.addEventListener('dragstart', e=>e.dataTransfer.setData('sectype', chip.dataset.type));
+  });
+}
+
+function bindDroppable(){
+  document.querySelectorAll('.a4').forEach((a4, pi)=>{
+    a4.ondragover = e => { e.preventDefault(); a4.classList.add('dragover'); };
+    a4.ondragleave = e => { a4.classList.remove('dragover'); };
+    a4.ondrop = e => {
+      e.preventDefault();
+      a4.classList.remove('dragover');
+      const type = e.dataTransfer.getData('sectype');
+      if(!type) return;
+      const rect = a4.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      addSec(pi, type, x, y);
+    };
+  });
+}
+
+/* ══ INTERACT.JS CONFIG ═════════════════════════════════ */
+const A4_W = 794, A4_H = 1123, SNAP_DIST = 8, GRID_SIZE = 10;
+function snapCoords(rX, rY, w, h, a4) {
+  let tX = [0, A4_W/2, A4_W], tY = [0, A4_H/2, A4_H];
+  a4.querySelectorAll('.cv-sec:not(.is-dragging)').forEach(el => {
+    let l = parseFloat(el.style.left)||0, t = parseFloat(el.style.top)||0;
+    let ew = parseFloat(el.style.width)||el.offsetWidth, eh = parseFloat(el.style.height)||el.offsetHeight;
+    tX.push(l, l+ew/2, l+ew); tY.push(t, t+eh/2, t+eh);
+  });
+
+  let bX=rX, gX=-1, minD=SNAP_DIST;
+  for(let m of [rX, rX+w/2, rX+w]) for(let t of tX) if(Math.abs(m-t)<minD) { minD=Math.abs(m-t); bX=rX+(t-m); gX=t; }
+  
+  let bY=rY, gY=-1; minD=SNAP_DIST;
+  for(let m of [rY, rY+h/2, rY+h]) for(let t of tY) if(Math.abs(m-t)<minD) { minD=Math.abs(m-t); bY=rY+(t-m); gY=t; }
+
+  if(gX===-1)bX=Math.round(rX/GRID_SIZE)*GRID_SIZE;
+  if(gY===-1)bY=Math.round(rY/GRID_SIZE)*GRID_SIZE;
+  bX=Math.max(0,Math.min(A4_W-w, bX)); bY=Math.max(0,Math.min(A4_H-h, bY));
+  return { l:bX, t:bY, gx:gX, gy:gY };
+}
+
+function drawGuides(a4, gx, gy) {
+  a4.querySelectorAll('.snap-guide').forEach(g=>g.remove());
+  if(gx!==-1) { let d=div('snap-guide'); d.style.left=gx+'px'; d.style.top='0'; d.style.bottom='0'; d.style.width='1px'; a4.appendChild(d); }
+  if(gy!==-1) { let d=div('snap-guide'); d.style.top=gy+'px'; d.style.left='0'; d.style.right='0'; d.style.height='1px'; a4.appendChild(d); }
+}
+
+interact('.resize-drag').draggable({
+  allowFrom: '.drag-handle',
+  listeners: {
+    start(e){ e.target.classList.add('is-dragging'); },
+    move(e){
+      let t=e.target, a4=t.closest('.a4');
+      let rx = (parseFloat(t.dataset.rx) ?? parseFloat(t.style.left) ?? 0) + e.dx;
+      let ry = (parseFloat(t.dataset.ry) ?? parseFloat(t.style.top) ?? 0) + e.dy;
+      t.dataset.rx=rx; t.dataset.ry=ry;
+      let w=parseFloat(t.style.width)||t.offsetWidth, h=parseFloat(t.style.height)||t.offsetHeight;
+      let s = snapCoords(rx, ry, w, h, a4);
+      t.style.left = s.l+'px'; t.style.top = s.t+'px';
+      drawGuides(a4, s.gx, s.gy);
+    },
+    end(e){ 
+      e.target.classList.remove('is-dragging');
+      delete e.target.dataset.rx; delete e.target.dataset.ry;
+      document.querySelectorAll('.snap-guide').forEach(g=>g.remove()); 
     }
+  }
+}).resizable({
+  edges: { left:true, right:true, bottom:true, top:true },
+  modifiers: [
+    interact.modifiers.restrictEdges({ outer: 'parent' }),
+    interact.modifiers.restrictSize({ min: { width: 150, height: 60 } }),
+    interact.modifiers.snapSize({ targets: [ interact.createSnapGrid({ x: GRID_SIZE, y: GRID_SIZE }) ] }),
+    interact.modifiers.snapEdges({ targets: [ interact.createSnapGrid({ x: GRID_SIZE, y: GRID_SIZE }) ] })
+  ],
+  listeners: { move(e){
+      let r=e.rect; e.target.style.width=r.width+'px'; e.target.style.height=r.height+'px';
+      let l=(parseFloat(e.target.style.left)||0)+e.deltaRect.left, t=(parseFloat(e.target.style.top)||0)+e.deltaRect.top;
+      e.target.style.left=l+'px'; e.target.style.top=t+'px';
+  } }
+});
 
-    function renderCV() {
-        const canvas = document.getElementById('cvCanvas');
-        
-        let html = `
-            <!-- HEADER -->
-            <div class="cv-header-block">
-                <div class="avatar-box">
-                    <i class="fas fa-user"></i>
-                </div>
-                <div class="header-info">
-                    <div class="name-box">
-                        <input type="text" class="inline-input name-input" placeholder="HỌ VÀ TÊN" value="${cvData.FullName||''}" oninput="updateData('FullName', this.value); checkPlaceholder(this)" />
-                    </div>
-                    <div class="title-box">
-                        <input type="text" class="inline-input title-input" placeholder="Vị trí ứng tuyển" value="${cvData.Position||''}" oninput="updateData('Position', this.value); checkPlaceholder(this)" />
-                    </div>
-                    
-                    <div class="contact-grid">
-                        <div class="contact-item">
-                            <span class="contact-icon"><i class="fas fa-calendar-alt"></i></span>
-                            <input type="text" class="inline-input" placeholder="DD/MM/YY" value="${cvData.Dob||''}" oninput="updateData('Dob', this.value)" />
-                        </div>
-                        <div class="contact-item">
-                            <span class="contact-icon"><i class="fas fa-phone"></i></span>
-                            <input type="text" class="inline-input" placeholder="0123 456 789" value="${cvData.Phone||''}" oninput="updateData('Phone', this.value); checkPlaceholder(this)" />
-                        </div>
-                        <div class="contact-item">
-                            <span class="contact-icon"><i class="fas fa-user-alt"></i></span>
-                            <input type="text" class="inline-input" placeholder="Nam/Nữ" value="${cvData.Gender||''}" oninput="updateData('Gender', this.value)" />
-                        </div>
-                        <div class="contact-item">
-                            <span class="contact-icon"><i class="fas fa-envelope"></i></span>
-                            <input type="text" class="inline-input" placeholder="email@gmail.com" value="${cvData.Email||''}" oninput="updateData('Email', this.value); checkPlaceholder(this)" />
-                        </div>
-                        <div class="contact-item">
-                            <span class="contact-icon"><i class="fas fa-map-marker-alt"></i></span>
-                            <input type="text" class="inline-input" placeholder="Địa chỉ" value="${cvData.Address||''}" oninput="updateData('Address', this.value); checkPlaceholder(this)" />
-                        </div>
-                        <div class="contact-item">
-                            <span class="contact-icon"><i class="fas fa-link"></i></span>
-                            <input type="text" class="inline-input" placeholder="facebook.com/..." value="${cvData.Website||''}" oninput="updateData('Website', this.value)" />
-                        </div>
-                    </div>
-                </div>
-            </div>
+function removeSec(el){ el.remove(); }
 
-            <!-- SUMMARY -->
-            <div class="cv-section">
-                <div class="sec-title-wrap">
-                    <h3 class="sec-title">Mục tiêu nghề nghiệp</h3>
-                </div>
-                <textarea class="inline-textarea item-desc" rows="3" placeholder="Mục tiêu nghề nghiệp của bạn, bao gồm mục tiêu ngắn hạn và dài hạn" oninput="autoResize(this); updateData('Summary', this.value); checkPlaceholder(this)">${cvData.Summary||''}</textarea>
-            </div>
+function addSec(pi, type, x, y){
+  const tpl = SEC[type];
+  if(!tpl) return;
+  const a4 = document.querySelector(`.a4[data-page="${pi}"]`);
+  
+  const el = document.createElement('div');
+  el.className = 'cv-sec resize-drag';
+  el.dataset.type = type;
+  el.style.top = y + 'px'; el.style.left = x + 'px';
+  el.style.width = tpl.defaultW + 'px'; el.style.height = tpl.defaultH + 'px';
+  el.innerHTML = `<div class="sec-bar"><span class="drag-handle" title="Kéo ngang dọc">🕂 Kéo vị trí</span><span class="sec-lbl">${tpl.label}</span><button type="button" class="sec-rm" onclick="removeSec(this.parentElement.parentElement)">✕</button></div>`;
+  el.appendChild(tpl.build());
+  a4.appendChild(el);
+  applyTheme();
+}
 
-            <!-- EDUCATION -->
-            <div class="cv-section">
-                <div class="sec-title-wrap">
-                    <h3 class="sec-title">Học vấn</h3>
-                    <button class="btn-add-inline" onclick="addEdu()"><i class="fas fa-plus"></i> Thêm</button>
-                </div>
-                <div id="eduList"></div>
-            </div>
+function renderCanvas(){
+  const cvs = document.getElementById('canvas');
+  cvs.innerHTML = '';
 
-            <!-- EXPERIENCE -->
-            <div class="cv-section">
-                <div class="sec-title-wrap">
-                    <h3 class="sec-title">Kinh nghiệm làm việc</h3>
-                    <button class="btn-add-inline" onclick="addExp()"><i class="fas fa-plus"></i> Thêm</button>
-                </div>
-                <div id="expList"></div>
-            </div>
+  pages.forEach((pg, pi) => {
+    const bar = div('pg-bar'); bar.innerHTML = `<span>Trang ${pi+1}</span>`;
+    const a4 = div('a4'); a4.dataset.page = pi; a4.style.fontFamily = `'${activeTheme.font}',sans-serif`;
 
-            <!-- SKILLS -->
-            <div class="cv-section">
-                <div class="sec-title-wrap">
-                    <h3 class="sec-title">Kỹ năng</h3>
-                </div>
-                <!-- TopCV style splits skills usually, but simple textarea is fine -->
-                <textarea class="inline-textarea item-desc" rows="3" placeholder="- Tên kỹ năng 1&#10;- Tên kỹ năng 2" oninput="autoResize(this); updateData('Skills', this.value); checkPlaceholder(this)">${cvData.Skills||''}</textarea>
-            </div>
-        `;
-
-        canvas.innerHTML = html;
-
-        // Render lists
-        renderEduList();
-        renderExpList();
-
-        // Trigger auto resize for all textareas
-        setTimeout(() => {
-            document.querySelectorAll('textarea').forEach(autoResize);
-            document.querySelectorAll('input, textarea').forEach(checkPlaceholder);
-        }, 50);
-    }
-
-    function renderEduList() {
-        const ct = document.getElementById('eduList');
-        let html = '';
-        cvData.Educations.forEach((edu, idx) => {
-            html += `
-            <div class="cv-item">
-                <div class="time-col">
-                    <input type="text" class="inline-input" placeholder="Bắt đầu - Kết thúc" value="${edu.Period||''}" oninput="updateData('Period', this.value, 'Educations', ${idx})" />
-                </div>
-                <div class="content-col">
-                    <div style="display:flex; align-items:center;">
-                        <input type="text" class="inline-input item-title" style="width:auto;flex:1" placeholder="Tên trường học" value="${edu.School||''}" oninput="updateData('School', this.value, 'Educations', ${idx})" />
-                        <span style="margin:0 8px; color:#9ca3af">|</span>
-                        <input type="text" class="inline-input item-subtitle" style="width:auto;flex:1; margin-bottom:0" placeholder="Ngành học / Môn học" value="${edu.Degree||''}" oninput="updateData('Degree', this.value, 'Educations', ${idx})" />
-                    </div>
-                </div>
-                <div class="item-actions">
-                    <button class="btn-item-del" onclick="delEdu(${idx})" title="Xóa"><i class="fas fa-trash"></i></button>
-                </div>
-            </div>`;
-        });
-        ct.innerHTML = html || `<p class="text-center text-muted" style="font-size:0.9rem">Chưa có thông tin</p>`;
-    }
-
-    function renderExpList() {
-        const ct = document.getElementById('expList');
-        let html = '';
-        cvData.Experiences.forEach((exp, idx) => {
-            html += `
-            <div class="cv-item">
-                <div class="time-col">
-                    <input type="text" class="inline-input" placeholder="Bắt đầu - Kết thúc" value="${exp.Period||''}" oninput="updateData('Period', this.value, 'Experiences', ${idx})" />
-                </div>
-                <div class="content-col">
-                    <div style="display:flex; align-items:center;">
-                        <input type="text" class="inline-input item-title" style="width:auto;flex:1" placeholder="Tên công ty" value="${exp.Company||''}" oninput="updateData('Company', this.value, 'Experiences', ${idx})" />
-                        <span style="margin:0 8px; color:#9ca3af">|</span>
-                        <input type="text" class="inline-input item-subtitle" style="width:auto;flex:1; margin-bottom:0" placeholder="Vị trí công việc" value="${exp.Role||''}" oninput="updateData('Role', this.value, 'Experiences', ${idx})" />
-                    </div>
-                    <textarea class="inline-textarea item-desc mt-1" rows="2" placeholder="Mô tả kinh nghiệm làm việc của bạn..." oninput="autoResize(this); updateData('Description', this.value, 'Experiences', ${idx})">${exp.Description||''}</textarea>
-                </div>
-                <div class="item-actions">
-                    <button class="btn-item-del" onclick="delExp(${idx})" title="Xóa"><i class="fas fa-trash"></i></button>
-                </div>
-            </div>`;
-        });
-        ct.innerHTML = html || `<p class="text-center text-muted" style="font-size:0.9rem">Chưa có thông tin</p>`;
-        setTimeout(() => ct.querySelectorAll('textarea').forEach(autoResize), 10);
-    }
-
-    function addEdu() {
-        cvData.Educations.push({});
-        renderEduList();
-        updateData('_stub', '');
-    }
-    function delEdu(idx) {
-        cvData.Educations.splice(idx, 1);
-        renderEduList();
-        updateData('_stub', '');
-    }
-
-    function addExp() {
-        cvData.Experiences.push({});
-        renderExpList();
-        updateData('_stub', '');
-    }
-    function delExp(idx) {
-        cvData.Experiences.splice(idx, 1);
-        renderExpList();
-        updateData('_stub', '');
-    }
-
-    // Auto save
-    let saveTimer;
-    function debouncedSave() {
-        clearTimeout(saveTimer);
-        saveTimer = setTimeout(() => saveCvApi(false), 3000);
-    }
-
-    async function saveCvApi(manual) {
-        const btn = document.getElementById('btnSave');
-        if(manual) {
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-        }
-
-        const title = document.getElementById('sysTitleInput').value;
-        const token = document.querySelector('#afForm input[name="__RequestVerificationToken"]').value;
-        
-        const form = new FormData();
-        form.append('cvId', CV_ID);
-        form.append('jsonData', JSON.stringify(cvData));
-        form.append('title', title);
-        form.append('__RequestVerificationToken', token);
-
-        try {
-            await fetch('@Url.Action("Save", "CV")', {
-                method: 'POST',
-                body: form
-            });
-            document.getElementById('saveStatus').innerText = 'Đã lưu';
-            document.getElementById('saveStatus').style.color = '#059669';
-        } catch (e) {
-            console.error(e);
-            document.getElementById('saveStatus').innerText = 'Lỗi lưu!';
-            document.getElementById('saveStatus').style.color = '#ef4444';
-        }
-
-        if(manual) {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-save me-1"></i> Lưu CV';
-        }
-    }
-
-    function saveCvManual() {
-        saveCvApi(true);
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        renderCV();
+    pg.sections.forEach((s) => {
+      const def = SEC[s.type];
+      if(!def) return;
+      const el = div('cv-sec resize-drag');
+      el.dataset.type = s.type;
+      el.style.top = (s.top || 10) + 'px'; el.style.left = (s.left || 10) + 'px';
+      if(s.width) el.style.width = s.width + 'px';
+      if(s.height) el.style.height = s.height + 'px';
+      
+      const ctrlBar = `<div class="sec-bar"><span class="drag-handle">🕂 Kéo dời</span><span class="sec-lbl">${def.label}</span><button type="button" class="sec-rm" onclick="removeSec(this.parentElement.parentElement)">✕</button></div>`;
+      
+      if(s.html) {
+         // Re-inject custom HTML made by Candidate (the content-wrap wrapper)
+         el.innerHTML = ctrlBar + s.html;
+      } else {
+         el.innerHTML = ctrlBar;
+         el.appendChild(def.build());
+      }
+      
+      a4.appendChild(el);
     });
-    </script>
+
+    const wrap = div('pgwrap'); wrap.appendChild(bar); wrap.appendChild(a4); cvs.appendChild(wrap);
+  });
+
+  bindDroppable();
+}
+
+/* ══ SAVE CV TO backend ════════════════════════════════════ */
+async function saveCv(){
+  let newPages = [];
+  document.querySelectorAll('.a4').forEach((a4) => {
+    let secs = [];
+    a4.querySelectorAll('.cv-sec').forEach(el => {
+      // Find the inner .cv-content-wrap and scrape its HTML (the edits!)
+      let cw = el.querySelector('.cv-content-wrap');
+      let htmlSnap = cw ? cw.outerHTML : '';
+      
+      secs.push({
+        type: el.dataset.type,
+        top: parseFloat(el.style.top)||0,
+        left: parseFloat(el.style.left)||0,
+        width: parseFloat(el.style.width)||300,
+        height: parseFloat(el.style.height)||100,
+        html: htmlSnap // candidate overrides text!
+      });
+    });
+    newPages.push({ columns:0, sections: secs });
+  });
+
+  cvDataObj.CustomLayout = { pages: newPages, theme: activeTheme };
+  document.getElementById('cvDataOutput').value = JSON.stringify(cvDataObj);
+  
+  let btn = document.querySelector('.btn-green');
+  let originalText = btn.innerHTML;
+  btn.innerHTML = '⏳ Đang lưu...';
+  btn.disabled = true;
+
+  try {
+    const form = document.getElementById('cvForm');
+    const formData = new FormData(form);
+    
+    // AJAX submit to perfectly silence the navigation and provide a robust notification
+    const res = await fetch(form.action, {
+      method: 'POST',
+      body: formData
+    });
+    
+    if (res.ok) {
+      btn.innerHTML = '✓ Đã lưu thành công';
+      btn.style.background = '#059669'; // darker success green
+    } else {
+      alert("Lỗi khi lưu CV!");
+    }
+  } catch (err) {
+    alert("Lỗi mạng: " + err.message);
+  } finally {
+    // Rever button back to original state after 2 seconds
+    setTimeout(() => {
+       btn.innerHTML = originalText;
+       btn.style.background = '';
+       btn.disabled = false;
+    }, 2500);
+  }
+}
+</script>
 }
