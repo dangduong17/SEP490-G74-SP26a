@@ -51,7 +51,6 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Upload(CvUploadDTO dto)
         {
             var userId = GetCurrentUserId();
@@ -79,7 +78,6 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(int templateId, string title)
         {
             var userId = GetCurrentUserId();
@@ -112,7 +110,6 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Save(int cvId, string jsonData, string title)
         {
             var userId = GetCurrentUserId();
@@ -146,7 +143,6 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         // DELETE
         // ──────────────────────────────────────────────────────────────────
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
             var userId = GetCurrentUserId();
