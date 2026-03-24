@@ -487,7 +487,6 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> CvTemplateCreate(string name, int? categoryId, string? configJson)
         {
             if (RequireAdmin() is { } r) return r;
@@ -523,7 +522,6 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> CvTemplateEdit(int id, string name, int? categoryId, string? configJson, bool isActive)
         {
             if (RequireAdmin() is { } r) return r;
@@ -541,7 +539,6 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> CvTemplateToggle(int id)
         {
             if (RequireAdmin() is { } r) return r;
@@ -551,7 +548,6 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> CvTemplateDelete(int id)
         {
             if (RequireAdmin() is { } r) return r;
