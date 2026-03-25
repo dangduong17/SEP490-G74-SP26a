@@ -92,8 +92,11 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
-            await _subscriptionService.CreatePlanAsync(model);
-            TempData["SuccessToast"] = "Tạo gói đăng ký thành công.";
+            var createdIds = await _subscriptionService.CreatePlansForCyclesAsync(model);
+            if (createdIds.Count > 1)
+                TempData["SuccessToast"] = $"Đã tạo {createdIds.Count} gói đăng ký (Theo tháng & Theo năm).";
+            else
+                TempData["SuccessToast"] = "Tạo gói đăng ký thành công.";
 
             return RedirectToAction(nameof(ManageSubscription));
         }
