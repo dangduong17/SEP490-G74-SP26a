@@ -2,7 +2,6 @@
 @using RJMS.vn.edu.fpt.Models.DTOs
 @{
     ViewData["Title"] = "Chỉnh sửa gói đăng ký";
-    ViewData["HidePageTitle"] = true;
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
 }
 
@@ -57,10 +56,6 @@
         display: flex;
         align-items: center;
         gap: 10px;
-    }
-    .section-title i {
-        color: #00b14f;
-        font-size: 1rem;
     }
 
     /* ===== Form elements ===== */
@@ -233,10 +228,7 @@
         align-items: flex-start;
     }
     .info-box-icon {
-        color: #3b82f6;
-        font-size: 1.1rem;
-        flex-shrink: 0;
-        padding-top: 2px;
+        display: none;
     }
     .info-box-content {
         flex: 1;
@@ -278,13 +270,12 @@
 <div class="edit-container">
     <!-- Page header -->
     <div class="page-header">
-        <h1><i class="fas fa-edit" style="color:#00b14f;"></i> Chỉnh sửa gói đăng ký</h1>
+        <h1>Chỉnh sửa gói đăng ký</h1>
         <p>Cập nhật thông tin và cấu hình cho gói dịch vụ đã tạo.</p>
     </div>
 
     <!-- Info box -->
     <div class="info-box">
-        <div class="info-box-icon"><i class="fas fa-lightbulb"></i></div>
         <div class="info-box-content">
             <div class="info-box-title">Lưu ý khi chỉnh sửa gói</div>
             <div class="info-box-text">
@@ -298,11 +289,12 @@
     <form asp-action="EditPlan" method="post">
         @Html.AntiForgeryToken()
         <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="BillingCycle" />
 
         <!-- Basic Info Section -->
         <div class="form-card">
             <div class="section-title">
-                <i class="fas fa-info-circle"></i> Thông tin cơ bản
+                Thông tin cơ bản
             </div>
 
             <div class="form-row cols-2">
@@ -341,8 +333,8 @@
 
         <!-- Pricing & Limits Section -->
         <div class="form-card">
-            <div class="section-title">
-                <i class="fas fa-coins"></i> Giá và giới hạn
+            <div class="section-title"  >
+                Giá và giới hạn
             </div>
 
             <div class="form-row cols-3">
@@ -407,13 +399,12 @@
                     <label class="form-label-custom">
                         Chu kỳ thanh toán
                     </label>
-                    <select asp-for="BillingCycle" class="form-select-custom">
+                    <select asp-for="BillingCycle" class="form-select-custom" disabled>
                         <option value="Monthly">Monthly (Hàng tháng)</option>
                         <option value="Yearly">Yearly (Hàng năm)</option>
                         <option value="Custom">Custom (Tùy chỉnh)</option>
                     </select>
-                    <span asp-validation-for="BillingCycle" class="text-danger"></span>
-                    <span class="text-muted-small">Chu kỳ thanh toán mặc định cho gói</span>
+                    <span class="text-muted-small">Không thể thay đổi chu kỳ sau khi tạo gói.</span>
                 </div>
             </div>
 
@@ -433,7 +424,7 @@
         <!-- Status Section -->
         <div class="form-card">
             <div class="section-title">
-                <i class="fas fa-toggle-on"></i> Trạng thái
+                Trạng thái
             </div>
 
             <div class="form-check-custom">
@@ -450,10 +441,10 @@
         <!-- Action buttons -->
         <div class="form-actions">
             <a asp-action="ManageSubscription" class="btn-custom btn-cancel">
-                <i class="fas fa-times"></i> Hủy
+                Hủy
             </a>
             <button type="submit" class="btn-custom btn-save">
-                <i class="fas fa-save"></i> Lưu thay đổi
+                Lưu thay đổi
             </button>
         </div>
     </form>
