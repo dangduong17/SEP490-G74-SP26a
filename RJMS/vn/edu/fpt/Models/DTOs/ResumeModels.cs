@@ -164,6 +164,9 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
         
         // Allows candidates to override template's layout and customize section positions/pages
         public TemplateConfig? CustomLayout { get; set; }
+        
+        // Extracted generic text buffer from uploaded PDF
+        public string RawText { get; set; } = string.Empty;
     }
 
     public class ExperienceModel
