@@ -41,7 +41,7 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
         public int RecruiterCount { get; set; }
     }
 
-    // ── Create / Edit form ─────────────────────────────────────────────────────
+    // ── Create / Edit form ──────────────────────────────────────────────────────
     public class SubscriptionPlanFormViewModel
     {
         public int Id { get; set; }   // 0 = create
@@ -64,8 +64,15 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
         [Range(1, 3650, ErrorMessage = "Thời hạn từ 1–3650 ngày")]
         public int DurationDays { get; set; } = 30;
 
+        /// <summary>
+        /// [""] by default. CheckBox: can be ["Monthly"], ["Yearly"], or ["Monthly","Yearly"].
+        /// When creating, we insert one plan per selected cycle.
+        /// </summary>
+        public List<string> BillingCycles { get; set; } = new() { "Monthly" };
+
+        // Used only for single plan edit
         [MaxLength(20)]
-        public string? BillingCycle { get; set; } = "Monthly";   // Monthly | Yearly | Custom
+        public string? BillingCycle { get; set; } = "Monthly";
 
         public int Version { get; set; } = 1;
 
@@ -99,4 +106,36 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
         public DateTime? EndDate { get; set; }
         public string Status { get; set; } = string.Empty;
     }
+
+    // ── Quota Check Result (used by Middleware + Lazy Check) ───────────────────
+    public class QuotaCheckResult
+    {
+        public bool Allowed { get; set; }
+        public string FeatureCode { get; set; } = string.Empty;
+        public int? Limit { get; set; }
+        public int Used { get; set; }
+        public int Remaining => Limit.HasValue ? Math.Max(0, Limit.Value - Used) : int.MaxValue;
+        public string Message { get; set; } = string.Empty;
+    }
+
+    // ── Period summary ─────────────────────────────────────────────────────────
+    public class SubscriptionPeriodDto
+    {
+        public int Id { get; set; }
+        public int SubscriptionId { get; set; }
+        public int PlanId { get; set; }
+        public string PlanName { get; set; } = string.Empty;
+        public DateTime PeriodStart { get; set; }
+        public DateTime PeriodEnd { get; set; }
+        public bool IsCurrent => DateTime.UtcNow >= PeriodStart && DateTime.UtcNow <= PeriodEnd;
+        public List<UsageItemDto> Usages { get; set; } = new();
+    }
+
+    public class UsageItemDto
+    {
+        public string FeatureCode { get; set; } = string.Empty;
+        public int UsedCount { get; set; }
+        public int? FeatureLimit { get; set; }
+    }
 }
+
