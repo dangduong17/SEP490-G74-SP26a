@@ -16,13 +16,29 @@ namespace RJMS.Vn.Edu.Fpt.Service
         // ─────────────────────────────────────────────────────────────────────
         public string Render(string templateJson, string dataJson)
         {
-            var data = string.IsNullOrWhiteSpace(dataJson)
-                ? new CvDataModel()
-                : JsonSerializer.Deserialize<CvDataModel>(dataJson, _opts) ?? new CvDataModel();
+            CvDataModel data;
+            try
+            {
+                data = string.IsNullOrWhiteSpace(dataJson)
+                    ? new CvDataModel()
+                    : JsonSerializer.Deserialize<CvDataModel>(dataJson, _opts) ?? new CvDataModel();
+            }
+            catch
+            {
+                data = new CvDataModel();
+            }
 
-            var template = string.IsNullOrWhiteSpace(templateJson)
-                ? BuildDefaultTemplate()
-                : JsonSerializer.Deserialize<TemplateConfig>(templateJson, _opts) ?? BuildDefaultTemplate();
+            TemplateConfig template;
+            try
+            {
+                template = string.IsNullOrWhiteSpace(templateJson)
+                    ? BuildDefaultTemplate()
+                    : JsonSerializer.Deserialize<TemplateConfig>(templateJson, _opts) ?? BuildDefaultTemplate();
+            }
+            catch
+            {
+                template = BuildDefaultTemplate();
+            }
 
             // Support candidate-specific layout overrides directly stored in their CV JsonData
             if (data.CustomLayout != null && data.CustomLayout.Pages.Any())
