@@ -3,16 +3,19 @@ using Microsoft.EntityFrameworkCore;
 using RJMS.vn.edu.fpt.Models;
 using RJMS.vn.edu.fpt.Models.DTOs;
 using System.Text.Json;
+using RJMS.Vn.Edu.Fpt.Service;
 
 namespace RJMS.Vn.Edu.Fpt.Controllers
 {
     public class RecruiterController : Controller
     {
         private readonly FindingJobsDbContext _context;
+        private readonly ISubscriptionService _subscriptionService;
 
-        public RecruiterController(FindingJobsDbContext context)
+        public RecruiterController(FindingJobsDbContext context, ISubscriptionService subscriptionService)
         {
             _context = context;
+            _subscriptionService = subscriptionService;
         }
 
         // ── Auth guard ────────────────────────────────────────────────────────────
@@ -101,9 +104,9 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                     .OrderByDescending(s => s.EndDate)
                     .FirstOrDefaultAsync();
 
-                if (activeSubscription != null)
+                if (activeSubscription != null && activeSubscription.Plan != null)
                 {
-                    model.SubscriptionPlan = activeSubscription.Plan.Name;
+                    model.SubscriptionPlan = activeSubscription.Plan.Name ?? "Chưa xác định";
                     model.SubscriptionValidTo = activeSubscription.EndDate.HasValue ? activeSubscription.EndDate.Value.ToString("dd/MM/yyyy") : "Không thời hạn";
 
                     model.PlanPrice = activeSubscription.Plan.Price ?? 0;
@@ -546,67 +549,16 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
 
             if (!isDraft)
             {
-                // Check Subscription limit for JOB_POSTING
-                var activeSubscription = await _context.Subscriptions
-                    .Where(s => s.UserId == userId && s.Status == "Active")
-                    .OrderByDescending(s => s.EndDate)
-                    .FirstOrDefaultAsync();
-
-                if (activeSubscription != null)
+                var quota = await _subscriptionService.CheckQuotaAsync(userId, "JOB_POSTING");
+                if (!quota.Allowed)
                 {
-                    var activePeriod = await _context.SubscriptionPeriods
-                        .Include(p => p.SubscriptionUsages)
-                        .Where(p => p.SubscriptionId == activeSubscription.Id)
-                        .OrderByDescending(p => p.PeriodEnd)
-                        .FirstOrDefaultAsync();
-
-                    var planFeature = await _context.PlanFeatures
-                        .FirstOrDefaultAsync(pf => pf.PlanId == activeSubscription.PlanId && pf.FeatureCode == "JOB_POSTING");
-
-                    if (activePeriod != null && planFeature != null)
-                    {
-                        var usage = activePeriod.SubscriptionUsages.FirstOrDefault(u => u.FeatureCode == "JOB_POSTING");
-                        int currentCount = usage?.UsedCount ?? 0;
-                        int limit = planFeature.FeatureLimit ?? 0;
-
-                        if (currentCount >= limit)
-                        {
-                            // Exceeded, forced to draft or return error
-                            TempData["ErrorToast"] = "Bạn đã hết lượt đăng tin trong gói hiện tại. Tin đã được lưu ở dạng nháp.";
-                            ModelState.AddModelError(string.Empty, "Bạn đã hết lượt đăng tin trong gói hiện tại. Tin đã được lưu ở dạng nháp.");
-                            isDraft = true;
-                        }
-                        else
-                        {
-                            // Increment usage
-                            if (usage == null)
-                            {
-                                usage = new SubscriptionUsage
-                                {
-                                    PeriodId = activePeriod.Id,
-                                    FeatureCode = "JOB_POSTING",
-                                    UsedCount = 1
-                                };
-                                _context.SubscriptionUsages.Add(usage);
-                            }
-                            else
-                            {
-                                usage.UsedCount += 1;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        isDraft = true;
-                        TempData["ErrorToast"] = "Gói đăng ký không hỗ trợ đăng tin. Tin đã lưu nháp.";
-                        ModelState.AddModelError(string.Empty, "Gói đăng ký không hỗ trợ đăng tin. Tin đã lưu nháp.");
-                    }
+                    isDraft = true;
+                    TempData["ErrorToast"] = quota.Message + " Tin đã được lưu ở dạng nháp.";
+                    ModelState.AddModelError(string.Empty, quota.Message);
                 }
                 else
                 {
-                    isDraft = true;
-                    TempData["ErrorToast"] = "Bạn chưa có gói đăng ký nào. Tin đã được lưu ở dạng nháp.";
-                    ModelState.AddModelError(string.Empty, "Bạn chưa có gói đăng ký nào. Tin đã được lưu ở dạng nháp.");
+                    // Everything OK, we will consume after save
                 }
             }
 
@@ -720,6 +672,12 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                 }
             }
             await _context.SaveChangesAsync();
+
+            // Spend quota after save
+            if (!isDraft)
+            {
+                await _subscriptionService.ConsumeQuotaAsync(userId, "JOB_POSTING");
+            }
 
             TempData["SuccessToast"] = isDraft ? "Lưu nháp thành công!" : "Đăng tin thành công!";
             return RedirectToAction("JobPostingList");
