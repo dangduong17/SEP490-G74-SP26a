@@ -4,8 +4,7 @@ using RJMS.Vn.Edu.Fpt.Repository;
 namespace RJMS.Vn.Edu.Fpt.Service
 {
     /// <summary>
-    /// Stub implementation — delegates straight to repository.
-    /// Business logic (validation, email alerts, etc.) sẽ được thêm sau.
+    /// Delegates to repository. Business logic will be layered here.
     /// </summary>
     public class SubscriptionService : ISubscriptionService
     {
@@ -26,6 +25,9 @@ namespace RJMS.Vn.Edu.Fpt.Service
         public Task<SubscriptionPlanFormViewModel?> GetPlanForEditAsync(int id)
             => _repo.GetPlanForEditAsync(id);
 
+        public Task<List<int>> CreatePlansForCyclesAsync(SubscriptionPlanFormViewModel model)
+            => _repo.CreatePlansForCyclesAsync(model);
+
         public Task<int> CreatePlanAsync(SubscriptionPlanFormViewModel model)
             => _repo.CreatePlanAsync(model);
 
@@ -37,5 +39,18 @@ namespace RJMS.Vn.Edu.Fpt.Service
 
         public Task<bool> DeletePlanAsync(int id)
             => _repo.DeletePlanAsync(id);
+
+        // Period / Quota
+        public Task<SubscriptionPeriodDto?> GetCurrentPeriodAsync(int subscriptionId)
+            => _repo.GetCurrentPeriodAsync(subscriptionId);
+
+        public Task<QuotaCheckResult> CheckQuotaAsync(int userId, string featureCode)
+            => _repo.CheckQuotaAsync(userId, featureCode);
+
+        public Task ConsumeQuotaAsync(int userId, string featureCode)
+            => _repo.ConsumeQuotaAsync(userId, featureCode);
+
+        public Task<int> RenewExpiredPeriodsAsync()
+            => _repo.RenewExpiredPeriodsAsync();
     }
 }
