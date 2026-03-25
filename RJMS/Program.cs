@@ -3,6 +3,10 @@ using Microsoft.EntityFrameworkCore;
 using RJMS.vn.edu.fpt.Models;
 using RJMS.Vn.Edu.Fpt.Repository;
 using RJMS.Vn.Edu.Fpt.Service;
+using RJMS.vn.edu.fpt.Middleware;
+using RJMS.vn.edu.fpt.Jobs;
+using Hangfire;
+using Hangfire.SqlServer;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,6 +19,15 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddDbContext<FindingJobsDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DBContext"))
 );
+
+// ── Hangfire (Recurring Job for renewals) ──
+builder.Services.AddHangfire(configuration => configuration
+    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+    .UseSimpleAssemblyNameTypeSerializer()
+    .UseRecommendedSerializerSettings()
+    .UseSqlServerStorage(builder.Configuration.GetConnectionString("DBContext")));
+
+builder.Services.AddHangfireServer();
 
 builder.Services.AddHttpContextAccessor();
 
@@ -41,6 +54,7 @@ builder.Services.AddScoped<IChatService, ChatService>();
 builder.Services.AddScoped<IJobCategoryService, JobCategoryService>();
 builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
 builder.Services.AddScoped<ICVRenderService, CVRenderService>();
+builder.Services.AddScoped<SubscriptionRenewalJob>();
 
 var app = builder.Build();
 
@@ -149,7 +163,27 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 
+// ── Quota Check Middleware (Intersects job creation/CV parsing) ──
+app.UseMiddleware<QuotaMiddleware>();
+
 app.UseAuthorization();
+
+// ── Hangfire Dashboard & Setup ──
+app.UseHangfireDashboard("/hangfire", new DashboardOptions
+{
+    // Important: Secure this in production. For now, allow internal access.
+});
+
+// Schedule the daily renewal job (runs at 01:00 AM every day)
+using (var scope = app.Services.CreateScope())
+{
+    var recurringJobManager = scope.ServiceProvider.GetRequiredService<IRecurringJobManager>();
+    recurringJobManager.AddOrUpdate<SubscriptionRenewalJob>(
+        "yearly-period-renewal",
+        job => job.Execute(),
+        Cron.Daily(1) 
+    );
+}
 
 app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}/{id?}");
 
