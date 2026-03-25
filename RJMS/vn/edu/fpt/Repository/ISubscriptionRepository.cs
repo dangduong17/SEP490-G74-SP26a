@@ -11,13 +11,26 @@ namespace RJMS.Vn.Edu.Fpt.Repository
 
         Task<SubscriptionPlanFormViewModel?> GetPlanForEditAsync(int id);
 
+        /// <summary>Insert one plan per BillingCycle checkbox selected.</summary>
+        Task<List<int>> CreatePlansForCyclesAsync(SubscriptionPlanFormViewModel model);
+
         Task<int> CreatePlanAsync(SubscriptionPlanFormViewModel model);
 
         Task<bool> UpdatePlanAsync(SubscriptionPlanFormViewModel model);
 
-        /// <summary>Toggle IsActive flag.</summary>
         Task<bool> TogglePlanStatusAsync(int id);
 
         Task<bool> DeletePlanAsync(int id);
+
+        // ── Period / Renewal ──
+        Task<SubscriptionPeriodDto?> GetCurrentPeriodAsync(int subscriptionId);
+        Task CreatePeriodAsync(int subscriptionId, int planId, DateTime start, DateTime end);
+
+        /// <summary>Renew monthly periods for all active yearly subscriptions that have no current period.</summary>
+        Task<int> RenewExpiredPeriodsAsync();
+
+        // ── Quota ──
+        Task<QuotaCheckResult> CheckQuotaAsync(int userId, string featureCode);
+        Task ConsumeQuotaAsync(int userId, string featureCode);
     }
 }
