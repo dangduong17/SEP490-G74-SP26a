@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("RJMS.Tests")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f6043e25ef4bce1c93455332c37f092f657a7eb8")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+2b25f03594f81bc7905978b3dd5686dccc88d0fb")]
 [assembly: System.Reflection.AssemblyProductAttribute("RJMS.Tests")]
 [assembly: System.Reflection.AssemblyTitleAttribute("RJMS.Tests")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -158,3 +158,4 @@
 /Users/dotritrong/Desktop/SEP490-G74-SP26a/RJMS.Tests/obj/Debug/net8.0/RJMS.Tests.pdb
 /Users/dotritrong/Desktop/SEP490-G74-SP26a/RJMS.Tests/obj/Debug/net8.0/RJMS.Tests.genruntimeconfig.cache
 /Users/dotritrong/Desktop/SEP490-G74-SP26a/RJMS.Tests/obj/Debug/net8.0/ref/RJMS.Tests.dll
+/Users/dotritrong/Desktop/SEP490-G74-SP26a/RJMS.Tests/bin/Debug/net8.0/Microsoft.EntityFrameworkCore.InMemory.dll
