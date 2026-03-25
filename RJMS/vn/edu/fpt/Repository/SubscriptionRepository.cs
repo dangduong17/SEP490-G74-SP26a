@@ -2,6 +2,7 @@ using RJMS.vn.edu.fpt.Models;
 using RJMS.vn.edu.fpt.Models.DTOs;
 using Microsoft.EntityFrameworkCore;
 using vn.edu.fpt.Utilities;
+using System.Text;
 
 namespace RJMS.Vn.Edu.Fpt.Repository
 {
@@ -155,14 +156,49 @@ namespace RJMS.Vn.Edu.Fpt.Repository
 
         public async Task<int> CreatePlanAsync(SubscriptionPlanFormViewModel model)
         {
+            var plan = await CreateOnePlanAsync(model, model.BillingCycle ?? "Monthly");
+            return plan.Id;
+        }
+
+        public async Task<List<int>> CreatePlansForCyclesAsync(SubscriptionPlanFormViewModel model)
+        {
+            var cycles = model.BillingCycles
+                ?? new List<string> { model.BillingCycle ?? "Monthly" };
+            if (!cycles.Any()) cycles = new List<string> { "Monthly" };
+
+            var ids = new List<int>();
+            foreach (var cycle in cycles.Distinct())
+            {
+                var plan = await CreateOnePlanAsync(model, cycle);
+                ids.Add(plan.Id);
+            }
+            return ids;
+        }
+
+        private async Task<SubscriptionPlan> CreateOnePlanAsync(SubscriptionPlanFormViewModel model, string cycle)
+        {
+            var planName = model.Name;
+            var duration = model.DurationDays;
+
+            if (cycle == "Yearly")
+            {
+                planName += " (Hàng năm)";
+                if (duration <= 31) duration = 365; // Auto-adjust if it looks like a monthly duration
+            }
+            else if (cycle == "Monthly")
+            {
+                planName += " (Hàng tháng)";
+                if (duration == 0 || duration > 365) duration = 30; 
+            }
+
             var plan = new SubscriptionPlan
             {
-                Name = model.Name,
+                Name = planName,
                 Price = model.Price,
-                DurationDays = model.DurationDays,
-                BillingCycle = model.BillingCycle,
+                DurationDays = duration,
+                BillingCycle = cycle,
                 Version = model.Version,
-                Description = BuildDescription(model),
+                Description = model.Description ?? BuildDescription(model),
                 IsActive = model.IsActive,
                 CreatedAt = DateTimeHelper.NowVietnam
             };
@@ -193,7 +229,7 @@ namespace RJMS.Vn.Edu.Fpt.Repository
 
             await _context.SaveChangesAsync();
 
-            return plan.Id;
+            return plan;
         }
 
         public async Task<bool> UpdatePlanAsync(SubscriptionPlanFormViewModel model)
@@ -240,6 +276,192 @@ namespace RJMS.Vn.Edu.Fpt.Repository
             return true;
         }
 
+        // ───────────────────────────────────────────────────────────────
+        // Period / Renewal
+        // ───────────────────────────────────────────────────────────────
+        public async Task<SubscriptionPeriodDto?> GetCurrentPeriodAsync(int subscriptionId)
+        {
+            var now = DateTime.UtcNow;
+            var period = await _context.SubscriptionPeriods
+                .Include(p => p.Plan)
+                    .ThenInclude(pl => pl.PlanFeatures)
+                .Include(p => p.SubscriptionUsages)
+                .Where(p => p.SubscriptionId == subscriptionId && p.PeriodStart <= now && p.PeriodEnd >= now)
+                .OrderByDescending(p => p.PeriodStart)
+                .FirstOrDefaultAsync();
+
+            if (period == null) return null;
+
+            return new SubscriptionPeriodDto
+            {
+                Id = period.Id,
+                SubscriptionId = period.SubscriptionId,
+                PlanId = period.PlanId,
+                PlanName = period.Plan.Name ?? "",
+                PeriodStart = period.PeriodStart,
+                PeriodEnd = period.PeriodEnd,
+                Usages = period.SubscriptionUsages.Select(u => new UsageItemDto
+                {
+                    FeatureCode = u.FeatureCode,
+                    UsedCount = u.UsedCount,
+                    FeatureLimit = period.Plan.PlanFeatures
+                        .FirstOrDefault(f => f.FeatureCode == u.FeatureCode)?.FeatureLimit
+                }).ToList()
+            };
+        }
+
+        public async Task CreatePeriodAsync(int subscriptionId, int planId, DateTime start, DateTime end)
+        {
+            _context.SubscriptionPeriods.Add(new SubscriptionPeriod
+            {
+                SubscriptionId = subscriptionId,
+                PlanId = planId,
+                PeriodStart = start,
+                PeriodEnd = end
+            });
+            await _context.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// Call from Hangfire Job daily: for every Active, Yearly subscription where the current
+        /// month has no SubscriptionPeriod, create one covering the 1st to last day of that month.
+        /// Returns count of periods created.
+        /// </summary>
+        public async Task<int> RenewExpiredPeriodsAsync()
+        {
+            var now = DateTime.UtcNow;
+            var firstOfMonth = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+            var lastOfMonth = firstOfMonth.AddMonths(1).AddSeconds(-1);
+
+            // Active yearly subscriptions still within their EndDate
+            var yearlyActive = await _context.Subscriptions
+                .Where(s => s.Status == "Active" && s.EndDate >= now)
+                .Where(s => s.Plan.BillingCycle == "Yearly")
+                .Include(s => s.Plan)
+                .Include(s => s.SubscriptionPeriods)
+                .ToListAsync();
+
+            int created = 0;
+            foreach (var sub in yearlyActive)
+            {
+                bool hasCurrent = sub.SubscriptionPeriods
+                    .Any(p => p.PeriodStart <= now && p.PeriodEnd >= now);
+
+                if (!hasCurrent)
+                {
+                    _context.SubscriptionPeriods.Add(new SubscriptionPeriod
+                    {
+                        SubscriptionId = sub.Id,
+                        PlanId = sub.PlanId,
+                        PeriodStart = firstOfMonth,
+                        PeriodEnd = lastOfMonth
+                    });
+                    created++;
+                }
+            }
+
+            if (created > 0) await _context.SaveChangesAsync();
+            return created;
+        }
+
+        // ───────────────────────────────────────────────────────────────
+        // Quota
+        // ───────────────────────────────────────────────────────────────
+        public async Task<QuotaCheckResult> CheckQuotaAsync(int userId, string featureCode)
+        {
+            var now = DateTime.UtcNow;
+
+            var sub = await _context.Subscriptions
+                .Include(s => s.Plan).ThenInclude(p => p.PlanFeatures)
+                .Include(s => s.SubscriptionPeriods).ThenInclude(p => p.SubscriptionUsages)
+                .Where(s => s.UserId == userId && s.Status == "Active" && s.EndDate >= now)
+                .OrderByDescending(s => s.StartDate)
+                .FirstOrDefaultAsync();
+
+            if (sub == null)
+                return new QuotaCheckResult { Allowed = false, FeatureCode = featureCode, Message = "Bạn chưa đăng kí gói dịch vụ." };
+
+            // Lazy create period if missing for Yearly subs
+            var period = sub.SubscriptionPeriods
+                .FirstOrDefault(p => p.PeriodStart <= now && p.PeriodEnd >= now);
+
+            if (period == null && sub.Plan.BillingCycle == "Yearly")
+            {
+                var firstOfMonth = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+                var lastOfMonth = firstOfMonth.AddMonths(1).AddSeconds(-1);
+                var newPeriod = new SubscriptionPeriod
+                {
+                    SubscriptionId = sub.Id,
+                    PlanId = sub.PlanId,
+                    PeriodStart = firstOfMonth,
+                    PeriodEnd = lastOfMonth
+                };
+                _context.SubscriptionPeriods.Add(newPeriod);
+                await _context.SaveChangesAsync();
+                period = newPeriod;
+            }
+
+            if (period == null)
+                return new QuotaCheckResult { Allowed = false, FeatureCode = featureCode, Message = "Không tìm thấy kỳ dịch vụ hiện tại." };
+
+            var feature = sub.Plan.PlanFeatures.FirstOrDefault(f => f.FeatureCode == featureCode);
+            var limit = feature?.FeatureLimit;
+
+            var usage = period.SubscriptionUsages
+                .FirstOrDefault(u => u.FeatureCode == featureCode);
+            int used = usage?.UsedCount ?? 0;
+
+            if (limit.HasValue && used >= limit.Value)
+                return new QuotaCheckResult
+                {
+                    Allowed = false, FeatureCode = featureCode,
+                    Limit = limit, Used = used,
+                    Message = $"Bạn đã sử dụng hết {limit} lượt {featureCode} trong kỳ này."
+                };
+
+            return new QuotaCheckResult
+            {
+                Allowed = true, FeatureCode = featureCode,
+                Limit = limit, Used = used, Message = "OK"
+            };
+        }
+
+        public async Task ConsumeQuotaAsync(int userId, string featureCode)
+        {
+            var now = DateTime.UtcNow;
+
+            var sub = await _context.Subscriptions
+                .Include(s => s.SubscriptionPeriods).ThenInclude(p => p.SubscriptionUsages)
+                .Where(s => s.UserId == userId && s.Status == "Active" && s.EndDate >= now)
+                .OrderByDescending(s => s.StartDate)
+                .FirstOrDefaultAsync();
+
+            if (sub == null) return;
+
+            var period = sub.SubscriptionPeriods
+                .FirstOrDefault(p => p.PeriodStart <= now && p.PeriodEnd >= now);
+            if (period == null) return;
+
+            var usage = period.SubscriptionUsages
+                .FirstOrDefault(u => u.FeatureCode == featureCode);
+
+            if (usage == null)
+            {
+                _context.SubscriptionUsages.Add(new SubscriptionUsage
+                {
+                    PeriodId = period.Id,
+                    FeatureCode = featureCode,
+                    UsedCount = 1
+                });
+            }
+            else
+            {
+                usage.UsedCount++;
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
         public async Task<bool> TogglePlanStatusAsync(int id)
         {
             var plan = await _context.SubscriptionPlans
@@ -275,9 +497,9 @@ namespace RJMS.Vn.Edu.Fpt.Repository
         private string ExtractPlanType(string? name, string? description)
         {
             var combined = $"{name} {description}".ToLower();
-            if (combined.Contains("premium")) return "Premium";
-            if (combined.Contains("standard")) return "Standard";
-            if (combined.Contains("basic")) return "Basic";
+            if (combined.Contains("#level:premium") || combined.Contains(" premium")) return "Premium";
+            if (combined.Contains("#level:standard") || combined.Contains(" standard")) return "Standard";
+            if (combined.Contains("#level:basic") || combined.Contains(" basic")) return "Basic";
             return "Basic";
         }
 
@@ -305,6 +527,9 @@ namespace RJMS.Vn.Edu.Fpt.Repository
         {
             var parts = new List<string>();
             
+            if (!string.IsNullOrEmpty(model.PlanType))
+                parts.Add($"#LEVEL:{model.PlanType}");
+
             if (!string.IsNullOrEmpty(model.Description))
                 parts.Add(model.Description);
 
