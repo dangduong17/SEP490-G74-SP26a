@@ -2,7 +2,6 @@
 @using RJMS.vn.edu.fpt.Models.DTOs
 @{
     ViewData["Title"] = "Quản lý gói đăng ký";
-    ViewData["HidePageTitle"] = true;
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
 }
 
@@ -54,10 +53,12 @@
         background: #fff;
         border: 1px solid #e5e7eb;
         border-radius: 12px;
-        padding: 18px 22px;
+        padding: 24px;
         display: flex;
+        flex-direction: column;
         align-items: center;
-        justify-content: space-between;
+        justify-content: center;
+        text-align: center;
     }
     .sum-card-left small {
         font-size: 0.78rem;
@@ -281,25 +282,19 @@
         <div class="sum-card-left">
             <small>Tổng số gói</small>
             <strong>@Model.TotalPlans</strong>
-            <span>↗ 2 gói mới tháng này</span>
         </div>
-        <div class="sum-icon" style="background:#ecfdf5;color:#00b14f;"></div>
     </div>
     <div class="sum-card">
         <div class="sum-card-left">
             <small>Gói hoạt động</small>
             <strong>@Model.ActivePlans.ToString("D2")</strong>
-            <span>↗ Chiếm @((int)((double)Model.ActivePlans/Model.TotalPlans*100))% tổng số</span>
         </div>
-        <div class="sum-icon" style="background:#f0fdf4;color:#16a34a;"></div>
     </div>
     <div class="sum-card">
         <div class="sum-card-left">
             <small>Nhà tuyển dụng sử dụng</small>
             <strong>@Model.RecruitersUsing.ToString("N0")</strong>
-            <span>↗ Tăng 12% so với quý trước</span>
         </div>
-        <div class="sum-icon" style="background:#eff6ff;color:#3b82f6;"></div>
     </div>
 </div>
 
