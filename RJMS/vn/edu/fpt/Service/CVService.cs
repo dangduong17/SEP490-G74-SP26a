@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
+using UglyToad.PdfPig;
 using RJMS.vn.edu.fpt.Models;
 using RJMS.vn.edu.fpt.Models.DTOs;
 using RJMS.Vn.Edu.Fpt.Repository;
@@ -71,6 +74,27 @@ namespace RJMS.Vn.Edu.Fpt.Service
             var candidate = await _cvRepository.GetCandidateByUserIdAsync(userId);
             if (candidate == null) return (false, "Không tìm thấy hồ sơ ứng viên.", 0);
 
+            // ── PRE-VALIDATE & EXTRACT PDF CONTENT (PdfPig) ──
+            string extractedText = string.Empty;
+            if (ext == ".pdf")
+            {
+                try
+                {
+                    using var stream = dto.File.OpenReadStream();
+                    using var document = PdfDocument.Open(stream);
+                    var sb = new StringBuilder();
+                    foreach (var page in document.GetPages())
+                    {
+                        sb.AppendLine(page.Text);
+                    }
+                    extractedText = sb.ToString();
+                }
+                catch (Exception)
+                {
+                    return (false, "File PDF bị lỗi định dạng hoặc có mật khẩu khóa. Vui lòng tải file khác.", 0);
+                }
+            }
+
             var fileUrl = await _cloudinaryService.UploadRawAsync(dto.File, "cv-uploads");
             if (string.IsNullOrEmpty(fileUrl))
                 return (false, "Upload file thất bại. Vui lòng thử lại.", 0);
@@ -88,6 +112,21 @@ namespace RJMS.Vn.Edu.Fpt.Service
             };
 
             var created = await _cvRepository.CreateCvAsync(cv);
+
+            if (ext == ".pdf")
+            {
+                var cvDataModel = new CvDataModel { RawText = extractedText };
+                var jsonStr = JsonSerializer.Serialize(cvDataModel);
+                var cvData = new CvData
+                {
+                    CvId = created.Id,
+                    JsonData = jsonStr,
+                    CreatedAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now
+                };
+                await _cvRepository.CreateCvDataAsync(cvData);
+            }
+            
             return (true, "Upload CV thành công!", created.Id);
         }
 
