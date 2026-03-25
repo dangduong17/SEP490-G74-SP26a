@@ -58,10 +58,6 @@
         align-items: center;
         gap: 10px;
     }
-    .section-title i {
-        color: #00b14f;
-        font-size: 1rem;
-    }
 
     /* ===== Form elements ===== */
     .form-label-custom {
@@ -233,10 +229,7 @@
         align-items: flex-start;
     }
     .info-box-icon {
-        color: #3b82f6;
-        font-size: 1.1rem;
-        flex-shrink: 0;
-        padding-top: 2px;
+        display: none;
     }
     .info-box-content {
         flex: 1;
@@ -278,13 +271,12 @@
 <div class="create-container">
     <!-- Page header -->
     <div class="page-header">
-        <h1><i class="fas fa-plus-circle" style="color:#00b14f;"></i> Tạo gói đăng ký mới</h1>
+        <h1>Tạo gói đăng ký mới</h1>
         <p>Thiết lập thông tin và cấu hình cho gói dịch vụ mới.</p>
     </div>
 
     <!-- Info box -->
     <div class="info-box">
-        <div class="info-box-icon"><i class="fas fa-lightbulb"></i></div>
         <div class="info-box-content">
             <div class="info-box-title">Lưu ý khi tạo gói mới</div>
             <div class="info-box-text">
@@ -301,7 +293,7 @@
         <!-- Basic Info Section -->
         <div class="form-card">
             <div class="section-title">
-                <i class="fas fa-info-circle"></i> Thông tin cơ bản
+                Thông tin cơ bản
             </div>
 
             <div class="form-row cols-2">
@@ -341,7 +333,7 @@
         <!-- Pricing & Limits Section -->
         <div class="form-card">
             <div class="section-title">
-                <i class="fas fa-coins"></i> Giá và giới hạn
+                Giá và giới hạn
             </div>
 
             <div class="form-row cols-3">
@@ -402,17 +394,21 @@
                     <span class="text-muted-small">Thời gian sử dụng gói sau khi kích hoạt (1-3650 ngày)</span>
                 </div>
 
-                <div>
+                <div id="billingCyclesSection">
                     <label class="form-label-custom">
-                        Chu kỳ thanh toán
+                        Chu kỳ thanh toán <span class="required">*</span>
                     </label>
-                    <select asp-for="BillingCycle" class="form-select-custom">
-                        <option value="Monthly">Monthly (Hàng tháng)</option>
-                        <option value="Yearly">Yearly (Hàng năm)</option>
-                        <option value="Custom">Custom (Tùy chỉnh)</option>
-                    </select>
-                    <span asp-validation-for="BillingCycle" class="text-danger"></span>
-                    <span class="text-muted-small">Chu kỳ thanh toán mặc định cho gói</span>
+                    <div style="display:flex; gap: 20px;">
+                        <div class="form-check-custom" style="padding: 8px 12px; background: none; border: none; flex: initial;">
+                            <input type="checkbox" name="BillingCycles" value="Monthly" id="cycleMonthly" checked />
+                            <label for="cycleMonthly" style="margin-left: 8px;">Hàng tháng (30 ngày)</label>
+                        </div>
+                        <div class="form-check-custom" style="padding: 8px 12px; background: none; border: none; flex: initial;">
+                            <input type="checkbox" name="BillingCycles" value="Yearly" id="cycleYearly" />
+                            <label for="cycleYearly" style="margin-left: 8px;">Hàng năm (365 ngày)</label>
+                        </div>
+                    </div>
+                    <span class="text-muted-small" id="billingCycleHint">Chọn một hoặc cả hai. Nếu chọn cả hai, hệ thống sẽ tự động tạo 2 phiên bản gói (Monthly & Yearly).</span>
                 </div>
             </div>
 
@@ -432,7 +428,7 @@
         <!-- Status Section -->
         <div class="form-card">
             <div class="section-title">
-                <i class="fas fa-toggle-on"></i> Trạng thái
+                Trạng thái
             </div>
 
             <div class="form-check-custom">
@@ -449,10 +445,10 @@
         <!-- Action buttons -->
         <div class="form-actions">
             <a asp-action="ManageSubscription" class="btn-custom btn-cancel">
-                <i class="fas fa-times"></i> Hủy
+                Hủy
             </a>
             <button type="submit" class="btn-custom btn-save">
-                <i class="fas fa-check"></i> Tạo gói
+                Tạo gói
             </button>
         </div>
     </form>
@@ -460,4 +456,28 @@
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        $(document).ready(function() {
+            function updateDuration() {
+                const monthly = $('#cycleMonthly').is(':checked');
+                const yearly = $('#cycleYearly').is(':checked');
+                
+                // If only one is selected, we can suggest duration
+                if (monthly && !yearly) {
+                    $('#DurationDays').val(30);
+                } else if (!monthly && yearly) {
+                    $('#DurationDays').val(365);
+                }
+            }
+
+            $('#cycleMonthly, #cycleYearly').change(updateDuration);
+            
+            $('form').submit(function(e) {
+                if ($('input[name="BillingCycles"]:checked').length === 0) {
+                    e.preventDefault();
+                    toastr.warning('Vui lòng chọn ít nhất một chu kỳ thanh toán.');
+                }
+            });
+        });
+    </script>
 }
