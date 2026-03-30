@@ -10,7 +10,7 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
         public int ActiveJobPosts { get; set; } = 12;
         public int TotalApplications { get; set; } = 848;
         public int InterviewsScheduled { get; set; } = 24;
-        public int ProfileViews { get; set; } = 2400;
+        public int FollowerCount { get; set; } = 0;
 
         // ---- Recruiter info (from cookie / session) ----
         public string RecruiterName { get; set; } = "HR Manager";
