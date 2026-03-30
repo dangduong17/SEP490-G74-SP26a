@@ -27,5 +27,6 @@ namespace RJMS.Vn.Edu.Fpt.Service
         Task<QuotaCheckResult> CheckQuotaAsync(int userId, string featureCode);
         Task ConsumeQuotaAsync(int userId, string featureCode);
         Task<int> RenewExpiredPeriodsAsync();
+        Task<int> ProcessExpiredSubscriptionsAsync();
     }
 }
