@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace RJMS.vn.edu.fpt.Models;
@@ -51,4 +51,5 @@ public partial class Company
     public virtual ICollection<Job> Jobs { get; set; } = new List<Job>();
 
     public virtual ICollection<Recruiter> Recruiters { get; set; } = new List<Recruiter>();
+    public virtual ICollection<CompanyFollower> Followers { get; set; } = new List<CompanyFollower>();
 }
