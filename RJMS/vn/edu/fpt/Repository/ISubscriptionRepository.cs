@@ -29,6 +29,9 @@ namespace RJMS.Vn.Edu.Fpt.Repository
         /// <summary>Renew monthly periods for all active yearly subscriptions that have no current period.</summary>
         Task<int> RenewExpiredPeriodsAsync();
 
+        /// <summary>Process subscriptions whose date range is no longer valid.</summary>
+        Task<int> ProcessExpiredSubscriptionsAsync();
+
         // ── Quota ──
         Task<QuotaCheckResult> CheckQuotaAsync(int userId, string featureCode);
         Task ConsumeQuotaAsync(int userId, string featureCode);
