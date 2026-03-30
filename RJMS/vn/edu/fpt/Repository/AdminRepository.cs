@@ -258,6 +258,7 @@ namespace RJMS.Vn.Edu.Fpt.Repository
             var query = _db.Companies
                 .Include(c => c.Recruiters)
                 .Include(c => c.Jobs)
+                .Include(c => c.Followers)
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(keyword))
