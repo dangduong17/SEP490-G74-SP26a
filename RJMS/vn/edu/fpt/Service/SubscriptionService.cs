@@ -52,5 +52,8 @@ namespace RJMS.Vn.Edu.Fpt.Service
 
         public Task<int> RenewExpiredPeriodsAsync()
             => _repo.RenewExpiredPeriodsAsync();
+
+        public Task<int> ProcessExpiredSubscriptionsAsync()
+            => _repo.ProcessExpiredSubscriptionsAsync();
     }
 }
