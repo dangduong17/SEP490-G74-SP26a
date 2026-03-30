@@ -478,6 +478,7 @@ namespace RJMS.Vn.Edu.Fpt.Service
                 IsVerified = c.IsVerified ?? false,
                 RecruiterCount = c.Recruiters.Count,
                 JobCount = c.Jobs.Count,
+                FollowerCount = c.Followers.Count,
                 CreatedAt = c.CreatedAt
             }).ToList();
 
