@@ -791,4 +791,22 @@ END
 GO
 
 END
+GO
+
+/* =====================================================
+COMPANY FOLLOWERS
+===================================================== */
+IF OBJECT_ID('CompanyFollowers', 'U') IS NULL
+BEGIN
+    CREATE TABLE CompanyFollowers
+    (
+        CompanyId INT NOT NULL,
+        UserId INT NOT NULL,
+        FollowedAt DATETIME2 DEFAULT GETUTCDATE(),
+
+        PRIMARY KEY (CompanyId, UserId),
+        FOREIGN KEY (CompanyId) REFERENCES Companies(Id) ON DELETE CASCADE,
+        FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE
+    );
+END
 GO
