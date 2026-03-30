@@ -364,6 +364,22 @@ namespace RJMS.Vn.Edu.Fpt.Repository
             return created;
         }
 
+        public async Task<int> ProcessExpiredSubscriptionsAsync()
+        {
+            var now = DateTime.UtcNow;
+            var expired = await _context.Subscriptions
+                .Where(s => s.Status == "Active" && (s.EndDate < now || s.StartDate > now))
+                .ToListAsync();
+
+            foreach (var sub in expired)
+            {
+                sub.Status = "Expired";
+            }
+
+            if (expired.Any()) await _context.SaveChangesAsync();
+            return expired.Count;
+        }
+
         // ───────────────────────────────────────────────────────────────
         // Quota
         // ───────────────────────────────────────────────────────────────
