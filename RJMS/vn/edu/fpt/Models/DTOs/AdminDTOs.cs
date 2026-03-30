@@ -326,6 +326,7 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
         public bool IsVerified { get; set; }
         public int RecruiterCount { get; set; }
         public int JobCount { get; set; }
+        public int FollowerCount { get; set; }
         public DateTime? CreatedAt { get; set; }
     }
 
