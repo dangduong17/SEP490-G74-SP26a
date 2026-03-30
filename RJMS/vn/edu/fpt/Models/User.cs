@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace RJMS.vn.edu.fpt.Models;
@@ -34,4 +34,5 @@ public partial class User
     public virtual ICollection<Subscription> Subscriptions { get; set; } = new List<Subscription>();
 
     public virtual ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
+    public virtual ICollection<CompanyFollower> FollowingCompanies { get; set; } = new List<CompanyFollower>();
 }
