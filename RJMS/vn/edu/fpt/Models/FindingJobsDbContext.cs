@@ -57,6 +57,7 @@ public partial class FindingJobsDbContext : DbContext
     public virtual DbSet<User> Users { get; set; }
 
     public virtual DbSet<UserRole> UserRoles { get; set; }
+    public virtual DbSet<CompanyFollower> CompanyFollowers { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 {
@@ -396,6 +397,22 @@ public partial class FindingJobsDbContext : DbContext
             entity.HasOne(d => d.User).WithMany(p => p.UserRoles)
                 .HasForeignKey(d => d.UserId)
                 .HasConstraintName("FK__UserRoles__UserI__4222D4EF");
+        });
+
+        modelBuilder.Entity<CompanyFollower>(entity =>
+        {
+            entity.HasKey(e => new { e.CompanyId, e.UserId });
+            entity.Property(p => p.FollowedAt).HasDefaultValueSql("(getutcdate())");
+
+            entity.HasOne(d => d.Company)
+                .WithMany(p => p.Followers)
+                .HasForeignKey(d => d.CompanyId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(d => d.User)
+                .WithMany(p => p.FollowingCompanies)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         OnModelCreatingPartial(modelBuilder);
