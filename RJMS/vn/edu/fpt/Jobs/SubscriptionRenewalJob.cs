@@ -19,6 +19,10 @@ namespace RJMS.vn.edu.fpt.Jobs
         /// </summary>
         public async Task Execute()
         {
+            // 1. Mark expired memberships
+            await _subscriptionService.ProcessExpiredSubscriptionsAsync();
+
+            // 2. Proactive month renewal for yearly subs
             await _subscriptionService.RenewExpiredPeriodsAsync();
         }
     }
