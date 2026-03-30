@@ -54,6 +54,7 @@ builder.Services.AddScoped<IChatService, ChatService>();
 builder.Services.AddScoped<IJobCategoryService, JobCategoryService>();
 builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
 builder.Services.AddScoped<ICVRenderService, CVRenderService>();
+builder.Services.AddScoped<ICompanyService, CompanyService>();
 builder.Services.AddScoped<SubscriptionRenewalJob>();
 
 var app = builder.Build();
