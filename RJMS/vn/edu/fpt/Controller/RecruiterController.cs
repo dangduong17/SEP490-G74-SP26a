@@ -56,7 +56,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                         .Where(j => j.RecruiterId == recruiter.Id)
                         .SumAsync(j => j.ApplicationCount ?? 0);
                     model.InterviewsScheduled = 0; // Future feature
-                    model.ProfileViews = 0; // Future feature
+                    model.FollowerCount = await _context.CompanyFollowers.CountAsync(f => f.CompanyId == recruiter.CompanyId);
                     
                     var recentJobs = await _context.Jobs
                         .Where(j => j.RecruiterId == recruiter.Id)
