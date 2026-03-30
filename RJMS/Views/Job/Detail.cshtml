@@ -140,7 +140,7 @@
                     </div>
                     <div class="hero-info">
                         <h1>@Model.Title</h1>
-                        <a href="#" class="hero-co-link">@Model.CompanyName</a>
+                        <a href="@Url.Action("Detail", "Company", new { id = Model.CompanyId })" class="col-footer-link">@Model.CompanyName</a>
                         <div class="hero-meta">
                             <div class="meta-tag">
                                 <i class="fas fa-money-bill-wave"></i> <strong>@SalaryText()</strong>
@@ -372,7 +372,7 @@
                     </p>
                 }
             </div>
-            <a href="#" class="co-footer-link"><i class="fas fa-building me-1"></i> Xem trang công ty</a>
+            <a href="@Url.Action("Detail", "Company", new { id = Model.CompanyId })" class="co-footer-link"><i class="fas fa-building me-1"></i> Xem trang công ty</a>
         </div>
 
         <!-- Actions again (sticky helpful) -->
