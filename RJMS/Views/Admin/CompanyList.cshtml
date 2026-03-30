@@ -173,6 +173,7 @@
                 <th>Số nhân viên</th>
                 <th>Recruiter</th>
                 <th>Công việc</th>
+                <th>Số Follower</th>
                 <th>Trạng thái</th>
                 <th>Ngày tạo</th>
                 <th style="text-align:right;">Thao tác</th>
@@ -192,6 +193,7 @@
                     <td>@(company.CompanySize ?? "—")</td>
                     <td>@company.RecruiterCount</td>
                     <td>@company.JobCount</td>
+                    <td style="font-weight:600; color:#00b14f;">@company.FollowerCount</td>
                     <td>
                         @if (company.IsVerified)
                         {
