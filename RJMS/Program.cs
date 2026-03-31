@@ -16,6 +16,7 @@ builder.WebHost.UseUrls("https://localhost:5000", "https://localhost:5001");
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddSignalR();
 builder.Services.AddDbContext<FindingJobsDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DBContext"))
 );
@@ -56,6 +57,8 @@ builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
 builder.Services.AddScoped<ICVRenderService, CVRenderService>();
 builder.Services.AddScoped<ICompanyService, CompanyService>();
 builder.Services.AddScoped<SubscriptionRenewalJob>();
+builder.Services.AddScoped<IApplicationService, ApplicationService>();
+builder.Services.AddScoped<ICompanyService, CompanyService>();
 
 var app = builder.Build();
 
@@ -187,5 +190,7 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}/{id?}");
+app.MapHub<RJMS.vn.edu.fpt.Hubs.NotificationHub>("/notificationHub");
+app.MapHub<RJMS.vn.edu.fpt.Hubs.ChatHub>("/chatHub");
 
 app.Run();
