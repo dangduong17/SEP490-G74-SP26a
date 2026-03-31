@@ -226,6 +226,29 @@
     .profile-dropdown.show .avatar-chevron {
         transform: rotate(180deg);
     }
+
+    /* Notification Styles */
+    .notif-dropdown { position:relative; }
+    .notif-menu { position:absolute; top:120%; right:-10px; background:white; border-radius:12px; box-shadow:0 10px 40px rgba(0,0,0,0.15); width:360px; max-width:90vw; z-index:1000; opacity:0; visibility:hidden; transform:translateY(-10px); transition:all 0.3s ease; }
+    .notif-dropdown.show .notif-menu { opacity:1; visibility:visible; transform:translateY(0); }
+    .notif-header { padding:16px 20px; border-bottom:1px solid #e5e7eb; display:flex; justify-content:space-between; align-items:center; }
+    .notif-header h6 { margin:0; font-weight:700; font-size:1rem; color:#111827; }
+    .mark-read-all { color:#00b14f; font-size:0.85rem; font-weight:600; cursor:pointer; text-decoration:none; }
+    .mark-read-all:hover { text-decoration:underline; }
+    .notif-body { max-height:400px; overflow-y:auto; }
+    .notif-item { padding:12px 20px; border-bottom:1px solid #f3f4f6; display:flex; gap:12px; cursor:pointer; transition:background 0.2s; text-decoration:none; color:inherit; }
+    .notif-item:hover { background:#f9fafb; margin-bottom: 0px; }
+    .notif-item.unread { background:#f0fdf4; }
+    .notif-icon { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:0.9rem; }
+    .notif-icon.APPLICATION { background:#dbeafe; color:#2563eb; }
+    .notif-icon.PAYMENT { background:#fef3c7; color:#d97706; }
+    .notif-icon.SYSTEM { background:#f3f4f6; color:#4b5563; }
+    .notif-content { flex:1; min-width:0; }
+    .notif-title { font-weight:600; font-size:0.9rem; color:#111827; margin-bottom:2px; }
+    .notif-item.unread .notif-title { color:#00b14f; }
+    .notif-desc { font-size:0.8rem; color:#6b7280; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; text-overflow: ellipsis; }
+    .notif-time { font-size:0.75rem; color:#9ca3af; margin-top:4px; }
+    .notif-empty { padding:40px 20px; text-align:center; color:#9ca3af; }
 </style>
 
 <header class="site-header">
@@ -354,11 +377,22 @@
                         else if (userRole == "Recruiter")
                         {
                             <div class="header-icons">
-                                <!-- Notification Icon -->
-                                <button class="header-icon-btn" title="Thông báo">
-                                    <i class="fas fa-bell"></i>
-                                    <span class="notification-badge">3</span>
-                                </button>
+                                <!-- Notification Dropdown -->
+                                <div class="notif-dropdown" id="notifDropdown" data-role="Recruiter">
+                                    <button class="header-icon-btn" title="Thông báo" onclick="toggleNotifMenu(event)">
+                                        <i class="fas fa-bell"></i>
+                                        <span class="notification-badge" id="notifBadge" style="display:none;">0</span>
+                                    </button>
+                                    <div class="notif-menu" id="notifMenu" onclick="event.stopPropagation()">
+                                        <div class="notif-header">
+                                            <h6>Thông báo</h6>
+                                            <a href="javascript:void(0)" class="mark-read-all" onclick="markAllRead()">Đánh dấu đã đọc</a>
+                                        </div>
+                                        <div class="notif-body" id="notifList">
+                                            <div class="notif-empty"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>
+                                        </div>
+                                    </div>
+                                </div>
 
                                 <!-- Message Icon -->
                                 <a asp-controller="Chat" asp-action="Index" class="header-icon-btn text-decoration-none" title="Tin nhắn">
@@ -445,11 +479,22 @@
                             <div class="header-icons">
                                 @if (userRole == "Candidate")
                                 {
-                                    <!-- Notification Icon -->
-                                    <button class="header-icon-btn">
-                                        <i class="fas fa-bell"></i>
-                                        <span class="notification-badge">9</span>
-                                    </button>
+                                    <!-- Notification Dropdown -->
+                                    <div class="notif-dropdown" id="notifDropdown" data-role="Candidate">
+                                        <button class="header-icon-btn" title="Thông báo" onclick="toggleNotifMenu(event)">
+                                            <i class="fas fa-bell"></i>
+                                            <span class="notification-badge" id="notifBadge" style="display:none;">0</span>
+                                        </button>
+                                        <div class="notif-menu" id="notifMenu" onclick="event.stopPropagation()">
+                                            <div class="notif-header">
+                                                <h6>Thông báo</h6>
+                                                <a href="javascript:void(0)" class="mark-read-all" onclick="markAllRead()">Đánh dấu đã đọc</a>
+                                            </div>
+                                            <div class="notif-body" id="notifList">
+                                                <div class="notif-empty"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>
+                                            </div>
+                                        </div>
+                                    </div>
                                     
                                     <!-- Message Icon -->
                                     <a asp-controller="Chat" asp-action="Index" class="header-icon-btn text-decoration-none" title="Tin nhắn">
@@ -575,8 +620,157 @@
     // Close dropdown when clicking outside
     document.addEventListener('click', function(event) {
         const dropdown = document.getElementById('profileDropdown');
-        if (dropdown && !dropdown.contains(event.target)) {
+        if (dropdown && !dropdown.contains(event.target) && !event.target.closest('.profile-avatar-wrapper')) {
             dropdown.classList.remove('show');
+        }
+        const notifDropdown = document.getElementById('notifDropdown');
+        if (notifDropdown && !notifDropdown.contains(event.target)) {
+            notifDropdown.classList.remove('show');
+        }
+    });
+
+    // ── NOTIFICATIONS LOGIC ──
+    const notifToken = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+
+    function toggleNotifMenu(e) {
+        e.stopPropagation();
+        const dd = document.getElementById('notifDropdown');
+        if (dd) {
+            dd.classList.toggle('show');
+            if (dd.classList.contains('show')) {
+                loadNotifications();
+            }
+        }
+    }
+
+    function loadNotifications() {
+        const listEl = document.querySelectorAll('#notifList');
+        listEl.forEach(el => {
+            if (el.innerHTML.includes('không có') || el.innerHTML.includes('Đang tải')) {
+                el.innerHTML = '<div class="notif-empty"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>';
+            }
+        });
+
+        fetch('/Notification/GetList')
+            .then(res => res.json())
+            .then(data => {
+                updateNotifBadge(data.unreadCount);
+                renderNotifList(data.notifications);
+            });
+    }
+
+    function updateNotifBadge(count) {
+        const badges = document.querySelectorAll('#notifBadge, .notification-badge');
+        badges.forEach(b => {
+            if (count > 0) {
+                b.textContent = count > 99 ? '99+' : count;
+                b.style.display = 'block';
+            } else {
+                b.style.display = 'none';
+            }
+        });
+    }
+
+    function renderNotifList(items) {
+        const listEl = document.querySelectorAll('#notifList');
+        if (!items || items.length === 0) {
+            listEl.forEach(el => el.innerHTML = '<div class="notif-empty"><i class="fas fa-bell-slash mb-2" style="font-size:1.5rem;"></i><br>Không có thông báo nào</div>');
+            return;
+        }
+
+        const html = items.map(n => {
+            let icon = 'fa-bell';
+            let typeClass = 'SYSTEM';
+            if (n.type === 'APPLICATION') { icon = 'fa-file-alt'; typeClass = 'APPLICATION'; }
+            else if (n.type === 'PAYMENT') { icon = 'fa-wallet'; typeClass = 'PAYMENT'; }
+
+            let href = 'javascript:void(0)';
+            if (n.type === 'APPLICATION') {
+                const role = document.getElementById('notifDropdown')?.getAttribute('data-role');
+                if (role === 'Recruiter') href = '/Recruiter/Applications';
+                else if (role === 'Candidate') href = '/Application/Index';
+            }
+
+            return `
+                <a href="${href}" class="notif-item ${!n.isRead ? 'unread' : ''}" onclick="markRead(${n.id}, this, event)">
+                    <div class="notif-icon ${typeClass}"><i class="fas ${icon}"></i></div>
+                    <div class="notif-content">
+                        <div class="notif-title">${n.title}</div>
+                        <div class="notif-desc">${n.content}</div>
+                        <div class="notif-time">${n.timeAgo}</div>
+                    </div>
+                    ${!n.isRead ? '<div class="ms-2" style="width:8px;height:8px;border-radius:50%;background:#00b14f;margin-top:4px;"></div>' : ''}
+                </a>
+            `;
+        }).join('');
+
+        listEl.forEach(el => el.innerHTML = html);
+    }
+
+    function markRead(id, el, e) {
+        if (!el.classList.contains('unread')) return;
+        
+        // Let it navigate normally if there's a href, but record the click async
+        fetch('/Notification/MarkRead', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': notifToken },
+            body: JSON.stringify({ id: id })
+        }).then(res => res.json()).then(data => {
+            if (data.success) {
+                el.classList.remove('unread');
+                const dot = el.querySelector('div[style*="background:#00b14f"]');
+                if (dot) dot.remove();
+                fetchUnreadCount();
+            }
+        });
+    }
+
+    function markAllRead() {
+        var fd = new FormData();
+        fd.append('__RequestVerificationToken', notifToken);
+        
+        fetch('/Notification/MarkAllRead', {
+            method: 'POST',
+            body: fd
+        }).then(res => res.json()).then(data => {
+            if (data.success) {
+                loadNotifications();
+            }
+        });
+    }
+
+    function fetchUnreadCount() {
+        fetch('/Notification/UnreadCount')
+            .then(res => res.json())
+            .then(data => updateNotifBadge(data.count))
+            .catch(() => {});
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const dd = document.getElementById('notifDropdown');
+        if (dd) {
+            fetchUnreadCount();
+            setInterval(fetchUnreadCount, 60000); // 1 min poll
+            
+            // SignalR Setup
+            const currentUserId = '@userId';
+            if (currentUserId && typeof signalR !== 'undefined') {
+                const connection = new signalR.HubConnectionBuilder()
+                    .withUrl("/notificationHub")
+                    .withAutomaticReconnect()
+                    .build();
+
+                connection.on("ReceiveNotification", function (title, content) {
+                    toastr.info(content, title, { timeOut: 8000 });
+                    fetchUnreadCount();
+                });
+
+                connection.start().then(function () {
+                    connection.invoke("JoinUserGroup", currentUserId);
+                }).catch(function (err) {
+                    console.error("SignalR Connection Error: ", err);
+                });
+            }
         }
     });
 </script>
