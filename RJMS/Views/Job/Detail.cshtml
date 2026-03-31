@@ -3,6 +3,7 @@
     ViewData["Title"] = Model.Title + " - " + Model.CompanyName;
     Layout = "~/Views/Shared/_Layout.cshtml";
     var userRole = Context.Request.Cookies["UserRole"];
+    var alreadyApplied = (bool)(ViewBag.AlreadyApplied ?? false);
 
     string SalaryText()
     {
@@ -168,9 +169,19 @@
             <div class="hero-actions">
                 @if (userRole == "Candidate")
                 {
-                    <button class="btn-apply-big" type="button">
-                        <i class="fas fa-paper-plane"></i> Ứng tuyển ngay
-                    </button>
+                    if (alreadyApplied)
+                    {
+                        <button class="btn-apply-big" style="background:#16a34a;cursor:default;" disabled>
+                            <i class="fas fa-check-circle"></i> Đã ứng tuyển
+                        </button>
+                    }
+                    else
+                    {
+                        <button class="btn-apply-big" type="button" id="btnOpenApply"
+                                onclick="openApplyModal(@Model.Id)">
+                            <i class="fas fa-paper-plane"></i> Ứng tuyển ngay
+                        </button>
+                    }
                 }
                 else if (string.IsNullOrEmpty(userRole))
                 {
@@ -378,9 +389,19 @@
         <!-- Actions again (sticky helpful) -->
         @if (userRole == "Candidate")
         {
-            <button class="btn-apply-big w-100 mb-2" type="button" style="justify-content:center;">
-                <i class="fas fa-paper-plane"></i> Ứng tuyển ngay
-            </button>
+            if (alreadyApplied)
+            {
+                <button class="btn-apply-big w-100 mb-2" style="background:#16a34a;cursor:default;justify-content:center;" disabled>
+                    <i class="fas fa-check-circle"></i> Đã ứng tuyển
+                </button>
+            }
+            else
+            {
+                <button class="btn-apply-big w-100 mb-2" type="button" style="justify-content:center;"
+                        onclick="openApplyModal(@Model.Id)">
+                    <i class="fas fa-paper-plane"></i> Ứng tuyển ngay
+                </button>
+            }
         }
         else if (string.IsNullOrEmpty(userRole))
         {
@@ -397,3 +418,209 @@
         </a>
     </aside>
 </div>
+
+@* ── APPLY MODAL ── *@
+<div id="applyModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:16px;width:min(620px,96vw);max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);position:relative;">
+        <div style="padding:20px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f3f4f6;">
+            <h5 style="font-size:1.1rem;font-weight:700;color:#111827;margin:0;"><i class="fas fa-paper-plane me-2" style="color:#00b14f;"></i>Ứng tuyển vị trí</h5>
+            <button onclick="closeApplyModal()" style="background:none;border:none;font-size:1.4rem;color:#9ca3af;cursor:pointer;line-height:1;padding:0;">&times;</button>
+        </div>
+        <div id="applyModalBody" style="padding:24px;">
+            <div style="text-align:center;padding:40px;">
+                <div style="width:40px;height:40px;border:4px solid #e5e7eb;border-top-color:#00b14f;border-radius:50%;animation:apspin 0.8s linear infinite;margin:0 auto 12px;"></div>
+                <p style="color:#6b7280;margin:0;">Đang tải...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<style>
+    @@keyframes apspin { to { transform: rotate(360deg); } }
+    .apcv-card { border:2px solid #e5e7eb; border-radius:10px; padding:13px 16px; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; gap:12px; margin-bottom:8px; }
+    .apcv-card:hover { border-color:#00b14f; background:#f0fdf4; }
+    .apcv-card.selected { border-color:#00b14f; background:#f0fdf4; }
+    .apcv-card input[type=radio] { accent-color:#00b14f; width:16px; height:16px; flex-shrink:0; cursor:pointer; }
+    .apcv-badge { font-size:0.68rem; padding:2px 8px; border-radius:4px; font-weight:700; }
+    .apcv-badge-up { background:#eff6ff; color:#2563eb; }
+    .apcv-badge-bld { background:#fdf4ff; color:#9333ea; }
+    .ap-tab-btn { padding:10px 18px; border:none; background:none; font-weight:600; color:#6b7280; cursor:pointer; border-bottom:3px solid transparent; transition:all 0.2s; font-size:0.9rem; }
+    .ap-tab-btn.active { color:#00b14f; border-bottom-color:#00b14f; }
+    .ap-tab-content { display:none; }
+    .ap-tab-content.active { display:block; }
+    .ap-upload-zone { border:2px dashed #d1d5db; border-radius:10px; padding:28px; text-align:center; cursor:pointer; transition:all 0.2s; }
+    .ap-upload-zone:hover, .ap-upload-zone.has-file { border-color:#00b14f; background:#f0fdf4; }
+    .ap-submit-btn { background:#00b14f; color:#fff; border:none; border-radius:8px; padding:13px 32px; font-size:1rem; font-weight:700; width:100%; cursor:pointer; transition:background 0.2s; margin-top:16px; display:flex; align-items:center; justify-content:center; gap:8px; }
+    .ap-submit-btn:hover { background:#009744; }
+    .ap-submit-btn:disabled { background:#9ca3af; cursor:not-allowed; }
+</style>
+<script>
+    // extract antiforgery token
+    var __applyToken = (function() {
+        var f = document.createElement('form');
+        f.innerHTML = '@Html.AntiForgeryToken()';
+        var inp = f.querySelector('input[name="__RequestVerificationToken"]');
+        return inp ? inp.value : '';
+    })();
+
+    function openApplyModal(jobId) {
+        var modal = document.getElementById('applyModal');
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        document.getElementById('applyModalBody').innerHTML =
+            '<div style="text-align:center;padding:40px;">' +
+            '<div style="width:40px;height:40px;border:4px solid #e5e7eb;border-top-color:#00b14f;border-radius:50%;animation:apspin 0.8s linear infinite;margin:0 auto 12px;"></div>' +
+            '<p style="color:#6b7280;margin:0;">Đang tải...</p></div>';
+        fetch('/Job/GetApplyData?jobId=' + jobId)
+            .then(function(r) { return r.json(); })
+            .then(function(res) {
+                if (!res.success) { alert(res.message); closeApplyModal(); return; }
+                renderApplyModal(res.data, jobId);
+            })
+            .catch(function() { alert('Có lỗi xảy ra.'); closeApplyModal(); });
+    }
+
+    function closeApplyModal() {
+        document.getElementById('applyModal').style.display = 'none';
+        document.body.style.overflow = '';
+    }
+
+    document.getElementById('applyModal').addEventListener('click', function(e) {
+        if (e.target === this) closeApplyModal();
+    });
+
+    function renderApplyModal(data, jobId) {
+        var uploadCount = data.uploadCount || 0;
+        var canUpload = uploadCount < 3;
+        var cvs = data.cvs || [];
+
+        var cvsHtml = '';
+        if (cvs.length === 0) {
+            cvsHtml = '<p style="color:#9ca3af;text-align:center;padding:20px 0;">Bạn chưa có CV nào. Hãy upload CV mới.</p>';
+        } else {
+            cvs.forEach(function(cv, i) {
+                var checked = i === 0 ? 'checked' : '';
+                var selectedClass = i === 0 ? ' selected' : '';
+                var date = cv.createdAt ? new Date(cv.createdAt).toLocaleDateString('vi-VN') : '';
+                var badgeClass = cv.cvType === 'UPLOAD' ? 'apcv-badge-up' : 'apcv-badge-bld';
+                var badgeText = cv.cvType === 'UPLOAD' ? 'Upload' : 'Builder';
+                cvsHtml += '<label class="apcv-card' + selectedClass + '" id="cvCard_' + cv.id + '">' +
+                    '<input type="radio" name="selectedCvId" value="' + cv.id + '" ' + checked + ' onchange="apSelectCv(' + cv.id + ')">' +
+                    '<div style="flex:1;min-width:0;">' +
+                    '<div style="font-weight:600;color:#111827;font-size:0.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + cv.title + '</div>' +
+                    '<div style="font-size:0.75rem;color:#9ca3af;margin-top:2px;">' + date + '</div></div>' +
+                    '<span class="apcv-badge ' + badgeClass + '">' + badgeText + '</span></label>';
+            });
+        }
+
+        var uploadTab = canUpload ? '<button class="ap-tab-btn" id="apTabUpload" onclick="apSwitchTab(\'upload\')">⬆ Upload CV mới</button>' : '';
+        var uploadContent = canUpload ? ('<div id="apTabUploadContent" class="ap-tab-content">' +
+            '<div class="ap-upload-zone" id="apUploadZone" onclick="document.getElementById(\'apCvFile\').click()">' +
+            '<i class="fas fa-cloud-upload-alt" style="font-size:2rem;color:#00b14f;display:block;margin-bottom:8px;"></i>' +
+            '<p style="font-weight:600;color:#374151;margin:0 0 4px;">Nhấp để chọn file hoặc kéo thả</p>' +
+            '<p style="color:#9ca3af;font-size:0.8rem;margin:0;">Hỗ trợ PDF, DOC, DOCX – tối đa 10MB</p>' +
+            '<p id="apUploadName" style="color:#00b14f;font-weight:600;margin-top:8px;display:none;"></p></div>' +
+            '<input type="file" id="apCvFile" accept=".pdf,.doc,.docx" style="display:none;" onchange="apHandleFile(this)">' +
+            '<p style="color:#9ca3af;font-size:0.78rem;margin-top:8px;">Lượt upload còn lại: <strong>' + (3 - uploadCount) + '</strong>/3</p></div>') : '';
+
+        var limitBanner = !canUpload ? '<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:10px 14px;font-size:0.83rem;color:#92400e;margin-bottom:12px;">⚠ <b>Đã đạt giới hạn 3 CV upload.</b> Vui lòng chọn từ thư viện.</div>' : '';
+
+        document.getElementById('applyModalBody').innerHTML =
+            '<p style="color:#6b7280;font-size:0.88rem;margin-bottom:16px;">Chọn CV cho vị trí <strong style="color:#111827;">' + (data.jobTitle || '') + '</strong></p>' +
+            limitBanner +
+            '<div style="display:flex;border-bottom:2px solid #f3f4f6;margin-bottom:16px;">' +
+            '<button class="ap-tab-btn active" id="apTabLib" onclick="apSwitchTab(\'lib\')">📁 Chọn từ thư viện (' + cvs.length + ')</button>' +
+            uploadTab + '</div>' +
+            '<div id="apTabLibContent" class="ap-tab-content active">' + cvsHtml + '</div>' +
+            uploadContent +
+            '<div style="margin-top:16px;">' +
+            '<label style="font-weight:600;color:#374151;display:block;margin-bottom:6px;font-size:0.88rem;">Thư giới thiệu <span style="color:#9ca3af;font-weight:400;">(tùy chọn)</span></label>' +
+            '<textarea id="apCoverLetter" rows="3" placeholder="Viết vài dòng về bản thân và lý do ứng tuyển..." style="width:100%;border:1px solid #e5e7eb;border-radius:8px;padding:10px;font-size:0.88rem;resize:vertical;color:#374151;box-sizing:border-box;"></textarea></div>' +
+            '<button class="ap-submit-btn" id="apSubmitBtn" onclick="apSubmit(' + jobId + ')">' +
+            '<i class="fas fa-paper-plane"></i> Nộp hồ sơ ứng tuyển</button>';
+    }
+
+    function apSelectCv(cvId) {
+        document.querySelectorAll('.apcv-card').forEach(function(c) { c.classList.remove('selected'); });
+        var card = document.getElementById('cvCard_' + cvId);
+        if (card) card.classList.add('selected');
+    }
+
+    function apSwitchTab(tab) {
+        var libBtn = document.getElementById('apTabLib');
+        var upBtn = document.getElementById('apTabUpload');
+        var libC = document.getElementById('apTabLibContent');
+        var upC = document.getElementById('apTabUploadContent');
+        if (libBtn) libBtn.classList.toggle('active', tab === 'lib');
+        if (upBtn) upBtn.classList.toggle('active', tab === 'upload');
+        if (libC) libC.classList.toggle('active', tab === 'lib');
+        if (upC) upC.classList.toggle('active', tab === 'upload');
+    }
+
+    function apHandleFile(input) {
+        if (!input.files.length) return;
+        var zone = document.getElementById('apUploadZone');
+        var nameEl = document.getElementById('apUploadName');
+        zone.classList.add('has-file');
+        nameEl.textContent = '✅ ' + input.files[0].name;
+        nameEl.style.display = 'block';
+    }
+
+    function apSubmit(jobId) {
+        var btn = document.getElementById('apSubmitBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang gửi...';
+
+        var upContent = document.getElementById('apTabUploadContent');
+        var activeTab = upContent && upContent.classList.contains('active') ? 'upload' : 'lib';
+        var coverLetter = (document.getElementById('apCoverLetter') || {}).value || '';
+        var formData = new FormData();
+        formData.append('jobId', jobId);
+        formData.append('coverLetter', coverLetter);
+        formData.append('__RequestVerificationToken', __applyToken);
+
+        if (activeTab === 'upload') {
+            var fileInput = document.getElementById('apCvFile');
+            if (!fileInput || !fileInput.files.length) {
+                alert('Vui lòng chọn file CV để upload.');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i> Nộp hồ sơ ứng tuyển';
+                return;
+            }
+            formData.append('uploadFile', fileInput.files[0]);
+            formData.append('cvId', '0');
+        } else {
+            var sel = document.querySelector('input[name="selectedCvId"]:checked');
+            if (!sel) {
+                alert('Vui lòng chọn một CV từ thư viện.');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i> Nộp hồ sơ ứng tuyển';
+                return;
+            }
+            formData.append('cvId', sel.value);
+        }
+
+        fetch('/Job/Apply', { method: 'POST', body: formData })
+            .then(function(r) { return r.json(); })
+            .then(function(result) {
+                closeApplyModal();
+                if (result.success) {
+                    toastr.success(result.message, 'Ứng tuyển thành công!', { timeOut: 6000 });
+                    document.querySelectorAll('button[onclick*="openApplyModal"]').forEach(function(b) {
+                        b.innerHTML = '<i class="fas fa-check-circle"></i> Đã ứng tuyển';
+                        b.style.background = '#16a34a';
+                        b.removeAttribute('onclick');
+                        b.disabled = true;
+                    });
+                } else {
+                    toastr.error(result.message, 'Không thể ứng tuyển');
+                }
+            })
+            .catch(function() {
+                closeApplyModal();
+                toastr.error('Có lỗi xảy ra. Vui lòng thử lại.', 'Lỗi hệ thống');
+            });
+    }
+</script>
+}
