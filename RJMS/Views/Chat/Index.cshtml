@@ -13,14 +13,14 @@
         }
 
         .chat-container {
-            max-width: 100%;
-            margin: 0;
-            padding: 0;
+            max-width: 1300px;
+            margin: 0 auto 30px;
+            padding: 0 15px;
             display: grid;
             grid-template-columns: 320px 1fr;
             gap: 20px;
-            height: calc(100vh - 140px);
-            min-height: 600px;
+            height: calc(100vh - 180px);
+            min-height: 700px;
         }
 
         @@media (max-width: 991px) {
@@ -246,6 +246,49 @@
             font-weight: 700;
             padding: 2px 6px;
             border-radius: 10px;
+        }
+
+        /* --- Custom Avatar Styles --- */
+        .chat-avatar-wrapper, .chat-avatar-wrapper-header {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            overflow: hidden;
+            flex-shrink: 0;
+            margin-right: 12px;
+            background: #f3f4f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chat-avatar-wrapper img, .chat-avatar-wrapper-header img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .chat-avatar-initials, .chat-avatar-initials-header {
+            width: 100%;
+            height: 100%;
+            background: #00b14f;
+            color: #fff;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+        }
+
+        .chat-avatar-wrapper-header {
+            width: 48px;
+            height: 48px;
+            margin-right: 0;
+        }
+
+        .chat-avatar-initials-header {
+            font-size: 1.3rem;
         }
 
         /* --- MIDDLE AREA (CHAT VIEW) --- */
@@ -752,7 +795,7 @@
 }
 
 <!-- Breadcrumbs -->
-<div class="container-fluid" style="padding: 0; margin-bottom: 20px;">
+<div style="max-width: 1300px; margin: 0 auto; padding: 0 15px 20px;">
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb bg-transparent p-0 m-0" style="font-size: 0.85rem;">
             <li class="breadcrumb-item"><a href="/" class="text-decoration-none" style="color: #6b7280;">Trang chủ</a></li>
@@ -781,23 +824,36 @@
         <div class="chat-list">
             @foreach (var conv in Model.Conversations)
             {
-                <div class="chat-item @(conv.IsActive ? "active" : "")">
-                    <img src="@conv.Avatar" alt="Avatar" class="chat-avatar" />
-                    <div class="chat-item-content">
-                        <div class="chat-item-header">
-                            <h4 class="chat-item-name">@conv.Name</h4>
-                            <span class="chat-item-time">@conv.Time</span>
-                        </div>
-                        <p class="chat-item-company">@conv.Company</p>
-                        <div class="chat-item-msg-wrapper">
-                            <p class="chat-item-msg">@conv.LastMessage</p>
-                            @if (conv.UnreadCount > 0)
+                <a href="/Chat/Index/@conv.Id" class="text-decoration-none text-dark">
+                    <div class="chat-item @(conv.IsActive ? "active" : "")">
+                        <div class="chat-avatar-wrapper">
+                            @if (!string.IsNullOrEmpty(conv.Avatar) && conv.Avatar != "/images/default-avatar.png")
                             {
-                                <span class="chat-unread-badge">@conv.UnreadCount</span>
+                                <img src="@conv.Avatar" alt="Avatar" class="chat-avatar" />
+                            }
+                            else
+                            {
+                                <div class="chat-avatar-initials">
+                                    @((conv.Name?.Length > 0 ? conv.Name.Substring(0, 1) : "U").ToUpper())
+                                </div>
                             }
                         </div>
+                        <div class="chat-item-content">
+                            <div class="chat-item-header">
+                                <h4 class="chat-item-name">@conv.Name</h4>
+                                <span class="chat-item-time">@conv.Time</span>
+                            </div>
+                            <p class="chat-item-company">@conv.Company</p>
+                            <div class="chat-item-msg-wrapper">
+                                <p class="chat-item-msg">@conv.LastMessage</p>
+                                @if (conv.UnreadCount > 0)
+                                {
+                                    <span class="chat-unread-badge">@conv.UnreadCount</span>
+                                }
+                            </div>
+                        </div>
                     </div>
-                </div>
+                </a>
             }
         </div>
     </div>
@@ -809,14 +865,21 @@
             var active = Model.ActiveConversation;
             <div class="chat-header">
                 <div class="chat-header-info">
-                    <img src="@active.Avatar" alt="Avatar" />
+                    <div class="chat-avatar-wrapper-header">
+                        @if (!string.IsNullOrEmpty(active.Avatar) && active.Avatar != "/images/default-avatar.png")
+                        {
+                            <img src="@active.Avatar" alt="Avatar" />
+                        }
+                        else
+                        {
+                            <div class="chat-avatar-initials-header">
+                                @((active.Name?.Length > 0 ? active.Name.Substring(0, 1) : "U").ToUpper())
+                            </div>
+                        }
+                    </div>
                     <div class="chat-header-text">
                         <h3>@active.Name</h3>
                         <p>@active.Company</p>
-                        @if (active.IsOnline)
-                        {
-                            <span class="chat-status-online">Online</span>
-                        }
                     </div>
                 </div>
                 <div class="dropdown">
@@ -830,7 +893,7 @@
                 </div>
             </div>
 
-            <div class="chat-body">
+            <div class="chat-body" id="chatBody">
                 <div class="chat-date-divider">
                     <span>Hôm nay</span>
                 </div>
@@ -838,7 +901,14 @@
                 @if (!string.IsNullOrEmpty(active.JobApplied))
                 {
                     <div class="chat-notice">
-                        <span>Bạn đã ứng tuyển vị trí: @active.JobApplied</span>
+                        @if (role == "Recruiter")
+                        {
+                            <span>Ứng viên <strong>@active.Name</strong> đã ứng tuyển vị trí <strong>@active.JobApplied</strong></span>
+                        }
+                        else
+                        {
+                            <span>Bạn đã ứng tuyển vị trí <strong>@active.JobApplied</strong> của công ty <strong>@active.Company</strong></span>
+                        }
                     </div>
                 }
 
@@ -847,7 +917,18 @@
                     <div class="msg-row @(msg.IsMine ? "sent" : "received")">
                         @if (!msg.IsMine)
                         {
-                            <img src="@msg.Avatar" alt="Avatar" class="msg-avatar" />
+                            <div class="chat-avatar-wrapper shadow-sm" style="width: 32px; height: 32px; margin-right: 8px;">
+                                @if (!string.IsNullOrEmpty(msg.Avatar) && msg.Avatar != "/images/default-avatar.png")
+                                {
+                                    <img src="@msg.Avatar" alt="Avatar" />
+                                }
+                                else
+                                {
+                                    <div class="chat-avatar-initials" style="font-size: 0.8rem;">
+                                        @((Model.ActiveConversation?.Name?.Length > 0 ? Model.ActiveConversation.Name.Substring(0, 1) : "U").ToUpper())
+                                    </div>
+                                }
+                            </div>
                         }
                         
                         <div style="display:flex; flex-direction:column; @(msg.IsMine ? "align-items:flex-end;" : "align-items:flex-start;")">
@@ -889,14 +970,118 @@
             <div class="chat-input-area">
                 <div class="chat-input-wrapper">
                     <button class="btn-attach"><i class="fas fa-paperclip"></i></button>
-                    <textarea class="chat-input" placeholder="Nhập tin nhắn..." rows="1"></textarea>
-                    <button class="btn-send"><i class="fas fa-paper-plane"></i></button>
+                    <textarea id="txtMessage" class="chat-input" placeholder="Nhập tin nhắn..." rows="1"></textarea>
+                    <button id="btnSend" class="btn-send"><i class="fas fa-paper-plane"></i></button>
                 </div>
                 <div class="chat-input-hint">Nhấn Enter để gửi</div>
             </div>
         }
+        else
+        {
+            <div class="chat-empty-state d-flex flex-column align-items-center justify-content-center text-center p-5" style="height: 100%; background: #f9fafb;">
+                <div class="empty-state-icon mb-4" style="width: 100px; height: 100px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+                    <i class="fas fa-comments" style="font-size: 3rem; color: #00b14f;"></i>
+                </div>
+                <h3 class="fw-bold text-dark mb-2">Lời chào từ Finding Jobs!</h3>
+                <p class="text-muted mb-4" style="max-width: 350px;">Hãy chọn một cuộc hội thoại từ danh sách bên trái để bắt đầu trao đổi với nhà tuyển dụng.</p>
+                <div class="d-flex gap-2">
+                    <span class="badge bg-light text-secondary border px-3 py-2">Hỗ trợ 24/7</span>
+                    <span class="badge bg-light text-secondary border px-3 py-2">Bảo mật 100%</span>
+                </div>
+            </div>
+        }
     </div>
-
-
-
 </div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            const chatBody = document.getElementById('chatBody');
+            if (chatBody) {
+                chatBody.scrollTop = chatBody.scrollHeight;
+            }
+
+            @if(Model.ActiveConversation != null && Model.ActiveConversation.Id > 0)
+            {
+                <text>
+                const activeConvId = '@Model.ActiveConversation.Id';
+                const currentUserIdStr = '@(Context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? Context.Request.Cookies["UserId"])';
+                </text>
+            }
+            else
+            {
+                <text>
+                const activeConvId = null;
+                const currentUserIdStr = null;
+                </text>
+            }
+
+            if (activeConvId && typeof signalR !== 'undefined') {
+                const conn = new signalR.HubConnectionBuilder()
+                    .withUrl("/chatHub")
+                    .withAutomaticReconnect()
+                    .build();
+
+                conn.on("ReceiveMessage", function (convId, content, time, senderId) {
+                    if (convId == activeConvId) {
+                        const isMine = (currentUserIdStr == senderId) || false;
+                        const avatar = isMine ? '/images/default-avatar.png' : '@(Model.ActiveConversation?.Avatar)';
+                        const name = isMine ? 'Me' : '@(Model.ActiveConversation?.Name)';
+                        const rowClass = isMine ? 'sent' : 'received';
+                        const align = isMine ? 'align-items:flex-end;' : 'align-items:flex-start;';
+                        
+                        let imgHtml = '';
+                        if (!isMine) {
+                            if (avatar !== '/images/default-avatar.png' && avatar !== '') {
+                                imgHtml = `<div class="chat-avatar-wrapper shadow-sm" style="width: 32px; height: 32px; margin-right: 8px;"><img src="${avatar}" /></div>`;
+                            } else {
+                                const initial = (name && name.length > 0) ? name.substring(0, 1).toUpperCase() : 'U';
+                                imgHtml = `<div class="chat-avatar-wrapper shadow-sm" style="width: 32px; height: 32px; margin-right: 8px;"><div class="chat-avatar-initials" style="font-size: 0.8rem;">${initial}</div></div>`;
+                            }
+                        }
+                        
+                        const msgHtml = `
+                            <div class="msg-row ${rowClass}">
+                                ${imgHtml}
+                                <div style="display:flex; flex-direction:column; ${align}">
+                                    <div class="msg-bubble">${content}</div>
+                                    <span class="msg-time">${time}</span>
+                                </div>
+                            </div>
+                        `;
+                        $('#chatBody').append(msgHtml);
+                        chatBody.scrollTop = chatBody.scrollHeight;
+                    } else {
+                        // could show unread indicator on the left sidebar
+                        toastr.info("Bạn có tin nhắn mới", "Tin nhắn");
+                    }
+                });
+
+                conn.start().then(function () {
+                    conn.invoke("JoinChat", activeConvId);
+                }).catch(function (err) {
+                    console.error("SignalR logic error: ", err);
+                });
+
+                $('#btnSend').click(function () {
+                    const txt = $('#txtMessage').val().trim();
+                    if (!txt) return;
+
+                    $('#txtMessage').val('');
+                    fetch('/Chat/SendMessage', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ ConversationId: parseInt(activeConvId), Content: txt })
+                    });
+                });
+
+                $('#txtMessage').keydown(function (e) {
+                    if (e.keyCode === 13 && !e.shiftKey) {
+                        e.preventDefault();
+                        $('#btnSend').click();
+                    }
+                });
+            }
+        });
+    </script>
+}
