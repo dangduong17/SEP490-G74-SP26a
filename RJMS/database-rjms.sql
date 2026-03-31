@@ -809,4 +809,132 @@ BEGIN
         FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE
     );
 END
+GO
+
+-- ──────────────────────────────────────────────────────────
+-- Notifications (dùng chung toàn hệ thống)
+-- ──────────────────────────────────────────────────────────
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Notifications')
+BEGIN
+    CREATE TABLE Notifications
+    (
+        Id INT IDENTITY PRIMARY KEY,
+        UserId INT NOT NULL,
+        Title NVARCHAR(255),
+        Content NVARCHAR(MAX),
+        Type NVARCHAR(50), -- CHAT, APPLICATION, SYSTEM, PAYMENT, JOB
+        IsRead BIT DEFAULT 0,
+        CreatedAt DATETIME2 DEFAULT GETDATE(),
+        FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE
+    );
+END
+GO
+
+-- Link notification tới entity cụ thể
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'NotificationReferences')
+BEGIN
+    CREATE TABLE NotificationReferences
+    (
+        Id INT IDENTITY PRIMARY KEY,
+        NotificationId INT NOT NULL,
+        ReferenceType NVARCHAR(50), -- MESSAGE, JOB, APPLICATION, PAYMENT
+        ReferenceId INT,
+        FOREIGN KEY (NotificationId) REFERENCES Notifications(Id) ON DELETE CASCADE
+    );
+END
+GO
+
+-- ──────────────────────────────────────────────────────────
+-- CHAT & MESSAGING
+-- ──────────────────────────────────────────────────────────
+-- Conversations
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Conversations')
+BEGIN
+    CREATE TABLE Conversations
+    (
+        Id INT IDENTITY PRIMARY KEY,
+        IsGroup BIT DEFAULT 0,
+        CreatedAt DATETIME2 DEFAULT GETDATE(),
+        UpdatedAt DATETIME2
+    );
+END
+GO
+
+-- Conversation Participants
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ConversationParticipants')
+BEGIN
+    CREATE TABLE ConversationParticipants
+    (
+        Id INT IDENTITY PRIMARY KEY,
+        ConversationId INT NOT NULL,
+        UserId INT NOT NULL,
+        JoinedAt DATETIME2 DEFAULT GETDATE(),
+        FOREIGN KEY (ConversationId) REFERENCES Conversations(Id) ON DELETE CASCADE,
+        FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE
+    );
+END
+GO
+
+-- Messages
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Messages')
+BEGIN
+    CREATE TABLE Messages
+    (
+        Id INT IDENTITY PRIMARY KEY,
+        ConversationId INT NOT NULL,
+        SenderId INT NOT NULL,
+        Content NVARCHAR(MAX),
+        MessageType NVARCHAR(50) DEFAULT 'TEXT', -- TEXT / IMAGE / FILE / JOB / CV
+        CreatedAt DATETIME2 DEFAULT GETDATE(),
+        IsDeleted BIT DEFAULT 0,
+        FOREIGN KEY (ConversationId) REFERENCES Conversations(Id) ON DELETE CASCADE,
+        FOREIGN KEY (SenderId) REFERENCES Users(Id)
+    );
+END
+GO
+
+-- Message Reads (Seen ✔✔)
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'MessageReads')
+BEGIN
+    CREATE TABLE MessageReads
+    (
+        Id INT IDENTITY PRIMARY KEY,
+        MessageId INT NOT NULL,
+        UserId INT NOT NULL,
+        ReadAt DATETIME2,
+        FOREIGN KEY (MessageId) REFERENCES Messages(Id) ON DELETE CASCADE,
+        FOREIGN KEY (UserId) REFERENCES Users(Id)
+    );
+END
+GO
+
+-- Message Attachments (file, ảnh...)
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'MessageAttachments')
+BEGIN
+    CREATE TABLE MessageAttachments
+    (
+        Id INT IDENTITY PRIMARY KEY,
+        MessageId INT NOT NULL,
+        FileUrl NVARCHAR(500),
+        FileName NVARCHAR(255),
+        FileType NVARCHAR(50),
+        FOREIGN KEY (MessageId) REFERENCES Messages(Id) ON DELETE CASCADE
+    );
+END
+GO
+
+-- Conversation - Job mapping (cực quan trọng cho job platform)
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ConversationJobs')
+BEGIN
+    CREATE TABLE ConversationJobs
+    (
+        Id INT IDENTITY PRIMARY KEY,
+        ConversationId INT NOT NULL,
+        JobId INT NULL,
+        ApplicationId INT NULL,
+        FOREIGN KEY (ConversationId) REFERENCES Conversations(Id) ON DELETE CASCADE,
+        FOREIGN KEY (JobId) REFERENCES Jobs(Id),
+        FOREIGN KEY (ApplicationId) REFERENCES Applications(Id)
+    );
+END
 GO
