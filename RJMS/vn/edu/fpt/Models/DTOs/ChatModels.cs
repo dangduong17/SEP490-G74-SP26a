@@ -12,11 +12,11 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
     public class ChatConversationViewModel
     {
         public int Id { get; set; }
-        public string Avatar { get; set; }
-        public string Name { get; set; }
-        public string Company { get; set; }
-        public string LastMessage { get; set; }
-        public string Time { get; set; }
+        public string Avatar { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string Company { get; set; } = string.Empty;
+        public string LastMessage { get; set; } = string.Empty;
+        public string Time { get; set; } = string.Empty;
         public int UnreadCount { get; set; }
         public bool IsActive { get; set; }
     }
@@ -24,11 +24,11 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
     public class ChatDetailViewModel
     {
         public int Id { get; set; }
-        public string Avatar { get; set; }
-        public string Name { get; set; }
-        public string Company { get; set; }
+        public string Avatar { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string Company { get; set; } = string.Empty;
         public bool IsOnline { get; set; }
-        public string JobApplied { get; set; }
+        public string JobApplied { get; set; } = string.Empty;
         
         public JobInfoViewModel JobInfo { get; set; } = new JobInfoViewModel();
         public CompanyInfoViewModel CompanyInfo { get; set; } = new CompanyInfoViewModel();
@@ -40,29 +40,29 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
     {
         public int Id { get; set; }
         public bool IsMine { get; set; }
-        public string Avatar { get; set; }
-        public string Content { get; set; }
-        public string Time { get; set; }
+        public string Avatar { get; set; } = string.Empty;
+        public string Content { get; set; } = string.Empty;
+        public string Time { get; set; } = string.Empty;
         
         public bool IsAttachment { get; set; }
-        public string FileName { get; set; }
-        public string FileSize { get; set; }
+        public string FileName { get; set; } = string.Empty;
+        public string FileSize { get; set; } = string.Empty;
     }
 
     public class JobInfoViewModel
     {
-        public string Title { get; set; }
-        public string Salary { get; set; }
-        public string Location { get; set; }
-        public string Status { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string Salary { get; set; } = string.Empty;
+        public string Location { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
     }
 
     public class CompanyInfoViewModel
     {
-        public string Name { get; set; }
-        public string EmployeeCount { get; set; }
-        public string HrName { get; set; }
-        public string HrTitle { get; set; }
-        public string HrAvatar { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string EmployeeCount { get; set; } = string.Empty;
+        public string HrName { get; set; } = string.Empty;
+        public string HrTitle { get; set; } = string.Empty;
+        public string HrAvatar { get; set; } = string.Empty;
     }
 }
