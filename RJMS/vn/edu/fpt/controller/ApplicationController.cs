@@ -14,12 +14,15 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Index(string? userId)
+        public async Task<IActionResult> Index()
         {
-            if (string.IsNullOrWhiteSpace(userId))
+            var userId = Request.Cookies["UserId"];
+            var role = Request.Cookies["UserRole"];
+
+            if (string.IsNullOrWhiteSpace(userId) || role != "Candidate")
             {
-                ModelState.AddModelError(string.Empty, "User id is required");
-                return View("Index", Array.Empty<JobApplicationDTO>());
+                TempData["WarningToast"] = "Vui lòng đăng nhập bằng tài khoản Ứng viên.";
+                return RedirectToAction("Login", "Auth");
             }
 
             var applications = await _jobApplicationService.GetApplicationsAsync(userId);
