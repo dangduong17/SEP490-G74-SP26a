@@ -1,63 +1,207 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using RJMS.vn.edu.fpt.Models;
 using RJMS.vn.edu.fpt.Models.DTOs;
 using RJMS.Vn.Edu.Fpt.Repository;
+using vn.edu.fpt.Utilities;
 
 namespace RJMS.Vn.Edu.Fpt.Service
 {
     public class ChatService : IChatService
     {
-        private readonly IChatRepository _chatRepository;
+        private readonly FindingJobsDbContext _context;
 
-        public ChatService(IChatRepository chatRepository)
+        public ChatService(FindingJobsDbContext context)
         {
-            _chatRepository = chatRepository;
+            _context = context;
         }
 
-        public async Task<ChatPageViewModel> GetChatPageDataAsync(int userId)
+        public async Task<int> StartConversationAsync(int candidateUserId, int jobId, int applicationId)
         {
-            // Mock Data for UI
+            // verify job and get recruiter user ID
+            var job = await _context.Jobs.Include(j => j.Recruiter).FirstOrDefaultAsync(j => j.Id == jobId);
+            if (job == null || job.Recruiter == null) return 0;
+            
+            int recruiterUserId = job.Recruiter.UserId;
+
+            // Check if there is already a conversation for this exact app
+            var existingConv = await _context.ConversationJobs
+                .Where(cj => cj.JobId == jobId && cj.ApplicationId == applicationId)
+                .Select(cj => cj.ConversationId)
+                .FirstOrDefaultAsync();
+
+            if (existingConv > 0)
+                return existingConv;
+
+            // Otherwise, create a new conversation
+            var conv = new Conversation
+            {
+                IsGroup = false,
+                CreatedAt = DateTimeHelper.NowVietnam,
+                UpdatedAt = DateTimeHelper.NowVietnam
+            };
+            
+            _context.Conversations.Add(conv);
+            await _context.SaveChangesAsync();
+
+            // create participants
+            _context.ConversationParticipants.Add(new ConversationParticipant { ConversationId = conv.Id, UserId = candidateUserId });
+            _context.ConversationParticipants.Add(new ConversationParticipant { ConversationId = conv.Id, UserId = recruiterUserId });
+            
+            // link to job
+            _context.ConversationJobs.Add(new ConversationJob { ConversationId = conv.Id, JobId = jobId, ApplicationId = applicationId });
+            
+            await _context.SaveChangesAsync();
+            return conv.Id;
+        }
+
+        public async Task<ChatPageViewModel> GetChatPageDataAsync(int userId, int? activeConversationId = null)
+        {
             var model = new ChatPageViewModel();
-            model.Conversations = new List<ChatConversationViewModel>
-            {
-                new ChatConversationViewModel { Id = 1, Avatar = "https://i.pravatar.cc/150?img=1", Name = "Nguyễn Thị Lan", Company = "Công ty TNHH ABC", LastMessage = "Chúng tôi rất quan tâm đến hồ sơ...", Time = "10:24", UnreadCount = 0, IsActive = true },
-                new ChatConversationViewModel { Id = 2, Avatar = "https://i.pravatar.cc/150?img=11", Name = "Trần Văn Minh", Company = "Tech Solutions Co.", LastMessage = "Cám ơn bạn đã quan tâm", Time = "Hôm qua", UnreadCount = 0, IsActive = false },
-                new ChatConversationViewModel { Id = 3, Avatar = "https://i.pravatar.cc/150?img=5", Name = "Phạm Thị Hương", Company = "VinaTech Group", LastMessage = "Bạn có thể tham gia phỏng vấn...", Time = "14:30", UnreadCount = 2, IsActive = false }
-            };
 
-            model.ActiveConversation = new ChatDetailViewModel
+            var participantConvs = await _context.ConversationParticipants
+                .Where(cp => cp.UserId == userId)
+                .Select(cp => cp.ConversationId)
+                .ToListAsync();
+
+            var conversations = await _context.Conversations
+                .Include(c => c.Participants).ThenInclude(p => p.User).ThenInclude(u => u.Candidates)
+                .Include(c => c.Participants).ThenInclude(p => p.User).ThenInclude(u => u.Recruiters).ThenInclude(r => r.Company)
+                .Include(c => c.Messages.OrderByDescending(m => m.CreatedAt).Take(1))
+                .Include(c => c.ConversationJobs).ThenInclude(cj => cj.Job).ThenInclude(j => j.Company)
+                .Where(c => participantConvs.Contains(c.Id))
+                .OrderByDescending(c => c.UpdatedAt)
+                .ToListAsync();
+
+            foreach (var c in conversations)
             {
-                Id = 1,
-                Avatar = "https://i.pravatar.cc/150?img=1",
-                Name = "Nguyễn Thị Lan",
-                Company = "Công ty TNHH ABC",
-                IsOnline = true,
-                JobApplied = "Kế toán thuế",
-                JobInfo = new JobInfoViewModel
+                var otherPart = c.Participants.FirstOrDefault(p => p.UserId != userId)?.User;
+                string name = "Người dùng";
+                string avatar = "/images/default-avatar.png";
+                string company = "";
+
+                var isRecruiter = otherPart?.Recruiters != null && otherPart.Recruiters.Any();
+                var isCandidate = otherPart?.Candidates != null && otherPart.Candidates.Any();
+                var recruiter = otherPart?.Recruiters?.FirstOrDefault();
+                var candidate = otherPart?.Candidates?.FirstOrDefault();
+
+                if (isRecruiter)
                 {
-                    Title = "Kế toán thuế",
-                    Salary = "15-20 triệu",
-                    Location = "Hà Nội",
-                    Status = "Đang trao đổi"
-                },
-                CompanyInfo = new CompanyInfoViewModel
-                {
-                    Name = "Công ty TNHH ABC",
-                    EmployeeCount = "100-200 nhân viên",
-                    HrName = "Nguyễn Thị Lan",
-                    HrTitle = "HR Manager",
-                    HrAvatar = "https://i.pravatar.cc/150?img=1"
-                },
-                Messages = new List<ChatMessageViewModel>
-                {
-                    new ChatMessageViewModel { Id = 1, IsMine = false, Avatar = "https://i.pravatar.cc/150?img=1", Content = "Xin chào, chúng tôi đã xem xét hồ sơ của bạn và rất quan tâm. Bạn có thể cho chúng tôi biết thêm về kinh nghiệm làm việc của mình không?", Time = "09:15" },
-                    new ChatMessageViewModel { Id = 2, IsMine = true, Avatar = "", Content = "Xin chào! Cám ơn bạn đã quan tâm. Tôi có 3 năm kinh nghiệm trong lĩnh vực kế toán thuế, đặc biệt là thuế GTGT và thuế TNDN.", Time = "09:18" },
-                    new ChatMessageViewModel { Id = 3, IsMine = true, Avatar = "", Content = "Đây là CV chi tiết của tôi ạ", Time = "09:20", IsAttachment = true, FileName = "CV_NguyenVanA.pdf", FileSize = "245 KB" },
-                    new ChatMessageViewModel { Id = 4, IsMine = false, Avatar = "https://i.pravatar.cc/150?img=1", Content = "Cảm ơn bạn! Chúng tôi sẽ xem xét và liên hệ lại trong vòng 2-3 ngày làm việc. Bạn có thể tham gia phỏng vấn vào tuần sau được không?", Time = "10:24" }
+                    name = recruiter?.FullName ?? otherPart?.Email ?? "Nhà tuyển dụng";
+                    company = recruiter?.Company?.Name ?? "";
+                    avatar = recruiter?.Company?.Logo ?? "/images/logo_default.png";
                 }
-            };
+                else if (isCandidate)
+                {
+                    name = candidate?.FullName ?? otherPart?.Email ?? "Ứng viên";
+                    avatar = otherPart?.Avatar ?? "/images/default-avatar.png"; 
+                }
 
-            return await Task.FromResult(model);
+                var lastMsg = c.Messages.FirstOrDefault();
+                
+                model.Conversations.Add(new ChatConversationViewModel
+                {
+                    Id = c.Id,
+                    Name = name,
+                    Avatar = avatar,
+                    Company = company,
+                    LastMessage = lastMsg?.Content ?? "Chưa có tin nhắn",
+                    Time = lastMsg?.CreatedAt?.ToString("dd/MM HH:mm") ?? "",
+                    UnreadCount = 0, // Simplified for now
+                    IsActive = activeConversationId.HasValue && c.Id == activeConversationId.Value
+                });
+            }
+
+            // Set active conversation if null or empty
+            int targetConvId = activeConversationId ?? (model.Conversations.FirstOrDefault()?.Id ?? 0);
+            if (targetConvId > 0)
+            {
+                // mark active
+                var activeVM = model.Conversations.FirstOrDefault(c => c.Id == targetConvId);
+                if (activeVM != null) activeVM.IsActive = true;
+
+                // Load detail
+                var targetConv = conversations.FirstOrDefault(c => c.Id == targetConvId);
+                if (targetConv != null)
+                {
+                    var msgList = await _context.Messages
+                        .Include(m => m.Sender)
+                        .Where(m => m.ConversationId == targetConvId)
+                        .OrderBy(m => m.CreatedAt)
+                        .ToListAsync();
+
+                    model.ActiveConversation.Id = targetConv.Id;
+                    model.ActiveConversation.Name = activeVM?.Name ?? "";
+                    model.ActiveConversation.Company = activeVM?.Company ?? "";
+                    model.ActiveConversation.Avatar = activeVM?.Avatar ?? "";
+                    model.ActiveConversation.IsOnline = true;
+
+                    var cJob = targetConv.ConversationJobs.FirstOrDefault()?.Job;
+                    if (cJob != null)
+                    {
+                        model.ActiveConversation.JobApplied = cJob.Title ?? "";
+                        model.ActiveConversation.JobInfo = new JobInfoViewModel
+                        {
+                            Title = cJob.Title ?? "",
+                            Location = cJob.Location?.CityName ?? "N/A",
+                            Salary = cJob.MinSalary != null ? $"{cJob.MinSalary:N0} - {cJob.MaxSalary:N0}" : "Thỏa thuận",
+                            Status = "Đang tuyển"
+                        };
+                        model.ActiveConversation.CompanyInfo = new CompanyInfoViewModel
+                        {
+                            Name = cJob.Company?.Name ?? "",
+                            HrName = model.ActiveConversation.Name
+                        };
+                    }
+
+                    foreach (var m in msgList)
+                    {
+                        model.ActiveConversation.Messages.Add(new ChatMessageViewModel
+                        {
+                            Id = m.Id,
+                            Content = m.Content ?? "",
+                            IsMine = m.SenderId == userId,
+                            Time = m.CreatedAt?.ToString("dd/MM HH:mm") ?? "",
+                            Avatar = m.SenderId == userId ? "/images/default-avatar.png" : model.ActiveConversation.Avatar
+                        });
+                    }
+                }
+            }
+
+            return model;
+        }
+
+        public async Task<ChatMessageViewModel> SendMessageAsync(int conversationId, int senderUserId, string content)
+        {
+            var msg = new Message
+            {
+                ConversationId = conversationId,
+                SenderId = senderUserId,
+                Content = content,
+                CreatedAt = DateTimeHelper.NowVietnam,
+                MessageType = "TEXT"
+            };
+            
+            _context.Messages.Add(msg);
+            
+            var conv = await _context.Conversations.FindAsync(conversationId);
+            if (conv != null) conv.UpdatedAt = DateTimeHelper.NowVietnam;
+
+            await _context.SaveChangesAsync();
+            
+            // Re-fetch avatar if needed, mock for now
+            return new ChatMessageViewModel
+            {
+                Id = msg.Id,
+                Content = msg.Content,
+                IsMine = true,
+                Time = msg.CreatedAt?.ToString("dd/MM HH:mm") ?? "",
+                Avatar = "/images/default-avatar.png", // Simplified
+                IsAttachment = false
+            };
         }
     }
 }
