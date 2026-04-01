@@ -42,12 +42,17 @@ namespace RJMS.Vn.Edu.Fpt.Repository
             var applications = await _context
                 .Applications.Where(a => a.CandidateId == candidateId)
                 .Include(a => a.Job)
+                .ThenInclude(j => j.Company)
                 .AsNoTracking()
                 .OrderByDescending(a => a.CreatedAt)
                 .Select(a => new JobApplicationDTO
                 {
                     Id = a.Id,
+                    JobId = a.JobId,
                     PositionTitle = a.Job.Title ?? string.Empty,
+                    CustomTitle = a.Job.Title ?? string.Empty,
+                    CompanyName = a.Job.Company != null ? a.Job.Company.Name : string.Empty,
+                    CompanyLogo = a.Job.Company != null ? a.Job.Company.Logo : null,
                     Status = a.Status ?? string.Empty,
                     AppliedAt = a.CreatedAt ?? DateTime.MinValue,
                 })
