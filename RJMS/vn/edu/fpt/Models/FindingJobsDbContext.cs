@@ -58,6 +58,16 @@ public partial class FindingJobsDbContext : DbContext
 
     public virtual DbSet<UserRole> UserRoles { get; set; }
     public virtual DbSet<CompanyFollower> CompanyFollowers { get; set; }
+    public virtual DbSet<AppNotification> Notifications { get; set; }
+    public virtual DbSet<NotificationReference> NotificationReferences { get; set; }
+    
+    // Chat & Messaging
+    public virtual DbSet<Conversation> Conversations { get; set; }
+    public virtual DbSet<ConversationParticipant> ConversationParticipants { get; set; }
+    public virtual DbSet<Message> Messages { get; set; }
+    public virtual DbSet<MessageRead> MessageReads { get; set; }
+    public virtual DbSet<MessageAttachment> MessageAttachments { get; set; }
+    public virtual DbSet<ConversationJob> ConversationJobs { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 {
@@ -413,6 +423,44 @@ public partial class FindingJobsDbContext : DbContext
                 .WithMany(p => p.FollowingCompanies)
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<AppNotification>(entity =>
+        {
+            entity.ToTable("Notifications");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getutcdate())");
+            entity.Property(e => e.IsRead).HasDefaultValue(false);
+            entity.HasOne(d => d.User)
+                .WithMany()
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<NotificationReference>(entity =>
+        {
+            entity.ToTable("NotificationReferences");
+            entity.HasKey(e => e.Id);
+            entity.HasOne(d => d.Notification)
+                .WithMany(p => p.References)
+                .HasForeignKey(d => d.NotificationId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Message>(entity =>
+        {
+            entity.HasOne(d => d.Sender)
+                .WithMany()
+                .HasForeignKey(d => d.SenderId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
+        });
+
+        modelBuilder.Entity<MessageRead>(entity =>
+        {
+            entity.HasOne(d => d.User)
+                .WithMany()
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
         });
 
         OnModelCreatingPartial(modelBuilder);
