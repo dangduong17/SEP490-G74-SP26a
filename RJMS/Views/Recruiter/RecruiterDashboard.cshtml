@@ -463,15 +463,45 @@
                 <canvas id="appOverviewChart" height="150"></canvas>
             </div>
 
-            <!-- Job Post Performance - Line -->
-            <div class="rchart-card">
-                <div class="rchart-card-header">
-                    <div>
-                        <div class="rchart-card-title">Hiệu quả tin tuyển dụng</div>
-                        <div class="rchart-card-sub">Xu hướng lượt xem vs lượt nhấn</div>
+            <!-- Subscription card (Moved from sidebar) -->
+            <div class="rsub-card" style="margin-bottom: 0;">
+                <div class="rsub-header">
+                    <span class="rsub-title">Gói dịch vụ hiện tại</span>
+                    <span class="rsub-plan-badge">@Model.SubscriptionPlan</span>
+                </div>
+                <div class="rsub-valid">Hạn dùng đến @Model.SubscriptionValidTo</div>
+
+                <div class="rsub-metric">
+                    <div class="rsub-metric-label">
+                        <span>Lượt đăng tin còn lại</span>
+                        <span class="rsub-metric-val">@Model.JobPostsUsed / @Model.JobPostsTotal</span>
+                    </div>
+                    <div class="rsub-bar-bg">
+                        <div class="rsub-bar-fill" style="width:@((Model.JobPostsTotal > 0) ? (int)((double)Model.JobPostsUsed/Model.JobPostsTotal*100) : 0)%;"></div>
                     </div>
                 </div>
-                <canvas id="jobPerfChart" height="150"></canvas>
+
+                <div class="rsub-metric">
+                    <div class="rsub-metric-label">
+                        <span>Lượt lọc AI CV còn lại</span>
+                        <span class="rsub-metric-val">@Model.CvSearchesUsed / @Model.CvSearchesTotal</span>
+                    </div>
+                    <div class="rsub-bar-bg">
+                        <div class="rsub-bar-fill" style="width:@((Model.CvSearchesTotal > 0) ? (int)((double)Model.CvSearchesUsed/Model.CvSearchesTotal*100) : 0)%;"></div>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center gap-3 mt-4">
+                    <a asp-controller="Subscription" asp-action="Index" class="btn-upgrade mb-0" style="margin-top: 0; flex: 1;">
+                        Nâng cấp gói <i class="fas fa-arrow-trend-up ms-1"></i>
+                    </a>
+                    @if (Model.PlanPrice > 0)
+                    {
+                        <button class="btn btn-outline-light btn-sm" style="font-size: 0.8rem; border-color: rgba(255,255,255,0.3); height: 40px;">
+                            <i class="fas fa-times-circle"></i> Hủy gói
+                        </button>
+                    }
+                </div>
             </div>
         </div>
 
@@ -555,64 +585,6 @@
         </div>
     </div><!-- /LEFT COLUMN -->
 
-    <!-- RIGHT SIDEBAR -->
-    <div class="rsidebar">
-
-        <!-- Subscription card -->
-        <div class="rsub-card">
-            <div class="rsub-header">
-                <span class="rsub-title">Gói dịch vụ hiện tại</span>
-                <span class="rsub-plan-badge">@Model.SubscriptionPlan</span>
-            </div>
-            <div class="rsub-valid">Hạn dùng đến @Model.SubscriptionValidTo</div>
-
-            <div class="rsub-metric">
-                <div class="rsub-metric-label">
-                    <span>Lượt đăng tin còn lại</span>
-                    <span class="rsub-metric-val">@Model.JobPostsUsed / @Model.JobPostsTotal</span>
-                </div>
-                <div class="rsub-bar-bg">
-                    <div class="rsub-bar-fill" style="width:@((Model.JobPostsTotal > 0) ? (int)((double)Model.JobPostsUsed/Model.JobPostsTotal*100) : 0)%;"></div>
-                </div>
-            </div>
-
-            <div class="rsub-metric">
-                <div class="rsub-metric-label">
-                    <span>Lượt lọc AI CV còn lại</span>
-                    <span class="rsub-metric-val">@Model.CvSearchesUsed / @Model.CvSearchesTotal</span>
-                </div>
-                <div class="rsub-bar-bg">
-                    <div class="rsub-bar-fill" style="width:@((Model.CvSearchesTotal > 0) ? (int)((double)Model.CvSearchesUsed/Model.CvSearchesTotal*100) : 0)%;"></div>
-                </div>
-            </div>
-
-            <div class="d-flex flex-column gap-2 mt-4">
-                <a asp-controller="Subscription" asp-action="Index" class="btn-upgrade mb-0">
-                    Nâng cấp gói <i class="fas fa-arrow-trend-up ms-1"></i>
-                </a>
-                @if (Model.PlanPrice > 0)
-                {
-                    <button class="btn btn-outline-light btn-sm" style="font-size: 0.8rem; border-color: rgba(255,255,255,0.3);">
-                        <i class="fas fa-times-circle"></i> Hủy gói hiện tại
-                    </button>
-                }
-            </div>
-            <div class="rsub-contact mt-3">Cần yêu cầu đặc biệt? <a href="#">Liên hệ Sale</a></div>
-        </div>
-
-        <!-- Recruitment tip -->
-        <div class="rtip-card">
-            <div class="rtip-label">Recruitment Tip</div>
-            <div class="rtip-content">
-                <div class="rtip-icon"><i class="fas fa-chart-line" style="color:#00b14f;"></i></div>
-                <div class="rtip-body">
-                    <h5>Boost your visibility</h5>
-                    <p>Job posts with detailed salary ranges receive up to 40% more applications. Update your active posts now!</p>
-                    <a href="#" class="rtip-link">Update Listings <i class="fas fa-arrow-right ms-1"></i></a>
-                </div>
-            </div>
-        </div>
-
     </div><!-- /RIGHT SIDEBAR -->
 
 </div><!-- /rdash-grid -->
@@ -650,56 +622,5 @@
         }
     });
 
-    // ===== Job Post Performance - Line Chart =====
-    new Chart(document.getElementById('jobPerfChart'), {
-        type: 'line',
-        data: {
-            labels: ['Tuần 1','Tuần 2','Tuần 3','Tuần 4'],
-            datasets: [
-                {
-                    label: 'Lượt xem',
-                    data: [405, 570, 735, 900],
-                    borderColor: '#00b14f',
-                    backgroundColor: 'rgba(0,177,79,0.07)',
-                    tension: 0.4,
-                    borderWidth: 2.5,
-                    pointRadius: 4,
-                    pointBackgroundColor: '#00b14f',
-                    fill: false,
-                },
-                {
-                    label: 'Lượt nhấn',
-                    data: [240, 330, 380, 460],
-                    borderColor: '#3b82f6',
-                    backgroundColor: 'rgba(59,130,246,0.07)',
-                    tension: 0.4,
-                    borderWidth: 2.5,
-                    pointRadius: 4,
-                    pointBackgroundColor: '#3b82f6',
-                    fill: false,
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    position: 'top',
-                    align: 'end',
-                    labels: { font: { size: 11 }, boxWidth: 12, usePointStyle: true }
-                }
-            },
-            scales: {
-                y: {
-                    ticks: { font: { size: 10 } },
-                    grid: { color: '#f3f4f6', borderDash: [4,4] }
-                },
-                x: {
-                    ticks: { font: { size: 10 } },
-                    grid: { display: false }
-                }
-            }
-        }
-    });
 </script>
 }
