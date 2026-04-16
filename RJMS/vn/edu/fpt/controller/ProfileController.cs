@@ -30,6 +30,14 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             return null;
         }
 
+        private IActionResult? RequireRecruiterOrEmployee()
+        {
+            var role = Request.Cookies["UserRole"];
+            if (role != "Recruiter" && role != "Employee")
+                return RedirectToAction("Login", "Auth");
+            return null;
+        }
+
         private IActionResult? RequireAdmin()
         {
             var role = Request.Cookies["UserRole"];
@@ -175,7 +183,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             if (userId == null)
                 return RedirectToAction("Login", "Auth");
 
-            if (role == "Recruiter")
+            if (role == "Recruiter" || role == "Employee")
                 return RedirectToAction(nameof(EditProfileNew));
             if (role == "Admin")
                 return RedirectToAction(nameof(EditAdminProfile));
@@ -242,7 +250,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         [HttpGet]
         public async Task<IActionResult> EditProfileNew()
         {
-            if (RequireRecruiter() is { } redirect) return redirect;
+            if (RequireRecruiterOrEmployee() is { } redirect) return redirect;
 
             var userId = GetCurrentUserId();
             if (userId == null)
@@ -259,11 +267,36 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditProfileNew(RecruiterEditProfileViewModel model)
         {
-            if (RequireRecruiter() is { } redirect) return redirect;
+            if (RequireRecruiterOrEmployee() is { } redirect) return redirect;
 
             var userId = GetCurrentUserId();
             if (userId == null)
                 return RedirectToAction("Login", "Auth");
+
+            var role = Request.Cookies["UserRole"];
+            if (role == "Employee")
+            {
+                var currentProfile = await _profileService.GetRecruiterProfileForEditAsync(userId.Value);
+                if (currentProfile != null)
+                {
+                    model.CompanyId = currentProfile.CompanyId;
+                    model.CompanyName = currentProfile.CompanyName;
+                    model.CompanyLogo = currentProfile.CompanyLogo;
+                    model.CompanyTaxCode = currentProfile.CompanyTaxCode;
+                    model.CompanySize = currentProfile.CompanySize;
+                    model.CompanyIndustry = currentProfile.CompanyIndustry;
+                    model.CompanyWebsite = currentProfile.CompanyWebsite;
+                    model.CompanyEmail = currentProfile.CompanyEmail;
+                    model.CompanyPhone = currentProfile.CompanyPhone;
+                    model.CompanyDescription = currentProfile.CompanyDescription;
+                    model.ProvinceCode = currentProfile.ProvinceCode;
+                    model.ProvinceName = currentProfile.ProvinceName;
+                    model.WardCode = currentProfile.WardCode;
+                    model.WardName = currentProfile.WardName;
+                    model.WorkAddress = currentProfile.WorkAddress;
+                    model.CompanyLogoFile = null;
+                }
+            }
 
             ViewData["Title"] = "Chỉnh sửa hồ sơ nhà tuyển dụng";
 
@@ -295,11 +328,13 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         [HttpGet]
         public async Task<IActionResult> EditCompanyProfile()
         {
-            if (RequireRecruiter() is { } redirect) return redirect;
+            if (RequireRecruiterOrEmployee() is { } redirect) return redirect;
 
             var userId = GetCurrentUserId();
             if (userId == null)
                 return RedirectToAction("Login", "Auth");
+
+            ViewData["CanEditCompanyProfile"] = Request.Cookies["UserRole"] == "Recruiter";
 
             var model = await _profileService.GetCompanyProfileForEditAsync(userId.Value);
             if (model == null)
@@ -316,11 +351,22 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditCompanyProfile(CompanyEditProfileViewModel model)
         {
-            if (RequireRecruiter() is { } redirect) return redirect;
-
             var userId = GetCurrentUserId();
             if (userId == null)
                 return RedirectToAction("Login", "Auth");
+
+            var role = Request.Cookies["UserRole"];
+            if (role == "Employee")
+            {
+                TempData["ErrorToast"] = "Bạn chỉ có quyền xem thông tin công ty.";
+                ViewData["CanEditCompanyProfile"] = false;
+                return RedirectToAction(nameof(EditCompanyProfile));
+            }
+
+            if (role != "Recruiter")
+                return RedirectToAction("Login", "Auth");
+
+            ViewData["CanEditCompanyProfile"] = true;
 
             ViewData["Title"] = "Chỉnh sửa thông tin công ty";
 

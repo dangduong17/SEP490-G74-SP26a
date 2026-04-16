@@ -135,6 +135,9 @@
     <div class="recruiter-body-wrapper">
         <!-- Sidebar -->
         <aside class="recruiter-sidebar">
+            @{
+                var _role = Context.Request.Cookies["UserRole"];
+            }
             <div class="recruiter-sidebar-logo" style="justify-content: center; text-align: center;">
                 <div>
                     <h6 style="color: #00b14f; font-size: 1.1rem;">Finding Jobs</h6>
@@ -163,19 +166,19 @@
                 </a>
                 
                 <span class="nav-section">Tương tác</span>
-                <a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Chat" ? "active" : "")"
-                   asp-controller="Chat" asp-action="Index">
-                    Tin nhắn
-                </a>
+                @if (_role == "Employee")
+                {
+                    <a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Chat" ? "active" : "")"
+                       asp-controller="Chat" asp-action="Index">
+                        Tin nhắn
+                    </a>
+                }
                 <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Candidates" ? "active" : "")"
                    asp-controller="Recruiter" asp-action="Candidates">
                     Tìm hồ sơ AI
                 </a>
 
                 <span class="nav-section">Quản lý công ty</span>
-                @{
-                    var _role = Context.Request.Cookies["UserRole"];
-                }
                 @if (_role != "Employee")
                 {
                     <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "ManageLocations" ? "active" : "")"
