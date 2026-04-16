@@ -1,0 +1,570 @@
+@model RJMS.vn.edu.fpt.Models.DTOs.RecruiterEmployeeListViewModel
+@{
+    ViewData["Title"] = "Quản lý nhân viên";
+    ViewData["HidePageTitle"] = true;
+    Layout = "~/Views/Shared/_RecruiterLayout.cshtml";
+}
+
+@section Styles {
+<style>
+    .rpage-breadcrumb { margin-bottom: 10px; font-size: 0.8rem; color: #9ca3af; }
+    .rpage-breadcrumb a { color: #6b7280; text-decoration: none; }
+    .rpage-breadcrumb a:hover { color: #00b14f; }
+
+    .rpage-header {
+        display: flex; align-items: center;
+        justify-content: space-between; margin-bottom: 22px;
+    }
+    .rpage-header h1 { font-size: 1.45rem; font-weight: 700; color: #111827; margin: 0 0 4px; }
+    .rpage-header p  { font-size: 0.84rem; color: #6b7280; margin: 0; }
+
+    /* Search bar */
+    .search-bar-row {
+        display: flex; gap: 12px; align-items: center; margin-bottom: 20px;
+    }
+    .search-input-wrap { position: relative; flex: 1; max-width: 380px; }
+    .search-input-wrap i {
+        position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+        color: #9ca3af; font-size: 0.9rem;
+    }
+    .search-input-wrap input {
+        width: 100%; padding: 9px 12px 9px 36px;
+        border: 1px solid #d1d5db; border-radius: 8px;
+        font-size: 0.875rem; color: #111827; outline: none;
+        transition: border-color 0.15s;
+    }
+    .search-input-wrap input:focus { border-color: #00b14f; box-shadow: 0 0 0 3px rgba(0,177,79,.1); }
+    .btn-search {
+        background: #00b14f; color: #fff; border: none; border-radius: 8px;
+        padding: 9px 18px; font-size: 0.875rem; font-weight: 600; cursor: pointer;
+        transition: background 0.2s;
+    }
+    .btn-search:hover { background: #009744; }
+
+    /* Table card */
+    .emp-card {
+        background: #fff; border: 1px solid #e5e7eb;
+        border-radius: 14px; overflow: hidden; margin-bottom: 24px;
+    }
+    .emp-table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+    .emp-table th {
+        font-size: 0.72rem; font-weight: 700; color: #9ca3af; text-transform: uppercase;
+        letter-spacing: 0.04em; padding: 12px 16px; background: #f9fafb;
+        border-bottom: 1px solid #f3f4f6; text-align: left;
+    }
+    .emp-table td {
+        padding: 14px 16px; border-bottom: 1px solid #f9fafb;
+        color: #374151; vertical-align: middle;
+    }
+    .emp-table tr:last-child td { border-bottom: none; }
+    .emp-table tr:hover td { background: #fafafa; }
+
+    /* Avatar */
+    .emp-avatar {
+        width: 36px; height: 36px; border-radius: 50%;
+        background: linear-gradient(135deg,#00b14f,#009744);
+        color: #fff; font-weight: 700; font-size: 0.85rem;
+        display: inline-flex; align-items: center; justify-content: center;
+        margin-right: 10px; flex-shrink: 0;
+    }
+    .emp-avatar img { width:36px; height:36px; border-radius:50%; object-fit:cover; }
+    .emp-cell { display: flex; align-items: center; }
+    .emp-name { font-weight: 600; color: #111827; font-size: 0.88rem; }
+    .emp-email { font-size: 0.75rem; color: #9ca3af; }
+
+    /* Badges */
+    .badge-active   { background: #dcfce7; color: #15803d; padding: 3px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 600; }
+    .badge-banned   { background: #fee2e2; color: #b91c1c; padding: 3px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 600; }
+    .badge-verified { background: #eff6ff; color: #1d4ed8; padding: 3px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 600; }
+
+    .loc-tags { display: flex; gap: 4px; flex-wrap: wrap; }
+    .loc-tag {
+        background: #f3f4f6; color: #374151;
+        font-size: 0.7rem; padding: 2px 8px; border-radius: 12px;
+    }
+
+    /* Action buttons */
+    .emp-actions { display: flex; gap: 6px; align-items: center; }
+    .eact-btn {
+        display: inline-flex; align-items: center; gap: 4px;
+        font-size: 0.75rem; border-radius: 7px; padding: 5px 10px;
+        border: 1px solid #e5e7eb; background: #f9fafb;
+        color: #374151; cursor: pointer; transition: all 0.15s;
+        white-space: nowrap;
+    }
+    .eact-btn:hover { background: #e5e7eb; }
+    .eact-btn.warn { color: #b45309; border-color: #fde68a; background: #fffbeb; }
+    .eact-btn.warn:hover { background: #fef3c7; }
+    .eact-btn.danger { color: #b91c1c; border-color: #fecaca; background: #fff5f5; }
+    .eact-btn.danger:hover { background: #fee2e2; }
+    .eact-btn.success { color: #15803d; border-color: #bbf7d0; background: #f0fdf4; }
+    .eact-btn.success:hover { background: #dcfce7; }
+
+    /* Add employee button */
+    .btn-add-emp {
+        background: #00b14f; color: #fff; border: none; border-radius: 9px;
+        padding: 10px 20px; font-size: 0.875rem; font-weight: 600;
+        display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+        transition: background 0.2s; text-decoration: none; white-space: nowrap;
+    }
+    .btn-add-emp:hover { background: #009744; color: #fff; }
+
+    /* Modal */
+    .rmodal-overlay {
+        position: fixed; inset: 0; background: rgba(0,0,0,0.35);
+        z-index: 1000; display: none; align-items: center; justify-content: center;
+    }
+    .rmodal-overlay.open { display: flex; }
+    .rmodal {
+        background: #fff; border-radius: 16px; width: 100%; max-width: 560px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.18); overflow: hidden;
+        animation: modalIn 0.2s ease; max-height: 90vh; overflow-y: auto;
+    }
+    @@keyframes modalIn { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: none; } }
+    .rmodal-header {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 18px 24px 16px; border-bottom: 1px solid #e5e7eb;
+        position: sticky; top: 0; background: #fff; z-index: 1;
+    }
+    .rmodal-header h5 { font-size: 1.05rem; font-weight: 700; color: #111827; margin: 0; }
+    .rmodal-close { background: none; border: none; font-size: 1.2rem; color: #9ca3af; cursor: pointer; }
+    .rmodal-close:hover { color: #111827; }
+    .rmodal-body   { padding: 24px; }
+    .rmodal-footer {
+        padding: 16px 24px; border-top: 1px solid #e5e7eb;
+        display: flex; justify-content: flex-end; gap: 10px;
+        position: sticky; bottom: 0; background: #fff;
+    }
+
+    .rform-group { margin-bottom: 16px; }
+    .rform-label { font-size: 0.82rem; font-weight: 600; color: #374151; margin-bottom: 6px; display: block; }
+    .rform-label .req { color: #ef4444; }
+    .rform-control {
+        width: 100%; padding: 9px 12px; border: 1px solid #d1d5db; border-radius: 8px;
+        font-size: 0.875rem; color: #111827; outline: none; transition: border-color 0.15s;
+    }
+    .rform-control:focus { border-color: #00b14f; box-shadow: 0 0 0 3px rgba(0,177,79,.1); }
+    .rform-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .rform-hint { font-size: 0.72rem; color: #9ca3af; margin-top: 4px; }
+
+    .loc-checkbox-list { display: flex; flex-direction: column; gap: 8px; }
+    .loc-checkbox-item { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+    .loc-checkbox-item input { width: 16px; height: 16px; accent-color: #00b14f; cursor: pointer; }
+    .loc-checkbox-item span { font-size: 0.85rem; color: #374151; }
+
+    .btn-rsubmit {
+        background: #00b14f; color: #fff; border: none; border-radius: 8px;
+        padding: 9px 22px; font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: background 0.2s;
+    }
+    .btn-rsubmit:hover { background: #009744; }
+    .btn-rcancel {
+        background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb;
+        border-radius: 8px; padding: 9px 18px; font-size: 0.875rem; cursor: pointer;
+    }
+    .btn-rcancel:hover { background: #e5e7eb; }
+
+    /* Pagination */
+    .rpagination { display: flex; gap: 6px; align-items: center; justify-content: center; padding: 12px 0; }
+    .rpagination a, .rpagination span {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 34px; height: 34px; border-radius: 8px;
+        font-size: 0.82rem; font-weight: 600; text-decoration: none;
+        border: 1px solid #e5e7eb; color: #374151; transition: all 0.15s;
+    }
+    .rpagination a:hover { background: #f0fdf4; border-color: #00b14f; color: #00b14f; }
+    .rpagination span.active { background: #00b14f; color: #fff; border-color: #00b14f; }
+    .rpagination span.disabled { color: #d1d5db; pointer-events: none; }
+
+    .empty-state { text-align: center; padding: 60px 20px; color: #9ca3af; }
+    .empty-state i { font-size: 3rem; margin-bottom: 16px; color: #d1d5db; }
+
+    .pwd-toggle-wrap { position: relative; }
+    .pwd-toggle-wrap input { padding-right: 40px; }
+    .pwd-eye {
+        position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+        cursor: pointer; color: #9ca3af; font-size: 0.9rem;
+    }
+    .pwd-eye:hover { color: #374151; }
+</style>
+}
+
+<!-- Breadcrumb -->
+<div class="rpage-breadcrumb">
+    <a asp-controller="Recruiter" asp-action="RecruiterDashboard">Trang chủ</a>
+    <span> › </span>
+    <span>Quản lý nhân viên</span>
+</div>
+
+<!-- Header -->
+<div class="rpage-header">
+    <div>
+        <h1><i class="fas fa-users-cog me-2" style="color:#00b14f;"></i>Quản lý nhân viên</h1>
+        <p>Tổng số: <strong>@Model.TotalItems</strong> nhân viên trong công ty</p>
+    </div>
+    <button class="btn-add-emp" onclick="openModal('modalCreateEmp')">
+        <i class="fas fa-user-plus"></i> Thêm nhân viên
+    </button>
+</div>
+
+<!-- Toast -->
+@if (TempData["SuccessToast"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show mb-3" role="alert" style="border-radius:10px;">
+        <i class="fas fa-check-circle me-2"></i>@TempData["SuccessToast"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorToast"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert" style="border-radius:10px;">
+        <i class="fas fa-exclamation-circle me-2"></i>@TempData["ErrorToast"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Search -->
+<form method="get" asp-action="Employees">
+    <div class="search-bar-row">
+        <div class="search-input-wrap">
+            <i class="fas fa-search"></i>
+            <input type="text" name="keyword" value="@Model.Keyword" placeholder="Tìm theo tên, email, vị trí..." />
+        </div>
+        <button type="submit" class="btn-search"><i class="fas fa-search me-1"></i>Tìm kiếm</button>
+        @if (!string.IsNullOrEmpty(Model.Keyword))
+        {
+            <a asp-action="Employees" class="eact-btn">
+                <i class="fas fa-times"></i> Xóa bộ lọc
+            </a>
+        }
+    </div>
+</form>
+
+<!-- Table -->
+<div class="emp-card">
+    @if (!Model.Employees.Any())
+    {
+        <div class="empty-state">
+            <i class="fas fa-user-slash"></i>
+            <p>Chưa có nhân viên nào. Hãy thêm nhân viên đầu tiên.</p>
+        </div>
+    }
+    else
+    {
+        <table class="emp-table">
+            <thead>
+                <tr>
+                    <th>Nhân viên</th>
+                    <th>Vị trí</th>
+                    <th>Địa chỉ</th>
+                    <th>Trạng thái</th>
+                    <th>Ngày tạo</th>
+                    <th>Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var emp in Model.Employees)
+                {
+                    <tr>
+                        <td>
+                            <div class="emp-cell">
+                                <div class="emp-avatar">
+                                    @if (!string.IsNullOrEmpty(emp.Avatar))
+                                    {
+                                        <img src="@emp.Avatar" alt="avatar" />
+                                    }
+                                    else
+                                    {
+                                        @(emp.FullName.Length > 0 ? emp.FullName[0].ToString().ToUpper() : "E")
+                                    }
+                                </div>
+                                <div>
+                                    <div class="emp-name">@emp.FullName</div>
+                                    <div class="emp-email">@emp.Email</div>
+                                    @if (!string.IsNullOrEmpty(emp.Phone))
+                                    {
+                                        <div class="emp-email"><i class="fas fa-phone-alt me-1"></i>@emp.Phone</div>
+                                    }
+                                </div>
+                            </div>
+                        </td>
+                        <td>@(emp.Position ?? "—")</td>
+                        <td>
+                            <div class="loc-tags">
+                                @foreach (var lbl in emp.LocationLabels)
+                                {
+                                    <span class="loc-tag"><i class="fas fa-map-pin me-1"></i>@lbl</span>
+                                }
+                                @if (!emp.LocationLabels.Any())
+                                {
+                                    <span style="color:#d1d5db;font-size:0.8rem;">Chưa gán</span>
+                                }
+                            </div>
+                        </td>
+                        <td>
+                            @if (emp.IsActive)
+                            {
+                                <span class="badge-active"><i class="fas fa-check-circle me-1"></i>Hoạt động</span>
+                            }
+                            else
+                            {
+                                <span class="badge-banned"><i class="fas fa-ban me-1"></i>Đã khóa</span>
+                            }
+                        </td>
+                        <td style="color:#9ca3af;font-size:0.78rem;">@(emp.CreatedAt?.ToString("dd/MM/yyyy") ?? "—")</td>
+                        <td>
+                            <div class="emp-actions">
+                                <button class="eact-btn warn"
+                                        onclick="openEditModal(@emp.Id, '@emp.FullName.Replace("'", "\'")', '@(emp.Phone ?? "")', '@(emp.Position ?? "")', [@string.Join(",", emp.LocationLabels.Select((l, i) => i))])">
+                                    <i class="fas fa-edit"></i> Sửa
+                                </button>
+                                @if (emp.IsActive)
+                                {
+                                    <form asp-action="BanEmployee" method="post" style="display:inline"
+                                          onsubmit="return confirm('Khóa tài khoản @emp.FullName?')">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@emp.Id" />
+                                        <button type="submit" class="eact-btn danger">
+                                            <i class="fas fa-ban"></i> Khóa
+                                        </button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <form asp-action="UnbanEmployee" method="post" style="display:inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@emp.Id" />
+                                        <button type="submit" class="eact-btn success">
+                                            <i class="fas fa-unlock"></i> Mở khóa
+                                        </button>
+                                    </form>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+<!-- Pagination -->
+@if (Model.TotalPages > 1)
+{
+    <div class="rpagination">
+        @if (Model.Page > 1)
+        {
+            <a asp-action="Employees" asp-route-keyword="@Model.Keyword" asp-route-page="@(Model.Page - 1)">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+        }
+        @for (int p = Math.Max(1, Model.Page - 2); p <= Math.Min(Model.TotalPages, Model.Page + 2); p++)
+        {
+            if (p == Model.Page)
+            {
+                <span class="active">@p</span>
+            }
+            else
+            {
+                <a asp-action="Employees" asp-route-keyword="@Model.Keyword" asp-route-page="@p">@p</a>
+            }
+        }
+        @if (Model.Page < Model.TotalPages)
+        {
+            <a asp-action="Employees" asp-route-keyword="@Model.Keyword" asp-route-page="@(Model.Page + 1)">
+                <i class="fas fa-chevron-right"></i>
+            </a>
+        }
+    </div>
+}
+
+<!-- ── Modal: Create Employee ── -->
+<div class="rmodal-overlay" id="modalCreateEmp">
+    <div class="rmodal">
+        <div class="rmodal-header">
+            <h5><i class="fas fa-user-plus me-2" style="color:#00b14f;"></i>Thêm nhân viên mới</h5>
+            <button class="rmodal-close" onclick="closeModal('modalCreateEmp')"><i class="fas fa-times"></i></button>
+        </div>
+        <form asp-controller="RecruiterManagement" asp-action="CreateEmployee" method="post" id="formCreateEmp">
+            @Html.AntiForgeryToken()
+            <div class="rmodal-body">
+                <div class="rform-row">
+                    <div class="rform-group">
+                        <label class="rform-label">Họ <span class="req">*</span></label>
+                        <input type="text" name="FirstName" class="rform-control" required placeholder="Nguyễn" />
+                    </div>
+                    <div class="rform-group">
+                        <label class="rform-label">Tên <span class="req">*</span></label>
+                        <input type="text" name="LastName" class="rform-control" required placeholder="Văn A" />
+                    </div>
+                </div>
+                <div class="rform-group">
+                    <label class="rform-label">Email đăng nhập <span class="req">*</span></label>
+                    <input type="email" name="Email" class="rform-control" required placeholder="employee@company.com" />
+                </div>
+                <div class="rform-group">
+                    <label class="rform-label">Mật khẩu <span class="req">*</span></label>
+                    <div class="pwd-toggle-wrap">
+                        <input type="password" name="Password" id="createPwd" class="rform-control"
+                               required placeholder="Tối thiểu 8 ký tự..." />
+                        <i class="fas fa-eye pwd-eye" onclick="togglePwd('createPwd',this)"></i>
+                    </div>
+                    <div class="rform-hint">Ít nhất 8 ký tự, gồm chữ hoa, chữ số và ký tự đặc biệt</div>
+                </div>
+                <div class="rform-row">
+                    <div class="rform-group">
+                        <label class="rform-label">Số điện thoại <span class="req">*</span></label>
+                        <input type="text" name="PhoneNumber" class="rform-control" required placeholder="09xxxxxxxx" />
+                    </div>
+                    <div class="rform-group">
+                        <label class="rform-label">Vị trí công việc <span class="req">*</span></label>
+                        <input type="text" name="Position" class="rform-control" required placeholder="Nhân viên tuyển dụng" />
+                    </div>
+                </div>
+                @if (Model.Locations.Any())
+                {
+                    <div class="rform-group">
+                        <label class="rform-label">Gán vào chi nhánh</label>
+                        <div class="loc-checkbox-list">
+                            @foreach (var loc in Model.Locations)
+                            {
+                                <label class="loc-checkbox-item">
+                                    <input type="checkbox" name="CompanyLocationIds" value="@loc.Id" />
+                                    <span>
+                                        @(string.IsNullOrEmpty(loc.AddressLabel) ? loc.CityName : loc.AddressLabel)
+                                        @if (loc.IsPrimary) { <span style="color:#00b14f;font-size:0.7rem;">(Chính)</span> }
+                                    </span>
+                                </label>
+                            }
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-warning py-2" style="font-size:0.82rem;border-radius:8px;">
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        Chưa có địa chỉ văn phòng.
+                        <a asp-controller="RecruiterManagement" asp-action="CompanyLocations" style="color:#92400e;">Thêm địa chỉ trước</a>
+                    </div>
+                }
+            </div>
+            <div class="rmodal-footer">
+                <button type="button" class="btn-rcancel" onclick="closeModal('modalCreateEmp')">Hủy</button>
+                <button type="submit" class="btn-rsubmit">
+                    <i class="fas fa-user-plus me-1"></i>Tạo tài khoản
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ── Modal: Edit Employee ── -->
+<div class="rmodal-overlay" id="modalEditEmp">
+    <div class="rmodal">
+        <div class="rmodal-header">
+            <h5><i class="fas fa-user-edit me-2" style="color:#00b14f;"></i>Chỉnh sửa nhân viên</h5>
+            <button class="rmodal-close" onclick="closeModal('modalEditEmp')"><i class="fas fa-times"></i></button>
+        </div>
+        <form asp-controller="RecruiterManagement" asp-action="EditEmployee" method="post" id="formEditEmp">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="RecruiterId" id="editRecruiterId" />
+            <div class="rmodal-body">
+                <div class="rform-group">
+                    <label class="rform-label">Họ và tên <span class="req">*</span></label>
+                    <input type="text" name="FullName" id="editFullName" class="rform-control" required />
+                </div>
+                <div class="rform-row">
+                    <div class="rform-group">
+                        <label class="rform-label">Số điện thoại</label>
+                        <input type="text" name="Phone" id="editPhone" class="rform-control" />
+                    </div>
+                    <div class="rform-group">
+                        <label class="rform-label">Vị trí</label>
+                        <input type="text" name="Position" id="editPosition" class="rform-control" />
+                    </div>
+                </div>
+                @if (Model.Locations.Any())
+                {
+                    <div class="rform-group">
+                        <label class="rform-label">Gán chi nhánh</label>
+                        <div class="loc-checkbox-list" id="editLocList">
+                            @foreach (var loc in Model.Locations)
+                            {
+                                <label class="loc-checkbox-item">
+                                    <input type="checkbox" class="edit-loc-chk" name="CompanyLocationIds"
+                                           value="@loc.Id" data-loc-id="@loc.Id" />
+                                    <span>@(string.IsNullOrEmpty(loc.AddressLabel) ? loc.CityName : loc.AddressLabel)
+                                        @if (loc.IsPrimary) { <span style="color:#00b14f;font-size:0.7rem;">(Chính)</span> }
+                                    </span>
+                                </label>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+            <div class="rmodal-footer">
+                <button type="button" class="btn-rcancel" onclick="closeModal('modalEditEmp')">Hủy</button>
+                <button type="submit" class="btn-rsubmit">
+                    <i class="fas fa-save me-1"></i>Lưu thay đổi
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function openModal(id) {
+        document.getElementById(id).classList.add('open');
+    }
+    function closeModal(id) {
+        document.getElementById(id).classList.remove('open');
+    }
+
+    // Close on overlay click
+    document.querySelectorAll('.rmodal-overlay').forEach(ov => {
+        ov.addEventListener('click', e => { if (e.target === ov) ov.classList.remove('open'); });
+    });
+
+    // Password visibility toggle
+    function togglePwd(inputId, icon) {
+        const inp = document.getElementById(inputId);
+        if (inp.type === 'password') { inp.type = 'text'; icon.classList.replace('fa-eye','fa-eye-slash'); }
+        else { inp.type = 'password'; icon.classList.replace('fa-eye-slash','fa-eye'); }
+    }
+
+    // Open edit modal — fetch current employee data via AJAX
+    function openEditModal(recruiterId, fullName, phone, position, currentLocIds) {
+        document.getElementById('editRecruiterId').value = recruiterId;
+        document.getElementById('editFullName').value = fullName;
+        document.getElementById('editPhone').value = phone;
+        document.getElementById('editPosition').value = position;
+
+        // Uncheck all
+        document.querySelectorAll('.edit-loc-chk').forEach(chk => chk.checked = false);
+
+        // Fetch actual data for this employee
+        fetch(`/RecruiterManagement/EditEmployee/${recruiterId}`)
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('editFullName').value = data.fullName || fullName;
+                document.getElementById('editPhone').value = data.phone || phone;
+                document.getElementById('editPosition').value = data.position || position;
+
+                const locIds = data.currentLocationIds || [];
+                document.querySelectorAll('.edit-loc-chk').forEach(chk => {
+                    chk.checked = locIds.includes(parseInt(chk.value));
+                });
+            })
+            .catch(() => {
+                // Fallback: use passed values, no location pre-tick
+            });
+
+        openModal('modalEditEmp');
+    }
+
+    // Auto-open create modal if there's an error redirecting back
+    @if (TempData["OpenCreateModal"] != null) {
+        <text>openModal('modalCreateEmp');</text>
+    }
+</script>
+}
