@@ -29,17 +29,6 @@ public partial class Company
 
     public string? Benefits { get; set; }
 
-    // Location fields
-    public int? ProvinceCode { get; set; }
-
-    public string? ProvinceName { get; set; }
-
-    public int? WardCode { get; set; }
-
-    public string? WardName { get; set; }
-
-    public string? Address { get; set; }
-
     public bool? IsVerified { get; set; }
 
     public DateTime? VerifiedAt { get; set; }
@@ -52,4 +41,5 @@ public partial class Company
 
     public virtual ICollection<Recruiter> Recruiters { get; set; } = new List<Recruiter>();
     public virtual ICollection<CompanyFollower> Followers { get; set; } = new List<CompanyFollower>();
+    public virtual ICollection<CompanyLocation> CompanyLocations { get; set; } = new List<CompanyLocation>();
 }
