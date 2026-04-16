@@ -1,0 +1,377 @@
+@model RJMS.vn.edu.fpt.Models.DTOs.AdminSubscriptionListViewModel
+@{
+    ViewData["Title"] = "Quản lý gói dịch vụ";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<style>
+    /* ===== Page header toolbar ===== */
+    .sub-toolbar {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        margin-bottom: 24px;
+        gap: 16px;
+    }
+    .sub-toolbar h1 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #111827;
+        margin: 0 0 4px;
+    }
+    .sub-toolbar p { font-size: 0.84rem; color: #6b7280; margin: 0; }
+
+    /* ===== Filter bar ===== */
+    .sub-filterbar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 20px;
+        padding: 16px;
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+    }
+    .sub-search {
+        position: relative;
+        flex: 1;
+        min-width: 180px;
+        max-width: 300px;
+    }
+    .sub-search input {
+        padding: 0 12px;
+        border-radius: 8px;
+        border: 1px solid #d1d5db;
+        font-size: 0.85rem;
+        height: 38px;
+        width: 100%;
+    }
+    .sub-search input:focus { border-color: #00b14f; outline: none; box-shadow: 0 0 0 3px rgba(0,177,79,0.12); }
+    .sub-filterbar .form-select {
+        border-radius: 8px;
+        border: 1px solid #d1d5db;
+        font-size: 0.85rem;
+        height: 38px;
+        min-width: 140px;
+    }
+    .sub-filterbar .form-select:focus {
+        border-color: #00b14f;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(0,177,79,0.12);
+    }
+    .btn-filter {
+        height: 38px;
+        padding: 0 20px;
+        border: none;
+        border-radius: 8px;
+        background: #00b14f;
+        color: #fff;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+        flex-shrink: 0;
+    }
+    .btn-filter:hover { background: #009744; }
+    .filter-label {
+        font-size: 0.83rem;
+        color: #374151;
+        font-weight: 500;
+        white-space: nowrap;
+    }
+
+    /* ===== Table ===== */
+    .sub-table-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        overflow: hidden;
+        margin-bottom: 16px;
+    }
+    .sub-table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+    .sub-table thead tr { border-bottom: 1px solid #f3f4f6; }
+    .sub-table th {
+        padding: 12px 14px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        white-space: nowrap;
+        background: #fafafa;
+        text-align: left;
+    }
+    .sub-table td {
+        padding: 14px;
+        border-bottom: 1px solid #f9fafb;
+        vertical-align: middle;
+        color: #374151;
+    }
+    .sub-table tr:last-child td { border-bottom: none; }
+    .sub-table tr:hover td { background: #f9fafb; }
+
+    /* Status badges */
+    .st-active {
+        background: #dcfce7;
+        color: #15803d;
+        padding: 3px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .st-expired {
+        background: #fee2e2;
+        color: #991b1b;
+        padding: 3px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .st-pending {
+        background: #fef3c7;
+        color: #92400e;
+        padding: 3px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .st-cancelled {
+        background: #f3f4f6;
+        color: #6b7280;
+        padding: 3px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    /* Action buttons */
+    .act-btn {
+        height: 30px;
+        padding: 0 12px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        border: 1px solid #e5e7eb;
+        background: #fff;
+        cursor: pointer;
+        font-size: 0.8rem;
+        font-weight: 500;
+        transition: all 0.15s;
+        text-decoration: none;
+        white-space: nowrap;
+        color: #6b7280;
+    }
+    .act-btn:hover {
+        background: #f3f4f6;
+        border-color: #d1d5db;
+        color: #374151;
+    }
+
+    /* ===== Pagination ===== */
+    .sub-pagination {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 14px;
+        font-size: 0.82rem;
+        color: #6b7280;
+        border-top: 1px solid #f3f4f6;
+        background: #fff;
+        border-radius: 0 0 12px 12px;
+        margin-top: -16px;
+    }
+    .pg-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        font-size: 0.82rem;
+        color: #374151;
+        text-decoration: none;
+        background: #fff;
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+    .pg-btn:hover { border-color: #00b14f; color: #00b14f; }
+    .pg-btn.active { background: #00b14f; border-color: #00b14f; color: #fff; }
+    .pg-btn-text {
+        padding: 0 14px;
+        height: 32px;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        font-size: 0.82rem;
+        color: #374151;
+        display: inline-flex;
+        align-items: center;
+        text-decoration: none;
+        background: #fff;
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+    .pg-btn-text:hover { border-color: #00b14f; color: #00b14f; }
+</style>
+
+<!-- Toolbar -->
+<div class="sub-toolbar">
+    <div>
+        <h1>Quản lý gói dịch vụ</h1>
+        <p>Quản lý các gói đăng ký của người dùng trên nền tảng Finding Jobs.</p>
+    </div>
+</div>
+
+<!-- Filter bar -->
+<form method="get" asp-action="SubscriptionList">
+    <div class="sub-filterbar">
+        <div class="sub-search">
+            <input type="text" name="keyword" value="@Model.Keyword" placeholder="Tìm theo email, tên người dùng..." />
+        </div>
+
+        <span class="filter-label">Trạng thái:</span>
+        <select name="status" class="form-select">
+            <option value="ALL" selected="@(Model.Status == "ALL")">Tất cả</option>
+            <option value="ACTIVE" selected="@(Model.Status == "ACTIVE")">Đang hoạt động</option>
+            <option value="PENDING" selected="@(Model.Status == "PENDING")">Đang chờ</option>
+            <option value="EXPIRED" selected="@(Model.Status == "EXPIRED")">Hết hạn</option>
+            <option value="CANCELLED" selected="@(Model.Status == "CANCELLED")">Đã hủy</option>
+        </select>
+
+        <span class="filter-label">Gói:</span>
+        <select name="planId" class="form-select">
+            <option value="">Tất cả gói</option>
+            @foreach (var plan in Model.Plans)
+            {
+                <option value="@plan.Id" selected="@(Model.PlanId == plan.Id)">@plan.Name</option>
+            }
+        </select>
+
+        <button type="submit" class="btn-filter">
+            Lọc
+        </button>
+    </div>
+</form>
+
+<!-- Table -->
+<div class="sub-table-card">
+    <table class="sub-table">
+        <thead>
+            <tr>
+                <th>Người dùng</th>
+                <th>Gói</th>
+                <th>Giá</th>
+                <th>Bắt đầu</th>
+                <th>Kết thúc</th>
+                <th>Trạng thái</th>
+                <th>Tự động gia hạn</th>
+                <th style="text-align:right;">Thao tác</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (!Model.Subscriptions.Any())
+            {
+                <tr><td colspan="8" class="text-center text-muted py-5">Không có dữ liệu</td></tr>
+            }
+            @foreach (var sub in Model.Subscriptions)
+            {
+                <tr>
+                    <td>
+                        <div style="font-weight:600;color:#111827;">@sub.UserName</div>
+                        <div style="font-size:0.8rem; color:#6b7280;">@sub.UserEmail</div>
+                    </td>
+                    <td>@sub.PlanName</td>
+                    <td style="font-weight:600; color:#00b14f;">@sub.PlanPrice.ToString("N0") VNĐ</td>
+                    <td style="font-size:0.82rem;color:#6b7280;">@(sub.StartDate?.ToString("dd/MM/yyyy") ?? "—")</td>
+                    <td style="font-size:0.82rem;color:#6b7280;">@(sub.EndDate?.ToString("dd/MM/yyyy") ?? "—")</td>
+                    <td>
+                        @if (sub.Status?.ToUpper() == "ACTIVE")
+                        {
+                            <span class="st-active">Đang hoạt động</span>
+                        }
+                        else if (sub.Status?.ToUpper() == "EXPIRED")
+                        {
+                            <span class="st-expired">Hết hạn</span>
+                        }
+                        else if (sub.Status?.ToUpper() == "CANCELLED")
+                        {
+                            <span class="st-cancelled">Đã hủy</span>
+                        }
+                        else if (sub.Status?.ToUpper() == "PENDING")
+                        {
+                            <span class="st-pending">Đang chờ</span>
+                        }
+                        else
+                        {
+                            <span class="st-cancelled">@sub.Status</span>
+                        }
+                    </td>
+                    <td>
+                        @if (sub.AutoRenew)
+                        {
+                            <span style="color:#00b14f;font-weight:600;font-size:0.82rem;">Có</span>
+                        }
+                        else
+                        {
+                            <span style="color:#9ca3af;font-size:0.82rem;">Không</span>
+                        }
+                    </td>
+                    <td style="text-align:right;">
+                        <a asp-action="SubscriptionDetail" asp-route-id="@sub.Id" class="act-btn">
+                            Xem
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <!-- Pagination -->
+    @if (Model.TotalPages > 1)
+    {
+        <div class="sub-pagination">
+            <span>Hiển thị <strong>@((Model.Page-1)*Model.PageSize+1)–@Math.Min(Model.Page*Model.PageSize,Model.TotalItems)</strong> trong tổng số <strong>@Model.TotalItems</strong> gói</span>
+            <div style="display:flex;gap:6px;align-items:center;">
+                @if (Model.Page > 1)
+                {
+                    <a class="pg-btn-text" asp-action="SubscriptionList"
+                       asp-route-keyword="@Model.Keyword"
+                       asp-route-status="@Model.Status"
+                       asp-route-planId="@Model.PlanId"
+                       asp-route-page="@(Model.Page-1)"
+                       asp-route-pageSize="@Model.PageSize">Trước</a>
+                }
+                else
+                {
+                    <span class="pg-btn-text" style="opacity:.4;cursor:not-allowed;">Trước</span>
+                }
+
+                @for (int pg = Math.Max(1, Model.Page - 2); pg <= Math.Min(Model.TotalPages, Model.Page + 2); pg++)
+                {
+                    <a class="pg-btn @(pg == Model.Page ? "active" : "")"
+                       asp-action="SubscriptionList"
+                       asp-route-keyword="@Model.Keyword"
+                       asp-route-status="@Model.Status"
+                       asp-route-planId="@Model.PlanId"
+                       asp-route-page="@pg"
+                       asp-route-pageSize="@Model.PageSize">@pg</a>
+                }
+
+                @if (Model.Page < Model.TotalPages)
+                {
+                    <a class="pg-btn-text" asp-action="SubscriptionList"
+                       asp-route-keyword="@Model.Keyword"
+                       asp-route-status="@Model.Status"
+                       asp-route-planId="@Model.PlanId"
+                       asp-route-page="@(Model.Page+1)"
+                       asp-route-pageSize="@Model.PageSize">Sau</a>
+                }
+                else
+                {
+                    <span class="pg-btn-text" style="opacity:.4;cursor:not-allowed;">Sau</span>
+                }
+            </div>
+        </div>
+    }
+</div>
