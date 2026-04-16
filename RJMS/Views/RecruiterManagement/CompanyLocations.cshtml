@@ -1,0 +1,359 @@
+@model RJMS.vn.edu.fpt.Models.DTOs.CompanyLocationsPageViewModel
+@{
+    ViewData["Title"] = "Địa chỉ văn phòng";
+    ViewData["HidePageTitle"] = true;
+    Layout = "~/Views/Shared/_RecruiterLayout.cshtml";
+}
+
+@section Styles {
+<style>
+    /* ── Page Header ── */
+    .rpage-breadcrumb { margin-bottom: 10px; font-size: 0.8rem; color: #9ca3af; }
+    .rpage-breadcrumb a { color: #6b7280; text-decoration: none; }
+    .rpage-breadcrumb a:hover { color: #00b14f; }
+    .rpage-header {
+        display: flex; align-items: flex-start;
+        justify-content: space-between; margin-bottom: 24px;
+    }
+    .rpage-header h1 { font-size: 1.45rem; font-weight: 700; color: #111827; margin: 0 0 4px; }
+    .rpage-header p  { font-size: 0.84rem; color: #6b7280; margin: 0; }
+
+    /* ── Cards grid ── */
+    .loc-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+        gap: 18px;
+        margin-bottom: 28px;
+    }
+    .loc-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        padding: 20px 22px;
+        position: relative;
+        transition: box-shadow 0.2s, border-color 0.2s;
+    }
+    .loc-card:hover { box-shadow: 0 4px 18px rgba(0,0,0,0.07); border-color: #d1fae5; }
+    .loc-card.primary { border-color: #00b14f; background: linear-gradient(to bottom right, #f0fdf4, #fff); }
+
+    .loc-badge-primary {
+        position: absolute; top: 14px; right: 14px;
+        background: #00b14f; color: #fff;
+        font-size: 0.68rem; font-weight: 700; padding: 3px 9px;
+        border-radius: 20px; letter-spacing: 0.04em;
+    }
+
+    .loc-icon-wrap {
+        width: 42px; height: 42px; border-radius: 10px;
+        background: #ecfdf5; display: flex; align-items: center;
+        justify-content: center; margin-bottom: 14px;
+    }
+    .loc-icon-wrap i { color: #00b14f; font-size: 1.15rem; }
+
+    .loc-label { font-size: 1rem; font-weight: 700; color: #111827; margin-bottom: 4px; }
+    .loc-meta  { font-size: 0.8rem; color: #6b7280; line-height: 1.55; margin-bottom: 14px; }
+    .loc-meta i { width: 14px; color: #9ca3af; margin-right: 5px; }
+
+    .loc-emp-badge {
+        display: inline-flex; align-items: center; gap: 5px;
+        background: #eff6ff; color: #1d4ed8;
+        font-size: 0.75rem; font-weight: 600;
+        padding: 3px 10px; border-radius: 20px; margin-bottom: 14px;
+    }
+
+    .loc-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .loc-btn {
+        display: inline-flex; align-items: center; gap: 5px;
+        font-size: 0.75rem; border-radius: 7px; padding: 6px 12px;
+        border: 1px solid #e5e7eb; background: #f9fafb;
+        color: #374151; cursor: pointer; transition: all 0.15s;
+        white-space: nowrap; text-decoration: none;
+    }
+    .loc-btn:hover { background: #e5e7eb; color: #111827; }
+    .loc-btn.danger { color: #b91c1c; border-color: #fecaca; background: #fff5f5; }
+    .loc-btn.danger:hover { background: #fee2e2; border-color: #fca5a5; }
+    .loc-btn.primary { background: #00b14f; color: #fff; border-color: #00b14f; }
+    .loc-btn.primary:hover { background: #009744; }
+
+    /* ── Add card ── */
+    .loc-add-card {
+        border: 2px dashed #d1d5db;
+        border-radius: 14px;
+        background: #fafafa;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        padding: 32px 20px; gap: 10px; cursor: pointer;
+        transition: all 0.2s; color: #6b7280;
+    }
+    .loc-add-card:hover { border-color: #00b14f; color: #00b14f; background: #f0fdf4; }
+    .loc-add-card i { font-size: 1.6rem; }
+    .loc-add-card span { font-size: 0.88rem; font-weight: 600; }
+
+    /* ── Modal ── */
+    .rmodal-overlay {
+        position: fixed; inset: 0;
+        background: rgba(0,0,0,0.35);
+        z-index: 1000; display: none;
+        align-items: center; justify-content: center;
+    }
+    .rmodal-overlay.open { display: flex; }
+    .rmodal {
+        background: #fff; border-radius: 16px;
+        width: 100%; max-width: 520px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.18);
+        overflow: hidden; animation: modalIn 0.2s ease;
+    }
+    @@keyframes modalIn { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: none; } }
+    .rmodal-header {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 18px 24px 16px; border-bottom: 1px solid #e5e7eb;
+    }
+    .rmodal-header h5 { font-size: 1.05rem; font-weight: 700; color: #111827; margin: 0; }
+    .rmodal-close { background: none; border: none; font-size: 1.2rem; color: #9ca3af; cursor: pointer; padding: 4px; }
+    .rmodal-close:hover { color: #111827; }
+    .rmodal-body   { padding: 24px; }
+    .rmodal-footer { padding: 16px 24px; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 10px; }
+
+    .rform-group { margin-bottom: 18px; }
+    .rform-label { font-size: 0.82rem; font-weight: 600; color: #374151; margin-bottom: 6px; display: block; }
+    .rform-label span.req { color: #ef4444; }
+    .rform-control {
+        width: 100%; padding: 9px 12px;
+        border: 1px solid #d1d5db; border-radius: 8px;
+        font-size: 0.875rem; color: #111827;
+        transition: border-color 0.15s; outline: none;
+    }
+    .rform-control:focus { border-color: #00b14f; box-shadow: 0 0 0 3px rgba(0,177,79,.1); }
+    .rform-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .rform-check { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+    .rform-check input { width: 16px; height: 16px; accent-color: #00b14f; cursor: pointer; }
+    .rform-check span { font-size: 0.85rem; color: #374151; }
+
+    .btn-rsubmit {
+        background: #00b14f; color: #fff; border: none;
+        border-radius: 8px; padding: 9px 22px; font-size: 0.875rem;
+        font-weight: 600; cursor: pointer; transition: background 0.2s;
+    }
+    .btn-rsubmit:hover { background: #009744; }
+    .btn-rcancel {
+        background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb;
+        border-radius: 8px; padding: 9px 18px; font-size: 0.875rem;
+        font-weight: 500; cursor: pointer; transition: background 0.2s;
+    }
+    .btn-rcancel:hover { background: #e5e7eb; }
+
+    .empty-state {
+        text-align: center; padding: 60px 20px; color: #9ca3af;
+    }
+    .empty-state i { font-size: 3rem; margin-bottom: 16px; color: #d1d5db; }
+    .empty-state p { font-size: 0.9rem; }
+</style>
+}
+
+<!-- Breadcrumb -->
+<div class="rpage-breadcrumb">
+    <a asp-controller="Recruiter" asp-action="RecruiterDashboard">Trang chủ</a>
+    <span> › </span>
+    <span>Địa chỉ văn phòng</span>
+</div>
+
+<!-- Header -->
+<div class="rpage-header">
+    <div>
+        <h1><i class="fas fa-map-marker-alt me-2" style="color:#00b14f;"></i>Địa chỉ văn phòng</h1>
+        <p>Quản lý các chi nhánh / văn phòng của <strong>@Model.CompanyName</strong></p>
+    </div>
+</div>
+
+<!-- Toast -->
+@if (TempData["SuccessToast"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show mb-3" role="alert" style="border-radius:10px;">
+        <i class="fas fa-check-circle me-2"></i>@TempData["SuccessToast"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorToast"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert" style="border-radius:10px;">
+        <i class="fas fa-exclamation-circle me-2"></i>@TempData["ErrorToast"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Location Cards -->
+<div class="loc-grid">
+    @foreach (var loc in Model.Locations)
+    {
+        <div class="loc-card @(loc.IsPrimary ? "primary" : "")">
+            @if (loc.IsPrimary)
+            {
+                <span class="loc-badge-primary"><i class="fas fa-star me-1"></i>Chính</span>
+            }
+            <div class="loc-icon-wrap">
+                <i class="fas fa-building"></i>
+            </div>
+            <div class="loc-label">@(string.IsNullOrEmpty(loc.AddressLabel) ? loc.CityName : loc.AddressLabel)</div>
+            <div class="loc-meta">
+                @if (!string.IsNullOrEmpty(loc.CityName))
+                {
+                    <div><i class="fas fa-map-pin"></i>@loc.CityName@(!string.IsNullOrEmpty(loc.WardName) ? $", {loc.WardName}" : "")</div>
+                }
+                @if (!string.IsNullOrEmpty(loc.Address))
+                {
+                    <div><i class="fas fa-road"></i>@loc.Address</div>
+                }
+            </div>
+            <div class="loc-emp-badge">
+                <i class="fas fa-users"></i> @loc.EmployeeCount nhân viên
+            </div>
+            <div class="loc-actions">
+                @if (!loc.IsPrimary)
+                {
+                    <form asp-action="SetPrimaryLocation" method="post" style="display:inline;">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@loc.Id" />
+                        <button type="submit" class="loc-btn">
+                            <i class="fas fa-star"></i> Đặt làm chính
+                        </button>
+                    </form>
+                    <form asp-action="DeleteLocation" method="post" style="display:inline;"
+                          onsubmit="return confirm('Xác nhận xóa địa chỉ này?')">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@loc.Id" />
+                        <button type="submit" class="loc-btn danger" @(loc.EmployeeCount > 0 ? "disabled title='Đang có nhân viên'" : "")>
+                            <i class="fas fa-trash-alt"></i> Xóa
+                        </button>
+                    </form>
+                }
+                else
+                {
+                    <span class="loc-btn" style="cursor:default;color:#6b7280;"><i class="fas fa-lock"></i> Địa chỉ chính</span>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- Add new card -->
+    <div class="loc-add-card" id="btnAddLocation" onclick="document.getElementById('modalAddLocation').classList.add('open')">
+        <i class="fas fa-plus-circle"></i>
+        <span>Thêm địa chỉ mới</span>
+    </div>
+</div>
+
+@if (!Model.Locations.Any())
+{
+    <div class="empty-state">
+        <i class="fas fa-map-marked-alt"></i>
+        <p>Công ty chưa có địa chỉ nào. Hãy thêm văn phòng đầu tiên.</p>
+    </div>
+}
+
+<!-- ── Modal: Add Location ── -->
+<div class="rmodal-overlay" id="modalAddLocation">
+    <div class="rmodal">
+        <div class="rmodal-header">
+            <h5><i class="fas fa-map-marker-alt me-2" style="color:#00b14f;"></i>Thêm địa chỉ văn phòng</h5>
+            <button class="rmodal-close" onclick="document.getElementById('modalAddLocation').classList.remove('open')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form asp-action="AddLocation" method="post">
+            @Html.AntiForgeryToken()
+            <div class="rmodal-body">
+                <div class="rform-group">
+                    <label class="rform-label">Tên văn phòng / chi nhánh</label>
+                    <input type="text" name="AddressLabel" class="rform-control"
+                           placeholder="VD: Văn phòng Hà Nội, Chi nhánh HCM..." />
+                </div>
+                <div class="rform-row">
+                    <div class="rform-group">
+                        <label class="rform-label">Tỉnh / Thành phố <span class="req">*</span></label>
+                        <select name="ProvinceCode" id="addProvinceCode" class="rform-control" required>
+                            <option value="">-- Chọn tỉnh --</option>
+                        </select>
+                        <input type="hidden" name="ProvinceName" id="addProvinceName" />
+                    </div>
+                    <div class="rform-group">
+                        <label class="rform-label">Quận / Phường</label>
+                        <select name="WardCode" id="addWardCode" class="rform-control">
+                            <option value="">-- Chọn quận/phường --</option>
+                        </select>
+                        <input type="hidden" name="WardName" id="addWardName" />
+                    </div>
+                </div>
+                <div class="rform-group">
+                    <label class="rform-label">Địa chỉ chi tiết</label>
+                    <input type="text" name="WorkAddress" class="rform-control"
+                           placeholder="Số nhà, tên đường..." />
+                </div>
+                <div class="rform-check">
+                    <input type="checkbox" name="IsPrimary" value="true" id="chkPrimary" />
+                    <span>Đặt làm địa chỉ chính</span>
+                </div>
+            </div>
+            <div class="rmodal-footer">
+                <button type="button" class="btn-rcancel"
+                        onclick="document.getElementById('modalAddLocation').classList.remove('open')">Hủy</button>
+                <button type="submit" class="btn-rsubmit">
+                    <i class="fas fa-plus me-1"></i>Thêm địa chỉ
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    // Close modal on overlay click
+    document.getElementById('modalAddLocation').addEventListener('click', function(e) {
+        if (e.target === this) this.classList.remove('open');
+    });
+
+    // Load provinces
+    const addProvinceSelect = document.getElementById('addProvinceCode');
+    const addProvinceNameInput = document.getElementById('addProvinceName');
+    const addWardSelect = document.getElementById('addWardCode');
+    const addWardNameInput = document.getElementById('addWardName');
+
+    fetch('https://provinces.open-api.vn/api/p/')
+        .then(r => r.json())
+        .then(data => {
+            data.sort((a, b) => a.name.localeCompare(b.name, 'vi'));
+            data.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.code;
+                opt.textContent = p.name;
+                opt.dataset.name = p.name;
+                addProvinceSelect.appendChild(opt);
+            });
+        })
+        .catch(() => {});
+
+    addProvinceSelect.addEventListener('change', function() {
+        const code = this.value;
+        const name = this.options[this.selectedIndex]?.dataset.name || '';
+        addProvinceNameInput.value = name;
+        addWardSelect.innerHTML = '<option value="">-- Chọn quận/phường --</option>';
+        addWardNameInput.value = '';
+        if (!code) return;
+
+        fetch(`https://provinces.open-api.vn/api/p/${code}?depth=2`)
+            .then(r => r.json())
+            .then(data => {
+                (data.districts || []).forEach(d => {
+                    const opt = document.createElement('option');
+                    opt.value = d.code;
+                    opt.textContent = d.name;
+                    opt.dataset.name = d.name;
+                    addWardSelect.appendChild(opt);
+                });
+            })
+            .catch(() => {});
+    });
+
+    addWardSelect.addEventListener('change', function() {
+        addWardNameInput.value = this.options[this.selectedIndex]?.dataset.name || '';
+    });
+</script>
+}
