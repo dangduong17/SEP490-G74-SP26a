@@ -221,7 +221,7 @@
 <div class="dash-toolbar">
     <div class="dash-toolbar-title">
         <h2>Admin Dashboard</h2>
-        <p>Tổng quan hoạt động hệ thống và doanh thu.</p>
+        <p>Tổng quan tăng trưởng người dùng.</p>
     </div>
     <button class="dash-period-btn active" onclick="setPeriod(this,7)">7 ngày</button>
     <button class="dash-period-btn" onclick="setPeriod(this,30)">30 ngày</button>
@@ -239,27 +239,7 @@
 </div>
 
 <!-- Stat Cards -->
-<div class="stat-grid">
-    <div class="stat-card">
-        <div class="stat-icon" style="background:#ecfdf5;">
-            <i class="fas fa-chart-line" style="color:#00b14f;"></i>
-        </div>
-        <div class="stat-info">
-            <div class="label">Doanh thu</div>
-            <div class="value">245,000,000 đ</div>
-            <div class="trend trend-up"><i class="fas fa-arrow-up"></i> +12%</div>
-        </div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-icon" style="background:#eff6ff;">
-            <i class="fas fa-briefcase" style="color:#3b82f6;"></i>
-        </div>
-        <div class="stat-info">
-            <div class="label">Tin tuyển dụng</div>
-            <div class="value">@Model.TotalRecruiters</div>
-            <div class="trend trend-up"><i class="fas fa-arrow-up"></i> +8%</div>
-        </div>
-    </div>
+<div class="stat-grid" style="grid-template-columns: repeat(2, 1fr);">
     <div class="stat-card">
         <div class="stat-icon" style="background:#fdf4ff;">
             <i class="fas fa-user-plus" style="color:#a855f7;"></i>
@@ -282,177 +262,39 @@
     </div>
 </div>
 
-<!-- Row 1: Line Chart + Bar Chart -->
-<div class="chart-row chart-row-2">
-    <div class="chart-card">
-        <div class="chart-card-title">Doanh thu</div>
-        <div class="chart-card-sub">Theo thời gian</div>
-        <canvas id="revenueChart" height="110"></canvas>
-    </div>
-    <div class="chart-card">
-        <div class="chart-card-title">Bài đăng tuyển dụng</div>
-        <div class="chart-card-sub">&nbsp;</div>
-        <canvas id="jobPostChart" height="110"></canvas>
-    </div>
-</div>
-
-<!-- Row 2: Area Chart + Donut Chart -->
-<div class="chart-row chart-row-2b">
+<!-- Row 1: Area Chart -->
+<div class="chart-row">
     <div class="chart-card">
         <div class="chart-card-title">Tăng trưởng người dùng</div>
         <div class="chart-card-sub">&nbsp;</div>
         <canvas id="userGrowthChart" height="120"></canvas>
     </div>
-    <div class="chart-card">
-        <div class="chart-card-title">Doanh thu theo gói</div>
-        <div class="chart-card-sub">&nbsp;</div>
-        <div style="display:flex;align-items:center;gap:20px;">
-            <canvas id="revenueDonut" width="200" height="200" style="max-width:200px;max-height:200px;"></canvas>
-            <div id="donutLegend" style="font-size:0.8rem;line-height:2;"></div>
+</div>
+    <div class="stat-card">
+        <div class="stat-icon" style="background:#fdf4ff;">
+            <i class="fas fa-user-plus" style="color:#a855f7;"></i>
+        </div>
+        <div class="stat-info">
+            <div class="label">Ứng viên mới</div>
+            <div class="value">@Model.TotalCandidates</div>
+            <div class="trend trend-up"><i class="fas fa-arrow-up"></i> +15%</div>
         </div>
     </div>
-</div>
-
-<!-- Recent Activity -->
-<div class="chart-card mb-4">
-    <div class="chart-card-title mb-3">Hoạt động gần đây</div>
-    <table class="activity-table">
-        <thead>
-            <tr>
-                <th>Thời gian</th>
-                <th>Loại sự kiện</th>
-                <th>Người dùng / Công ty</th>
-                <th>Chi tiết</th>
-                <th>Trạng thái</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>10:30 AM</td>
-                <td>Đăng tin</td>
-                <td>FPT Software</td>
-                <td>Senior Frontend Developer</td>
-                <td><span class="status-badge status-active">Hoạt động</span></td>
-            </tr>
-            <tr>
-                <td>09:15 AM</td>
-                <td>Mua gói</td>
-                <td>Vietcombank</td>
-                <td>Gói Enterprise – 3 tháng</td>
-                <td><span class="status-badge status-success">Thành công</span></td>
-            </tr>
-            <tr>
-                <td>08:45 AM</td>
-                <td>Tạo tài khoản</td>
-                <td>Nguyễn Văn A</td>
-                <td>Ứng viên mới đăng ký</td>
-                <td><span class="status-badge status-pending">Đang xử lý</span></td>
-            </tr>
-            <tr>
-                <td>07:50 AM</td>
-                <td>Đăng tin</td>
-                <td>Vingroup</td>
-                <td>Product Manager</td>
-                <td><span class="status-badge status-active">Hoạt động</span></td>
-            </tr>
-        </tbody>
-    </table>
-</div>
-
-<!-- Alerts -->
-<div class="chart-card alert-section mb-2">
-    <div class="chart-card-title mb-3">Cảnh báo</div>
-    <div class="alert-item danger">
-        <i class="fas fa-exclamation-triangle"></i>
-        5 tin tuyển dụng bị báo cáo trong 24h
-    </div>
-    <div class="alert-item warning">
-        <i class="fas fa-clock"></i>
-        2 recruiter sắp hết gói
-    </div>
-    <div class="alert-item success">
-        <i class="fas fa-arrow-trend-up"></i>
-        Tăng đột biến đăng ký 30%
+    <div class="stat-card">
+        <div class="stat-icon" style="background:#fff7ed;">
+            <i class="fas fa-building" style="color:#f97316;"></i>
+        </div>
+        <div class="stat-info">
+            <div class="label">Nhà tuyển dụng mới</div>
+            <div class="value">@Model.TotalAdmins</div>
+            <div class="trend trend-up"><i class="fas fa-arrow-up"></i> +6%</div>
+        </div>
     </div>
 </div>
 
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
     <script>
-        // ===== Revenue Line Chart =====
-        new Chart(document.getElementById('revenueChart'), {
-            type: 'line',
-            data: {
-                labels: ['T1','T2','T3','T4','T5','T6','T7'],
-                datasets: [
-                    {
-                        label: 'Gói Basic',
-                        data: [62,58,65,70,68,72,75],
-                        borderColor: '#22c55e',
-                        backgroundColor: 'rgba(34,197,94,0.07)',
-                        tension: 0.4,
-                        borderWidth: 2,
-                        pointRadius: 3,
-                        fill: false,
-                    },
-                    {
-                        label: 'Gói Pro',
-                        data: [80,76,85,80,88,84,90],
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59,130,246,0.07)',
-                        tension: 0.4,
-                        borderWidth: 2,
-                        pointRadius: 3,
-                        fill: false,
-                    },
-                    {
-                        label: 'Gói Enterprise',
-                        data: [90,92,88,95,96,100,105],
-                        borderColor: '#a855f7',
-                        backgroundColor: 'rgba(168,85,247,0.07)',
-                        tension: 0.4,
-                        borderWidth: 2,
-                        pointRadius: 3,
-                        fill: false,
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                plugins: { legend: { position: 'top', labels: { font: { size: 11 }, boxWidth: 16 } } },
-                scales: {
-                    y: {
-                        ticks: { font: { size: 10 }, callback: v => v + 'M' },
-                        grid: { color: '#f3f4f6' }
-                    },
-                    x: { ticks: { font: { size: 10 } }, grid: { display: false } }
-                }
-            }
-        });
-
-        // ===== Job Post Bar Chart =====
-        new Chart(document.getElementById('jobPostChart'), {
-            type: 'bar',
-            data: {
-                labels: ['T1','T2','T3','T4','T5','T6','T7','CN'],
-                datasets: [{
-                    label: 'Bài đăng',
-                    data: [130,160,150,185,175,195,210,90],
-                    backgroundColor: '#10b981',
-                    borderRadius: 4,
-                    borderSkipped: false,
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: { legend: { display: false } },
-                scales: {
-                    y: { ticks: { font: { size: 10 } }, grid: { color: '#f3f4f6' } },
-                    x: { ticks: { font: { size: 10 } }, grid: { display: false } }
-                }
-            }
-        });
-
         // ===== User Growth Area Chart =====
         new Chart(document.getElementById('userGrowthChart'), {
             type: 'line',
@@ -489,43 +331,6 @@
                     x: { ticks: { font: { size: 10 } }, grid: { display: false } }
                 }
             }
-        });
-
-        // ===== Revenue Donut Chart =====
-        const donutData = {
-            labels: ['Pro', 'Enterprise', 'Basic'],
-            datasets: [{
-                data: [40, 31.7, 28.3],
-                backgroundColor: ['#3b82f6', '#a855f7', '#22c55e'],
-                borderWidth: 3,
-                borderColor: '#fff',
-                hoverOffset: 6,
-            }]
-        };
-
-        new Chart(document.getElementById('revenueDonut'), {
-            type: 'doughnut',
-            data: donutData,
-            options: {
-                responsive: false,
-                cutout: '60%',
-                plugins: {
-                    legend: { display: false },
-                    tooltip: { callbacks: { label: ctx => ctx.label + ': ' + ctx.parsed + '%' } }
-                }
-            }
-        });
-
-        // Custom legend for donut
-        const colors = ['#3b82f6','#a855f7','#22c55e'];
-        const legend = document.getElementById('donutLegend');
-        ['Pro – 40%','Enterprise – 31.7%','Basic – 28.3%'].forEach((item, i) => {
-            const div = document.createElement('div');
-            div.style.display = 'flex';
-            div.style.alignItems = 'center';
-            div.style.gap = '8px';
-            div.innerHTML = `<span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:${colors[i]};"></span> ${item}`;
-            legend.appendChild(div);
         });
 
         // Period button toggle
