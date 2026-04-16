@@ -22,7 +22,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         private IActionResult? RequireRecruiter()
         {
             var role = Request.Cookies["UserRole"];
-            if (role != "Recruiter")
+            if (role != "Recruiter" && role != "Employee")
             {
                 TempData["WarningToast"] = "Vui lòng đăng nhập bằng tài khoản Nhà tuyển dụng.";
                 return RedirectToAction("Login", "Auth");
@@ -30,12 +30,13 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             return null;
         }
 
+        private bool IsEmployee() => Request.Cookies["UserRole"] == "Employee";
+
         // ── Dashboard (GET /Recruiter) ─────────────────────────────────────────
         public async Task<IActionResult> RecruiterDashboard()
         {
             if (RequireRecruiter() is { } redirect) return redirect;
 
-            // Lấy thông tin recruiter từ cookie (hoặc tích hợp service sau)
             var userName = Request.Cookies["UserName"] ?? "Recruiter";
             var userIdStr = Request.Cookies["UserId"];
             int userId = 0;
@@ -48,18 +49,33 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
 
             if (userId > 0)
             {
-                var recruiter = await _context.Recruiters.FirstOrDefaultAsync(r => r.UserId == userId);
+                var recruiter = await _context.Recruiters
+                    .Include(r => r.RecruiterLocations)
+                    .FirstOrDefaultAsync(r => r.UserId == userId);
+
                 if (recruiter != null)
                 {
-                    model.ActiveJobPosts = await _context.Jobs.CountAsync(j => j.RecruiterId == recruiter.Id && j.Status == "Active");
-                    model.TotalApplications = await _context.Jobs
-                        .Where(j => j.RecruiterId == recruiter.Id)
-                        .SumAsync(j => j.ApplicationCount ?? 0);
-                    model.InterviewsScheduled = 0; // Future feature
+                    // Employee: chỉ thấy Job/Application thuộc địa chỉ được gán
+                    IQueryable<Job> jobQuery;
+                    if (IsEmployee())
+                    {
+                        var assignedLocationIds = recruiter.RecruiterLocations
+                            .Select(rl => rl.CompanyLocationId).ToList();
+                        jobQuery = _context.Jobs
+                            .Where(j => j.JobRecruiters.Any(jr => assignedLocationIds.Contains(jr.CompanyLocationId)));
+                    }
+                    else
+                    {
+                        jobQuery = _context.Jobs
+                            .Where(j => j.JobRecruiters.Any(jr => jr.RecruiterId == recruiter.Id));
+                    }
+
+                    model.ActiveJobPosts = await jobQuery.CountAsync(j => j.Status == "Active");
+                    model.TotalApplications = await jobQuery.SumAsync(j => j.ApplicationCount ?? 0);
+                    model.InterviewsScheduled = 0;
                     model.FollowerCount = await _context.CompanyFollowers.CountAsync(f => f.CompanyId == recruiter.CompanyId);
                     
-                    var recentJobs = await _context.Jobs
-                        .Where(j => j.RecruiterId == recruiter.Id)
+                    model.RecentJobPosts = await jobQuery
                         .OrderByDescending(j => j.CreatedAt)
                         .Take(5)
                         .Select(j => new RecentJobPostItem
@@ -73,13 +89,11 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                         })
                         .ToListAsync();
                     
-                    model.RecentJobPosts = recentJobs;
-                    
-                    // Fetch recent applications - simplified for now
+                    var jobIds = await jobQuery.Select(j => j.Id).ToListAsync();
                     model.RecentApplications = await _context.Applications
                         .Include(a => a.Job)
                         .Include(a => a.Candidate)
-                        .Where(a => a.Job.RecruiterId == recruiter.Id)
+                        .Where(a => jobIds.Contains(a.JobId))
                         .OrderByDescending(a => a.CreatedAt)
                         .Take(5)
                         .Select(a => new RecentApplicationItem
@@ -98,9 +112,29 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                         .ToListAsync();
                 }
 
+                // Subscription: Employee dùng subscription của công ty (theo recruiter owner)
+                int subscriptionUserId = userId;
+                if (IsEmployee() && model.RecentJobPosts != null)
+                {
+                    // Lấy owner recruiter (có role Recruiter) cùng công ty
+                    var rec = await _context.Recruiters.FirstOrDefaultAsync(r => r.UserId == userId);
+                    if (rec?.CompanyId != null)
+                    {
+                        var ownerRecruiter = await _context.Recruiters
+                            .Include(r => r.User)
+                            .ThenInclude(u => u.UserRoles)
+                            .ThenInclude(ur => ur.Role)
+                            .Where(r => r.CompanyId == rec.CompanyId 
+                                && r.User.UserRoles.Any(ur => ur.Role.Name == "Recruiter"))
+                            .FirstOrDefaultAsync();
+                        if (ownerRecruiter != null)
+                            subscriptionUserId = ownerRecruiter.UserId;
+                    }
+                }
+
                 var activeSubscription = await _context.Subscriptions
                     .Include(s => s.Plan)
-                    .Where(s => s.UserId == userId && s.Status == "Active")
+                    .Where(s => s.UserId == subscriptionUserId && s.Status == "Active")
                     .OrderByDescending(s => s.EndDate)
                     .FirstOrDefaultAsync();
 
@@ -108,10 +142,8 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                 {
                     model.SubscriptionPlan = activeSubscription.Plan.Name ?? "Chưa xác định";
                     model.SubscriptionValidTo = activeSubscription.EndDate.HasValue ? activeSubscription.EndDate.Value.ToString("dd/MM/yyyy") : "Không thời hạn";
-
                     model.PlanPrice = activeSubscription.Plan.Price ?? 0;
 
-                    // Fetch active Period
                     var activePeriod = await _context.SubscriptionPeriods
                         .Include(p => p.SubscriptionUsages)
                         .Where(p => p.SubscriptionId == activeSubscription.Id)
@@ -127,13 +159,13 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                         var jobFeature = planFeatures.FirstOrDefault(f => f.FeatureCode == "JOB_POSTING");
                         var jobUsage = usages.FirstOrDefault(u => u.FeatureCode == "JOB_POSTING");
                         model.JobPostsTotal = jobFeature?.FeatureLimit ?? 0;
-                        model.JobPostsUsed = model.JobPostsTotal - (jobUsage?.UsedCount ?? 0); // "Lượt đăng tin còn lại"
+                        model.JobPostsUsed = model.JobPostsTotal - (jobUsage?.UsedCount ?? 0);
                         if(model.JobPostsUsed < 0) model.JobPostsUsed = 0;
 
                         var detailFeature = planFeatures.FirstOrDefault(f => f.FeatureCode == "CV_AI_FILTER");
                         var detailUsage = usages.FirstOrDefault(u => u.FeatureCode == "CV_AI_FILTER");
                         model.CvSearchesTotal = detailFeature?.FeatureLimit ?? 0;
-                        model.CvSearchesUsed = model.CvSearchesTotal - (detailUsage?.UsedCount ?? 0); // "Lượt tìm CV còn lại"
+                        model.CvSearchesUsed = model.CvSearchesTotal - (detailUsage?.UsedCount ?? 0);
                         if(model.CvSearchesUsed < 0) model.CvSearchesUsed = 0;
                     }
                 }
@@ -145,7 +177,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                 }
             }
 
-            ViewData["Title"] = "Recruiter Dashboard";
+            ViewData["Title"] = IsEmployee() ? "Employee Dashboard" : "Recruiter Dashboard";
             return View(model);
         }
 
@@ -157,13 +189,28 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             var userIdStr = Request.Cookies["UserId"];
             if (!int.TryParse(userIdStr, out int userId)) return RedirectToAction("Login", "Auth");
 
-            var recruiter = await _context.Recruiters.FirstOrDefaultAsync(r => r.UserId == userId);
+            var recruiter = await _context.Recruiters
+                .Include(r => r.RecruiterLocations)
+                .FirstOrDefaultAsync(r => r.UserId == userId);
             if (recruiter == null) return NotFound("Không tìm thấy thông tin nhà tuyển dụng.");
 
-            var query = _context.Jobs
-                .Include(j => j.JobCategory)
-                .Include(j => j.Location)
-                .Where(j => j.RecruiterId == recruiter.Id);
+            IQueryable<Job> query;
+            if (IsEmployee())
+            {
+                var assignedLocationIds = recruiter.RecruiterLocations
+                    .Select(rl => rl.CompanyLocationId).ToList();
+                query = _context.Jobs
+                    .Include(j => j.JobCategory)
+                    .Include(j => j.JobRecruiters)
+                    .Where(j => j.JobRecruiters.Any(jr => assignedLocationIds.Contains(jr.CompanyLocationId)));
+            }
+            else
+            {
+                query = _context.Jobs
+                    .Include(j => j.JobCategory)
+                    .Include(j => j.JobRecruiters)
+                    .Where(j => j.JobRecruiters.Any(jr => jr.RecruiterId == recruiter.Id));
+            }
 
             // Auto-update Scheduled to Active if time reached, and Active to Expired if expired
             var jobsToUpdate = await query.Where(j => 
@@ -208,7 +255,10 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                 {
                     Id = j.Id,
                     Title = j.Title,
-                    LocationName = j.Location != null ? j.Location.CityName : "Chưa rõ",
+                    LocationName = j.JobRecruiters
+                        .Where(jr => jr.IsPrimary)
+                        .Select(jr => jr.CompanyLocation.Location.CityName)
+                        .FirstOrDefault() ?? "Chưa rõ",
                     MinSalary = j.MinSalary,
                     MaxSalary = j.MaxSalary,
                     CreatedAt = j.CreatedAt,
@@ -240,7 +290,9 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             var recruiter = await _context.Recruiters.FirstOrDefaultAsync(r => r.UserId == userId);
             if (recruiter == null) return Unauthorized();
 
-            var job = await _context.Jobs.FirstOrDefaultAsync(j => j.Id == id && j.RecruiterId == recruiter.Id);
+            var job = await _context.Jobs
+                .Include(j => j.JobRecruiters)
+                .FirstOrDefaultAsync(j => j.Id == id && j.JobRecruiters.Any(jr => jr.RecruiterId == recruiter.Id));
             if (job == null) return NotFound();
 
             // Soft delete: update status to Inactive
@@ -263,7 +315,9 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             var recruiter = await _context.Recruiters.FirstOrDefaultAsync(r => r.UserId == userId);
             if (recruiter == null) return Unauthorized();
 
-            var job = await _context.Jobs.FirstOrDefaultAsync(j => j.Id == id && j.RecruiterId == recruiter.Id);
+            var job = await _context.Jobs
+                .Include(j => j.JobRecruiters)
+                .FirstOrDefaultAsync(j => j.Id == id && j.JobRecruiters.Any(jr => jr.RecruiterId == recruiter.Id));
             if (job == null) return NotFound();
 
             if (job.ExpiryDate.HasValue && job.ExpiryDate.Value < DateTime.Now)
@@ -289,14 +343,26 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             var userIdStr = Request.Cookies["UserId"];
             int.TryParse(userIdStr, out int userId);
 
-            var recruiter = await _context.Recruiters.FirstOrDefaultAsync(r => r.UserId == userId);
+            var recruiter = await _context.Recruiters
+                .Include(r => r.Company)
+                    .ThenInclude(c => c.CompanyLocations)
+                    .ThenInclude(cl => cl.Location)
+                .Include(r => r.RecruiterLocations)
+                .FirstOrDefaultAsync(r => r.UserId == userId);
             if (recruiter == null) return Unauthorized();
 
             var job = await _context.Jobs
                 .Include(j => j.JobCategory)
-                .Include(j => j.Location)
+                .Include(j => j.JobRecruiters)
+                    .ThenInclude(jr => jr.CompanyLocation)
+                    .ThenInclude(cl => cl.Location)
                 .Include(j => j.JobSkills).ThenInclude(js => js.Skill)
-                .FirstOrDefaultAsync(j => j.Id == id && j.RecruiterId == recruiter.Id);
+                .FirstOrDefaultAsync(j => j.Id == id && (
+                    // Recruiter: owns the job directly
+                    j.JobRecruiters.Any(jr => jr.RecruiterId == recruiter.Id)
+                    // Employee: job at any of their assigned locations
+                    || (IsEmployee() && j.JobRecruiters.Any(jr => recruiter.RecruiterLocations.Select(rl => rl.CompanyLocationId).Contains(jr.CompanyLocationId)))
+                ));
 
             if (job == null) return NotFound();
 
@@ -314,15 +380,31 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                 Benefits = job.Benefits ?? "",
                 ApplicationDeadline = job.ApplicationDeadline ?? DateTime.Now.AddDays(30),
                 ExpiryDate = job.ExpiryDate ?? DateTime.Now.AddDays(30),
-                PublishDate = job.CreatedAt ?? DateTime.Now,
+                PublishDate = job.PublishDate ?? job.CreatedAt ?? DateTime.Now,
                 Status = job.Status,
-                ProvinceCode = job.Location?.ProvinceCode,
-                ProvinceName = job.Location?.CityName,
-                WardCode = job.Location?.WardCode,
-                WardName = job.Location?.WardName,
-                Address = job.Location?.Address,
+                SelectedCompanyLocationIds = job.JobRecruiters.Select(jr => jr.CompanyLocationId).ToList(),
                 SelectedSkillIds = job.JobSkills.Select(js => js.SkillId).ToList()
             };
+
+            // For Employee: only show their assigned locations and pre-select them
+            if (IsEmployee())
+            {
+                var assignedLocationIds = recruiter.RecruiterLocations.Select(rl => rl.CompanyLocationId).ToList();
+                var assignedLocations = recruiter.Company?.CompanyLocations
+                    .Where(cl => assignedLocationIds.Contains(cl.Id)).ToList() ?? new List<CompanyLocation>();
+                ViewBag.CompanyLocations = assignedLocations;
+                // Pre-select assigned locations if none already selected
+                if (model.SelectedCompanyLocationIds == null || !model.SelectedCompanyLocationIds.Any())
+                    model.SelectedCompanyLocationIds = assignedLocationIds;
+            }
+            else if (recruiter?.Company != null)
+            {
+                ViewBag.CompanyLocations = recruiter.Company.CompanyLocations.ToList();
+            }
+            else
+            {
+                ViewBag.CompanyLocations = new List<CompanyLocation>();
+            }
 
             // Handling category hierarchy
             if (job.JobCategory != null)
@@ -367,7 +449,8 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
 
             var job = await _context.Jobs
                 .Include(j => j.JobSkills)
-                .FirstOrDefaultAsync(j => j.Id == model.Id && j.RecruiterId == recruiter.Id);
+                .Include(j => j.JobRecruiters)
+                .FirstOrDefaultAsync(j => j.Id == model.Id && j.JobRecruiters.Any(jr => jr.RecruiterId == recruiter.Id));
 
             if (job == null) return NotFound();
 
@@ -378,26 +461,6 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             {
                 // Similar subscription check logic as CreateJob...
                 // (Simplified for now, assuming editing active job doesn't cost extra)
-            }
-
-            // Create or find Location
-            var location = await _context.Locations.FirstOrDefaultAsync(l => 
-                l.ProvinceCode == model.ProvinceCode && 
-                l.WardCode == model.WardCode && 
-                l.Address == model.Address);
-
-            if (location == null)
-            {
-                location = new Location
-                {
-                    CityName = model.ProvinceName ?? "Chưa rõ",
-                    ProvinceCode = model.ProvinceCode,
-                    WardCode = model.WardCode,
-                    WardName = model.WardName,
-                    Address = model.Address
-                };
-                _context.Locations.Add(location);
-                await _context.SaveChangesAsync();
             }
 
             if (model.ApplicationDeadline.Date > DateTime.Now.Date.AddDays(30))
@@ -425,6 +488,14 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                 TempData["ErrorToast"] = "Vui lòng kiểm tra lại thông tin!";
                 ViewBag.Categories1 = await _context.JobCategories.Where(c => c.Level == 1).OrderBy(c => c.Name).ToListAsync();
                 ViewBag.Skills = await _context.Skills.OrderBy(s => s.Name).ToListAsync();
+                if (recruiter?.Company != null)
+                {
+                    ViewBag.CompanyLocations = recruiter.Company.CompanyLocations.ToList();
+                }
+                else
+                {
+                    ViewBag.CompanyLocations = new List<CompanyLocation>();
+                }
                 return View(model);
             }
 
@@ -439,8 +510,27 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             job.Benefits = model.Benefits;
             job.ApplicationDeadline = model.ApplicationDeadline;
             job.ExpiryDate = model.ExpiryDate;
+            job.PublishDate = model.PublishDate;
             job.CreatedAt = model.PublishDate;
-            job.LocationId = location.Id;
+            
+            // Location update: Rebuild JobRecruiters mapping
+            _context.JobRecruiters.RemoveRange(job.JobRecruiters);
+            if (model.SelectedCompanyLocationIds != null && model.SelectedCompanyLocationIds.Any())
+            {
+                bool isFirst = true;
+                foreach (var locId in model.SelectedCompanyLocationIds)
+                {
+                    _context.JobRecruiters.Add(new JobRecruiter
+                    {
+                        JobId = job.Id,
+                        RecruiterId = recruiter.Id,
+                        CompanyLocationId = locId,
+                        IsPrimary = isFirst,
+                        AssignedAt = DateTime.UtcNow
+                    });
+                    isFirst = false;
+                }
+            }
 
             // Preserve chosen Status if editing manually instead of submitting draft/saving
             if (isDraft)
@@ -503,9 +593,11 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             var userIdStr = Request.Cookies["UserId"];
             int.TryParse(userIdStr, out int userId);
 
-            // Fetch recruiter's company for default location
             var recruiter = await _context.Recruiters
                 .Include(r => r.Company)
+                    .ThenInclude(c => c.CompanyLocations)
+                    .ThenInclude(cl => cl.Location)
+                .Include(r => r.RecruiterLocations)
                 .FirstOrDefaultAsync(r => r.UserId == userId);
 
             var model = new JobSaveDTO
@@ -515,13 +607,22 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                 PublishDate = DateTime.Now
             };
 
-            if (recruiter?.Company != null)
+            if (IsEmployee())
             {
-                model.ProvinceCode = recruiter.Company.ProvinceCode;
-                model.ProvinceName = recruiter.Company.ProvinceName;
-                model.WardCode = recruiter.Company.WardCode;
-                model.WardName = recruiter.Company.WardName;
-                model.Address = recruiter.Company.Address;
+                var assignedLocationIds = recruiter?.RecruiterLocations.Select(rl => rl.CompanyLocationId).ToList() ?? new List<int>();
+                var assignedLocations = recruiter?.Company?.CompanyLocations
+                    .Where(cl => assignedLocationIds.Contains(cl.Id)).ToList() ?? new List<CompanyLocation>();
+                ViewBag.CompanyLocations = assignedLocations;
+                // Auto-select assigned locations by default
+                model.SelectedCompanyLocationIds = assignedLocationIds;
+            }
+            else if (recruiter?.Company != null)
+            {
+                ViewBag.CompanyLocations = recruiter.Company.CompanyLocations.ToList();
+            }
+            else
+            {
+                ViewBag.CompanyLocations = new List<CompanyLocation>();
             }
 
             ViewBag.Categories1 = await _context.JobCategories.Where(c => c.Level == 1).OrderBy(c => c.Name).ToListAsync();
@@ -547,39 +648,27 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
 
             bool isDraft = model.ActionType == "Draft";
 
+            // Determine subscription owner (Employee uses company's Recruiter subscription)
+            int subscriptionUserId = userId;
+            if (IsEmployee() && recruiter.CompanyId != null)
+            {
+                var ownerRecruiter = await _context.Recruiters
+                    .Include(r => r.User).ThenInclude(u => u.UserRoles).ThenInclude(ur => ur.Role)
+                    .Where(r => r.CompanyId == recruiter.CompanyId
+                        && r.User.UserRoles.Any(ur => ur.Role.Name == "Recruiter"))
+                    .FirstOrDefaultAsync();
+                if (ownerRecruiter != null) subscriptionUserId = ownerRecruiter.UserId;
+            }
+
             if (!isDraft)
             {
-                var quota = await _subscriptionService.CheckQuotaAsync(userId, "JOB_POSTING");
+                var quota = await _subscriptionService.CheckQuotaAsync(subscriptionUserId, "JOB_POSTING");
                 if (!quota.Allowed)
                 {
                     isDraft = true;
                     TempData["ErrorToast"] = quota.Message + " Tin đã được lưu ở dạng nháp.";
                     ModelState.AddModelError(string.Empty, quota.Message);
                 }
-                else
-                {
-                    // Everything OK, we will consume after save
-                }
-            }
-
-            // Create or find Location
-            var location = await _context.Locations.FirstOrDefaultAsync(l => 
-                l.ProvinceCode == model.ProvinceCode && 
-                l.WardCode == model.WardCode && 
-                l.Address == model.Address);
-
-            if (location == null)
-            {
-                location = new Location
-                {
-                    CityName = model.ProvinceName ?? "Chưa rõ",
-                    ProvinceCode = model.ProvinceCode,
-                    WardCode = model.WardCode,
-                    WardName = model.WardName,
-                    Address = model.Address
-                };
-                _context.Locations.Add(location);
-                await _context.SaveChangesAsync();
             }
 
             // Application Deadline Validation
@@ -618,6 +707,14 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                 TempData["ErrorToast"] = "Vui lòng kiểm tra lại thông tin đăng tin!";
                 ViewBag.Categories1 = await _context.JobCategories.Where(c => c.Level == 1).OrderBy(c => c.Name).ToListAsync();
                 ViewBag.Skills = await _context.Skills.OrderBy(s => s.Name).ToListAsync();
+                if (recruiter?.Company != null)
+                {
+                    ViewBag.CompanyLocations = recruiter.Company.CompanyLocations.ToList();
+                }
+                else
+                {
+                    ViewBag.CompanyLocations = new List<CompanyLocation>();
+                }
                 return View(model);
             }
 
@@ -625,9 +722,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             {
                 Title = model.Title,
                 CompanyId = recruiter.CompanyId ?? 0,
-                RecruiterId = recruiter.Id,
                 JobCategoryId = finalCategoryId,
-                LocationId = location.Id,
                 Description = model.Description,
                 Requirements = model.Requirements,
                 Benefits = model.Benefits,
@@ -637,12 +732,31 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                 NumberOfPositions = model.NumberOfPositions,
                 ApplicationDeadline = model.ApplicationDeadline == default ? DateTime.Now.AddDays(30) : model.ApplicationDeadline,
                 ExpiryDate = model.ExpiryDate == default ? DateTime.Now.AddDays(30) : model.ExpiryDate,
+                PublishDate = model.PublishDate == default ? DateTime.Now : model.PublishDate,
                 Status = isDraft ? "Draft" : (model.PublishDate > DateTime.Now ? "Scheduled" : "Active"),
-                CreatedAt = model.PublishDate == default ? DateTime.Now : model.PublishDate
+                CreatedAt = DateTime.Now
             };
 
             _context.Jobs.Add(job);
             await _context.SaveChangesAsync();
+
+            // Link recruiter to multiple locations via JobRecruiters junction table
+            if (model.SelectedCompanyLocationIds != null && model.SelectedCompanyLocationIds.Any())
+            {
+                bool isFirst = true;
+                foreach (var locId in model.SelectedCompanyLocationIds)
+                {
+                    _context.JobRecruiters.Add(new JobRecruiter
+                    {
+                        JobId = job.Id,
+                        RecruiterId = recruiter.Id,
+                        CompanyLocationId = locId,
+                        IsPrimary = isFirst, // first selected is primary
+                        AssignedAt = DateTime.UtcNow
+                    });
+                    isFirst = false;
+                }
+            }
 
             // Process Skills
             if (model.SelectedSkillIds != null)
@@ -745,7 +859,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                 .Include(a => a.Job)
                 .Include(a => a.Candidate)
                 .ThenInclude(c => c.User)
-                .Where(a => a.Job.RecruiterId == recruiter.Id);
+                .Where(a => a.Job.JobRecruiters.Any(jr => jr.RecruiterId == recruiter.Id));
 
             // Filter
             if (jobId.HasValue) query = query.Where(a => a.JobId == jobId.Value);
@@ -776,7 +890,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                 })
                 .ToListAsync();
 
-            ViewBag.Jobs = await _context.Jobs.Where(j => j.RecruiterId == recruiter.Id).Select(j => new { j.Id, j.Title }).ToListAsync();
+            ViewBag.Jobs = await _context.Jobs.Where(j => j.JobRecruiters.Any(jr => jr.RecruiterId == recruiter.Id)).Select(j => new { j.Id, j.Title }).ToListAsync();
             ViewBag.CurrentJobId = jobId;
             ViewBag.CurrentStatus = status;
             ViewBag.Keyword = keyword;
@@ -831,6 +945,112 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             if (fileUrl.StartsWith("http")) return Redirect(fileUrl);
 
             return File(fileUrl, "application/pdf");
+        }
+
+        // ---------- Quản lý Địa chỉ (Company Locations) ----------
+        [HttpGet]
+        public async Task<IActionResult> ManageLocations()
+        {
+            if (RequireRecruiter() is { } redirect) return redirect;
+            var userIdStr = Request.Cookies["UserId"];
+            int.TryParse(userIdStr, out int userId);
+
+            var recruiter = await _context.Recruiters
+                .Include(r => r.Company)
+                    .ThenInclude(c => c.CompanyLocations)
+                    .ThenInclude(cl => cl.Location)
+                .FirstOrDefaultAsync(r => r.UserId == userId);
+
+            if (recruiter?.Company == null) return NotFound("Chưa có công ty");
+
+            ViewBag.CompanyLocations = recruiter.Company.CompanyLocations.ToList();
+            ViewData["Title"] = "Quản lý địa chỉ công ty";
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> AddLocation(int? provinceCode, string? provinceName, int? wardCode, string? wardName, string? address)
+        {
+            if (RequireRecruiter() is { } redirect) return redirect;
+            var userIdStr = Request.Cookies["UserId"];
+            int.TryParse(userIdStr, out int userId);
+
+            var recruiter = await _context.Recruiters.FirstOrDefaultAsync(r => r.UserId == userId);
+            if (recruiter?.CompanyId == null) return NotFound();
+
+            if (provinceCode == null || string.IsNullOrWhiteSpace(address))
+            {
+                TempData["ErrorToast"] = "Vui lòng nhập đầy đủ Tỉnh/Thành phố và Địa chỉ cụ thể.";
+                return RedirectToAction("ManageLocations");
+            }
+
+            var location = await _context.Locations.FirstOrDefaultAsync(l =>
+                l.ProvinceCode == provinceCode && l.WardCode == wardCode && l.Address == address);
+
+            if (location == null)
+            {
+                location = new Location
+                {
+                    CityName = provinceName ?? "Chưa rõ",
+                    ProvinceCode = provinceCode,
+                    WardCode = wardCode,
+                    WardName = wardName,
+                    Address = address
+                };
+                _context.Locations.Add(location);
+                await _context.SaveChangesAsync();
+            }
+
+            var existingCl = await _context.CompanyLocations
+                .FirstOrDefaultAsync(cl => cl.CompanyId == recruiter.CompanyId && cl.LocationId == location.Id);
+            
+            if (existingCl == null)
+            {
+                _context.CompanyLocations.Add(new CompanyLocation
+                {
+                    CompanyId = recruiter.CompanyId.Value,
+                    LocationId = location.Id,
+                    IsPrimary = false,
+                    CreatedAt = DateTime.UtcNow
+                });
+                await _context.SaveChangesAsync();
+                TempData["SuccessToast"] = "Thêm địa chỉ mới thành công.";
+            }
+            else
+            {
+                TempData["ErrorToast"] = "Địa chỉ này đã tồn tại trong danh sách.";
+            }
+
+            return RedirectToAction("ManageLocations");
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteLocation(int clId)
+        {
+            if (RequireRecruiter() is { } redirect) return redirect;
+            var userIdStr = Request.Cookies["UserId"];
+            int.TryParse(userIdStr, out int userId);
+
+            var recruiter = await _context.Recruiters.FirstOrDefaultAsync(r => r.UserId == userId);
+            var loc = await _context.CompanyLocations.FirstOrDefaultAsync(cl => cl.Id == clId && cl.CompanyId == recruiter.CompanyId);
+            
+            if (loc != null)
+            {
+                // Check if any job is using it
+                bool isInUse = await _context.JobRecruiters.AnyAsync(jr => jr.CompanyLocationId == loc.Id);
+                if (isInUse)
+                {
+                    TempData["ErrorToast"] = "Không thể xóa địa chỉ này vì đang có ít nhất 1 tin tuyển dụng sử dụng.";
+                }
+                else
+                {
+                    _context.CompanyLocations.Remove(loc);
+                    await _context.SaveChangesAsync();
+                    TempData["SuccessToast"] = "Xóa địa chỉ thành công.";
+                }
+            }
+
+            return RedirectToAction("ManageLocations");
         }
     }
 }
