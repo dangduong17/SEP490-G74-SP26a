@@ -164,9 +164,22 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
         
         // Allows candidates to override template's layout and customize section positions/pages
         public TemplateConfig? CustomLayout { get; set; }
+
+        // Extra section content that does not map to the structured AI fields above
+        public List<CvSectionContentModel> AdditionalSections { get; set; } = new List<CvSectionContentModel>();
         
         // Extracted generic text buffer from uploaded PDF
         public string RawText { get; set; } = string.Empty;
+    }
+
+    public class CvSectionContentModel
+    {
+        public string Type { get; set; } = string.Empty;
+        public string Content { get; set; } = string.Empty;
+        public double? Top { get; set; }
+        public double? Left { get; set; }
+        public double? Width { get; set; }
+        public double? Height { get; set; }
     }
 
     public class ExperienceModel
