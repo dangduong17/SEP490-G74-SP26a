@@ -112,7 +112,6 @@
     <div class="page-header-box">
         <div class="page-title">
             <h1>Quản lý tin tuyển dụng</h1>
-            <p>Bạn có @Model.Count tin tuyển dụng trong danh sách</p>
         </div>
         <a asp-action="CreateJob" class="btn-create-new">
             <i class="fas fa-plus"></i> Đăng tin mới
@@ -167,7 +166,7 @@
                                 <td>
                                     <div class="job-info">
                                         <h4>@job.Title</h4>
-                                        <span>ID: #@job.Id.ToString("D4") • Đăng ngày: @job.CreatedAt?.ToString("dd/MM/yyyy")</span>
+                                        <span>Đăng ngày: @job.CreatedAt?.ToString("dd/MM/yyyy")</span>
                                     </div>
                                 </td>
                                 <td>
