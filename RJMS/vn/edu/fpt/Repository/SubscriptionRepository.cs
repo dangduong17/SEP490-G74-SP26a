@@ -390,12 +390,17 @@ namespace RJMS.Vn.Edu.Fpt.Repository
             var sub = await _context.Subscriptions
                 .Include(s => s.Plan).ThenInclude(p => p.PlanFeatures)
                 .Include(s => s.SubscriptionPeriods).ThenInclude(p => p.SubscriptionUsages)
-                .Where(s => s.UserId == userId && s.Status == "Active" && s.EndDate >= now)
+                .Where(s => s.UserId == userId && (s.Status == "Active" || s.Status == "ACTIVE") && s.EndDate >= now)
                 .OrderByDescending(s => s.StartDate)
                 .FirstOrDefaultAsync();
 
             if (sub == null)
-                return new QuotaCheckResult { Allowed = false, FeatureCode = featureCode, Message = "Bạn chưa đăng kí gói dịch vụ." };
+            {
+                sub = await CreateDefaultFreeSubscriptionAsync(userId, now);
+            }
+
+            if (sub == null)
+                return new QuotaCheckResult { Allowed = false, FeatureCode = featureCode, Message = "Không tìm thấy gói dịch vụ khả dụng." };
 
             // Lazy create period if missing for Yearly subs
             var period = sub.SubscriptionPeriods
@@ -448,11 +453,15 @@ namespace RJMS.Vn.Edu.Fpt.Repository
 
             var sub = await _context.Subscriptions
                 .Include(s => s.SubscriptionPeriods).ThenInclude(p => p.SubscriptionUsages)
-                .Where(s => s.UserId == userId && s.Status == "Active" && s.EndDate >= now)
+                .Where(s => s.UserId == userId && (s.Status == "Active" || s.Status == "ACTIVE") && s.EndDate >= now)
                 .OrderByDescending(s => s.StartDate)
                 .FirstOrDefaultAsync();
 
-            if (sub == null) return;
+            if (sub == null)
+            {
+                sub = await CreateDefaultFreeSubscriptionAsync(userId, now);
+                if (sub == null) return;
+            }
 
             var period = sub.SubscriptionPeriods
                 .FirstOrDefault(p => p.PeriodStart <= now && p.PeriodEnd >= now);
@@ -476,6 +485,74 @@ namespace RJMS.Vn.Edu.Fpt.Repository
             }
 
             await _context.SaveChangesAsync();
+        }
+
+        private async Task<Subscription?> CreateDefaultFreeSubscriptionAsync(int userId, DateTime now)
+        {
+            var freePlan = await _context.SubscriptionPlans
+                .Include(sp => sp.PlanFeatures)
+                .Where(sp => sp.IsActive == true && ((sp.Price ?? 0) == 0 || sp.Name == "Gói Miễn Phí"))
+                .OrderBy(sp => sp.Id)
+                .FirstOrDefaultAsync();
+
+            if (freePlan == null)
+            {
+                return null;
+            }
+
+            var companyId = await _context.Recruiters
+                .Where(r => r.UserId == userId)
+                .Select(r => r.CompanyId)
+                .FirstOrDefaultAsync();
+
+            var startDate = now;
+            var endDate = now.AddDays(freePlan.DurationDays ?? 30);
+
+            var subscription = new Subscription
+            {
+                UserId = userId,
+                CompanyId = companyId,
+                PlanId = freePlan.Id,
+                StartDate = startDate,
+                EndDate = endDate,
+                Status = "Active",
+                CreatedAt = now,
+                AutoRenew = false
+            };
+
+            _context.Subscriptions.Add(subscription);
+            await _context.SaveChangesAsync();
+
+            var period = new SubscriptionPeriod
+            {
+                SubscriptionId = subscription.Id,
+                PlanId = freePlan.Id,
+                PeriodStart = startDate,
+                PeriodEnd = endDate
+            };
+
+            _context.SubscriptionPeriods.Add(period);
+            await _context.SaveChangesAsync();
+
+            foreach (var feature in freePlan.PlanFeatures)
+            {
+                _context.SubscriptionUsages.Add(new SubscriptionUsage
+                {
+                    PeriodId = period.Id,
+                    FeatureCode = feature.FeatureCode,
+                    UsedCount = 0
+                });
+            }
+
+            if (freePlan.PlanFeatures.Any())
+            {
+                await _context.SaveChangesAsync();
+            }
+
+            return await _context.Subscriptions
+                .Include(s => s.Plan).ThenInclude(p => p.PlanFeatures)
+                .Include(s => s.SubscriptionPeriods).ThenInclude(p => p.SubscriptionUsages)
+                .FirstOrDefaultAsync(s => s.Id == subscription.Id);
         }
 
         public async Task<bool> TogglePlanStatusAsync(int id)
