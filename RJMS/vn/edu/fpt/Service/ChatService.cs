@@ -21,16 +21,37 @@ namespace RJMS.Vn.Edu.Fpt.Service
 
         public async Task<int> StartConversationAsync(int candidateUserId, int jobId, int applicationId)
         {
-            // verify job and get recruiter user ID
+            // Verify job and resolve target employee (fallback recruiter if no employee is assigned in company).
             var job = await _context.Jobs
                 .Include(j => j.JobRecruiters)
                     .ThenInclude(jr => jr.Recruiter)
+                        .ThenInclude(r => r.User)
+                            .ThenInclude(u => u.UserRoles)
+                                .ThenInclude(ur => ur.Role)
                 .FirstOrDefaultAsync(j => j.Id == jobId);
             var primaryRecruiter = job?.JobRecruiters.FirstOrDefault(jr => jr.IsPrimary)?.Recruiter
                 ?? job?.JobRecruiters.FirstOrDefault()?.Recruiter;
             if (job == null || primaryRecruiter == null) return 0;
-            
-            int recruiterUserId = primaryRecruiter.UserId;
+
+            int chatTargetUserId = primaryRecruiter.UserId;
+            bool primaryIsEmployee = primaryRecruiter.User?.UserRoles.Any(ur => ur.Role.Name == "Employee") == true;
+
+            if (!primaryIsEmployee && primaryRecruiter.CompanyId != null)
+            {
+                var companyEmployee = await _context.Recruiters
+                    .Include(r => r.User)
+                        .ThenInclude(u => u.UserRoles)
+                            .ThenInclude(ur => ur.Role)
+                    .Where(r => r.CompanyId == primaryRecruiter.CompanyId
+                        && r.User.UserRoles.Any(ur => ur.Role.Name == "Employee"))
+                    .OrderBy(r => r.Id)
+                    .FirstOrDefaultAsync();
+
+                if (companyEmployee != null)
+                {
+                    chatTargetUserId = companyEmployee.UserId;
+                }
+            }
 
             // Check if there is already a conversation for this exact app
             var existingConv = await _context.ConversationJobs
@@ -54,7 +75,7 @@ namespace RJMS.Vn.Edu.Fpt.Service
 
             // create participants
             _context.ConversationParticipants.Add(new ConversationParticipant { ConversationId = conv.Id, UserId = candidateUserId });
-            _context.ConversationParticipants.Add(new ConversationParticipant { ConversationId = conv.Id, UserId = recruiterUserId });
+            _context.ConversationParticipants.Add(new ConversationParticipant { ConversationId = conv.Id, UserId = chatTargetUserId });
             
             // link to job
             _context.ConversationJobs.Add(new ConversationJob { ConversationId = conv.Id, JobId = jobId, ApplicationId = applicationId });
@@ -71,6 +92,40 @@ namespace RJMS.Vn.Edu.Fpt.Service
                 .Where(cp => cp.UserId == userId)
                 .Select(cp => cp.ConversationId)
                 .ToListAsync();
+
+            // Employee inherits recruiter/company chat threads.
+            var employee = await _context.Recruiters
+                .Include(r => r.User)
+                    .ThenInclude(u => u.UserRoles)
+                        .ThenInclude(ur => ur.Role)
+                .FirstOrDefaultAsync(r => r.UserId == userId && r.User.UserRoles.Any(ur => ur.Role.Name == "Employee"));
+
+            if (employee?.CompanyId != null)
+            {
+                var companyConversationIds = await _context.ConversationJobs
+                    .Include(cj => cj.Job)
+                    .Where(cj => cj.Job != null && cj.Job.CompanyId == employee.CompanyId)
+                    .Select(cj => cj.ConversationId)
+                    .Distinct()
+                    .ToListAsync();
+
+                var missingConversationIds = companyConversationIds.Except(participantConvs).ToList();
+                if (missingConversationIds.Any())
+                {
+                    foreach (var convId in missingConversationIds)
+                    {
+                        _context.ConversationParticipants.Add(new ConversationParticipant
+                        {
+                            ConversationId = convId,
+                            UserId = userId,
+                            JoinedAt = DateTimeHelper.NowVietnam
+                        });
+                    }
+                    await _context.SaveChangesAsync();
+                }
+
+                participantConvs = participantConvs.Union(companyConversationIds).Distinct().ToList();
+            }
 
             var conversations = await _context.Conversations
                 .Include(c => c.Participants).ThenInclude(p => p.User).ThenInclude(u => u.Candidates)
