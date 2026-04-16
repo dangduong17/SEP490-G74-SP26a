@@ -9,11 +9,13 @@ namespace RJMS.Vn.Edu.Fpt.Service
     {
         private readonly IAdminRepository _repo;
         private readonly ICloudinaryService _cloudinaryService;
+        private readonly ILocationLookupService _locationLookupService;
 
-        public AdminService(IAdminRepository repo, ICloudinaryService cloudinaryService)
+        public AdminService(IAdminRepository repo, ICloudinaryService cloudinaryService, ILocationLookupService locationLookupService)
         {
             _repo = repo;
             _cloudinaryService = cloudinaryService;
+            _locationLookupService = locationLookupService;
         }
 
         public async Task<AdminDashboardViewModel> GetDashboardAsync()
@@ -128,6 +130,20 @@ namespace RJMS.Vn.Edu.Fpt.Service
             return ServiceResult.Success();
         }
 
+        public async Task<ServiceResult> CreateManagerAsync(AdminCreateManagerViewModel model)
+        {
+            var pwd = ValidatePassword(model.Password);
+            if (!pwd.Succeeded) return pwd;
+
+            if (await _repo.UserEmailExistsAsync(model.Email))
+                return ServiceResult.Failed(new ServiceError { Key = "Email", Message = "Email đã tồn tại." });
+
+            var user = BuildUser(model.Email, model.Password, model.FirstName, model.LastName, model.PhoneNumber);
+            await _repo.CreateUserAsync(user);
+            await AssignRoleAsync(user.Id, "Manager");
+            return ServiceResult.Success();
+        }
+
         public async Task<ServiceResult> CreateCandidateAsync(AdminCreateCandidateViewModel model)
         {
             if (string.IsNullOrWhiteSpace(model.PhoneNumber))
@@ -190,6 +206,36 @@ namespace RJMS.Vn.Edu.Fpt.Service
                 logoUrl = await _cloudinaryService.UploadImageAsync(model.CompanyLogoFile, "logos");
             }
 
+            // 1. Handle Location
+            var provinceName = model.ProvinceName;
+            var wardName = model.WardName;
+
+            if (string.IsNullOrWhiteSpace(provinceName) && model.ProvinceCode.HasValue)
+            {
+                var provinces = await _locationLookupService.GetProvincesAsync();
+                provinceName = provinces.FirstOrDefault(p => p.Code == model.ProvinceCode)?.Name;
+            }
+            if (string.IsNullOrWhiteSpace(wardName) && model.WardCode.HasValue && model.ProvinceCode.HasValue)
+            {
+                var wards = await _locationLookupService.GetWardsByProvinceCodeAsync(model.ProvinceCode.Value);
+                wardName = wards.FirstOrDefault(w => w.Code == model.WardCode)?.Name;
+            }
+
+            var location = await _repo.GetLocationAsync(model.ProvinceCode, model.WardCode, model.WorkAddress);
+            if (location == null)
+            {
+                location = new Location
+                {
+                    ProvinceCode = model.ProvinceCode,
+                    CityName = provinceName ?? "N/A",
+                    WardCode = model.WardCode,
+                    WardName = wardName,
+                    Address = model.WorkAddress
+                };
+                await _repo.AddLocationAsync(location);
+            }
+
+            // 2. Handle Company
             var company = new Company
             {
                 Name = model.CompanyName,
@@ -201,11 +247,6 @@ namespace RJMS.Vn.Edu.Fpt.Service
                 Email = model.CompanyEmail,
                 Phone = model.CompanyPhone ?? model.PhoneNumber,
                 Description = model.CompanyDescription,
-                ProvinceCode = model.ProvinceCode,
-                ProvinceName = model.ProvinceName,
-                WardCode = model.WardCode,
-                WardName = model.WardName,
-                Address = model.WorkAddress,
                 IsVerified = true,
                 VerifiedAt = DateTimeHelper.NowVietnam,
                 CreatedAt = DateTimeHelper.NowVietnam,
@@ -213,6 +254,18 @@ namespace RJMS.Vn.Edu.Fpt.Service
             };
             await _repo.AddCompanyAsync(company);
 
+            // 3. Handle CompanyLocation
+            var companyLocation = new CompanyLocation
+            {
+                CompanyId = company.Id,
+                LocationId = location.Id,
+                AddressLabel = "Trụ sở chính",
+                IsPrimary = true,
+                CreatedAt = DateTimeHelper.NowVietnam
+            };
+            await _repo.AddCompanyLocationAsync(companyLocation);
+
+            // 4. Handle Recruiter
             var recruiter = new Recruiter
             {
                 UserId = user.Id,
@@ -225,6 +278,17 @@ namespace RJMS.Vn.Edu.Fpt.Service
                 CreatedAt = DateTimeHelper.NowVietnam
             };
             await _repo.AddRecruiterAsync(recruiter);
+
+            // 5. Handle RecruiterLocation
+            var recruiterLocation = new RecruiterLocation
+            {
+                RecruiterId = recruiter.Id,
+                CompanyLocationId = companyLocation.Id,
+                IsDefault = true,
+                AssignedAt = DateTimeHelper.NowVietnam
+            };
+            await _repo.AddRecruiterLocationAsync(recruiterLocation);
+
             return ServiceResult.Success();
         }
 
@@ -520,6 +584,11 @@ namespace RJMS.Vn.Edu.Fpt.Service
                 CreatedAt = j.CreatedAt
             }).ToList();
 
+            // Get primary location for the company
+            var primaryLoc = company.CompanyLocations
+                .FirstOrDefault(cl => cl.IsPrimary)?.Location
+                ?? company.CompanyLocations.FirstOrDefault()?.Location;
+
             return new AdminCompanyDetailViewModel
             {
                 Id = company.Id,
@@ -533,9 +602,10 @@ namespace RJMS.Vn.Edu.Fpt.Service
                 Phone = company.Phone,
                 Description = company.Description,
                 Benefits = company.Benefits,
-                ProvinceName = company.ProvinceName,
-                WardName = company.WardName,
-                Address = company.Address,
+                ProvinceName = primaryLoc?.CityName,
+                WardName = primaryLoc?.WardName,
+                Address = primaryLoc?.Address,
+                LocationCount = company.CompanyLocations.Count,
                 IsVerified = company.IsVerified ?? false,
                 VerifiedAt = company.VerifiedAt,
                 CreatedAt = company.CreatedAt,
@@ -651,6 +721,213 @@ namespace RJMS.Vn.Edu.Fpt.Service
                 CreatedAt = subscription.CreatedAt,
                 Payments = payments
             };
+        }
+
+        // ========== COMPANY LOCATION MANAGEMENT ==========
+
+        public async Task<List<CompanyLocationViewModel>> GetCompanyLocationsAsync(int companyId)
+        {
+            var locations = await _repo.GetCompanyLocationsAsync(companyId);
+            var company = await _repo.GetCompanyByIdWithDetailsAsync(companyId);
+
+            return locations.Select(cl => new CompanyLocationViewModel
+            {
+                Id = cl.Id,
+                CompanyId = cl.CompanyId,
+                CompanyName = company?.Name ?? "",
+                LocationId = cl.LocationId,
+                CityName = cl.Location?.CityName ?? "",
+                WardName = cl.Location?.WardName,
+                Address = cl.Location?.Address,
+                AddressLabel = cl.AddressLabel,
+                IsPrimary = cl.IsPrimary,
+                CreatedAt = cl.CreatedAt,
+                EmployeeCount = cl.RecruiterLocations.Count
+            }).ToList();
+        }
+
+        public async Task<ServiceResult> AddCompanyLocationAsync(int companyId, AdminCreateCompanyLocationViewModel model)
+        {
+            var provinceName = model.ProvinceName;
+            var wardName = model.WardName;
+
+            if (string.IsNullOrWhiteSpace(provinceName) && model.ProvinceCode.HasValue)
+            {
+                var provinces = await _locationLookupService.GetProvincesAsync();
+                provinceName = provinces.FirstOrDefault(p => p.Code == model.ProvinceCode)?.Name;
+            }
+            if (string.IsNullOrWhiteSpace(wardName) && model.WardCode.HasValue && model.ProvinceCode.HasValue)
+            {
+                var wards = await _locationLookupService.GetWardsByProvinceCodeAsync(model.ProvinceCode.Value);
+                wardName = wards.FirstOrDefault(w => w.Code == model.WardCode)?.Name;
+            }
+
+            var location = await _repo.GetLocationAsync(model.ProvinceCode, model.WardCode, model.WorkAddress);
+            if (location == null)
+            {
+                location = new Location
+                {
+                    ProvinceCode = model.ProvinceCode,
+                    CityName = provinceName ?? "N/A",
+                    WardCode = model.WardCode,
+                    WardName = wardName,
+                    Address = model.WorkAddress
+                };
+                await _repo.AddLocationAsync(location);
+            }
+
+            // If IsPrimary, unset any existing primary for this company
+            if (model.IsPrimary)
+            {
+                var existing = await _repo.GetCompanyLocationsAsync(companyId);
+                foreach (var ex in existing.Where(cl => cl.IsPrimary))
+                {
+                    ex.IsPrimary = false;
+                    _repo.SaveChangesAsync(); // fire-and-forget pattern acceptable here
+                }
+                await _repo.SaveChangesAsync();
+            }
+
+            var companyLocation = new CompanyLocation
+            {
+                CompanyId = companyId,
+                LocationId = location.Id,
+                AddressLabel = model.AddressLabel,
+                IsPrimary = model.IsPrimary,
+                CreatedAt = DateTimeHelper.NowVietnam
+            };
+            await _repo.AddCompanyLocationAsync(companyLocation);
+            return ServiceResult.Success();
+        }
+
+        public async Task<ServiceResult> DeleteCompanyLocationAsync(int companyLocationId)
+        {
+            var cl = await _repo.GetCompanyLocationByIdAsync(companyLocationId);
+            if (cl == null) return ServiceResult.NotFoundResult();
+            if (cl.RecruiterLocations.Any())
+                return ServiceResult.Failed(new ServiceError
+                {
+                    Key = "CompanyLocation",
+                    Message = "Không thể xóa trụ sở này vì đang có nhân viên được gán vào."
+                });
+
+            await _repo.DeleteCompanyLocationAsync(cl);
+            return ServiceResult.Success();
+        }
+
+        // ========== EMPLOYEE MANAGEMENT ==========
+
+        public async Task<AdminEmployeeListViewModel> GetEmployeeListAsync(string? keyword, int? companyId, int page, int pageSize)
+        {
+            page = page < 1 ? 1 : page;
+            if (pageSize != 10 && pageSize != 20 && pageSize != 50) pageSize = 10;
+
+            var (total, recruiters) = await _repo.GetEmployeesPagedAsync(keyword, companyId, page, pageSize);
+            var companies = await _repo.GetAllCompaniesAsync();
+
+            var items = recruiters.Select(r => new AdminEmployeeListItemViewModel
+            {
+                Id = r.Id,
+                UserId = r.UserId,
+                Email = r.User?.Email ?? "",
+                FullName = r.FullName ?? "",
+                Phone = r.Phone,
+                Position = r.Position,
+                CompanyName = r.Company?.Name ?? "",
+                LocationLabels = r.RecruiterLocations
+                    .Select(rl => rl.CompanyLocation?.AddressLabel ?? rl.CompanyLocation?.Location?.CityName ?? "")
+                    .Where(s => !string.IsNullOrEmpty(s))
+                    .ToList(),
+                IsVerified = r.IsVerified ?? false,
+                CreatedAt = r.CreatedAt
+            }).ToList();
+
+            return new AdminEmployeeListViewModel
+            {
+                Keyword = keyword,
+                CompanyId = companyId,
+                Page = page,
+                PageSize = pageSize,
+                TotalItems = total,
+                Employees = items,
+                Companies = companies.Select(c => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+                {
+                    Value = c.Id.ToString(),
+                    Text = c.Name,
+                    Selected = c.Id == companyId
+                }).ToList()
+            };
+        }
+
+        public async Task<ServiceResult> CreateEmployeeAsync(AdminCreateEmployeeViewModel model)
+        {
+            if (string.IsNullOrWhiteSpace(model.PhoneNumber))
+                return ServiceResult.Failed(new ServiceError { Key = nameof(model.PhoneNumber), Message = "Số điện thoại là bắt buộc." });
+            if (string.IsNullOrWhiteSpace(model.Position))
+                return ServiceResult.Failed(new ServiceError { Key = nameof(model.Position), Message = "Vị trí công việc là bắt buộc." });
+
+            var pwd = ValidatePassword(model.Password);
+            if (!pwd.Succeeded) return pwd;
+
+            if (await _repo.UserEmailExistsAsync(model.Email))
+                return ServiceResult.Failed(new ServiceError { Key = "Email", Message = "Email đã tồn tại." });
+
+            // Create User
+            var user = BuildUser(model.Email, model.Password, model.FirstName, model.LastName, model.PhoneNumber);
+            await _repo.CreateUserAsync(user);
+            await AssignRoleAsync(user.Id, "Employee");
+
+            // Create Recruiter record (Employee shares Recruiter table)
+            var recruiter = new Recruiter
+            {
+                UserId = user.Id,
+                CompanyId = model.CompanyId,
+                FullName = $"{model.FirstName} {model.LastName}".Trim(),
+                Phone = model.PhoneNumber,
+                Position = model.Position,
+                IsVerified = true,
+                VerifiedAt = DateTimeHelper.NowVietnam,
+                CreatedAt = DateTimeHelper.NowVietnam
+            };
+            await _repo.AddRecruiterAsync(recruiter);
+
+            // Assign CompanyLocations
+            foreach (var clId in model.CompanyLocationIds.Distinct())
+            {
+                await _repo.AddRecruiterLocationAsync(new RecruiterLocation
+                {
+                    RecruiterId = recruiter.Id,
+                    CompanyLocationId = clId,
+                    IsDefault = model.CompanyLocationIds.IndexOf(clId) == 0,
+                    AssignedAt = DateTimeHelper.NowVietnam
+                });
+            }
+
+            return ServiceResult.Success();
+        }
+
+        public async Task<ServiceResult> AssignEmployeeLocationsAsync(AdminAssignEmployeeLocationViewModel model)
+        {
+            // Remove all existing assignments
+            var existing = await _repo.GetRecruiterLocationsByRecruiterIdAsync(model.RecruiterId);
+            foreach (var rl in existing)
+                await _repo.RemoveRecruiterLocationAsync(rl);
+
+            // Add new assignments
+            var isFirst = true;
+            foreach (var clId in model.CompanyLocationIds.Distinct())
+            {
+                await _repo.AddRecruiterLocationAsync(new RecruiterLocation
+                {
+                    RecruiterId = model.RecruiterId,
+                    CompanyLocationId = clId,
+                    IsDefault = isFirst,
+                    AssignedAt = DateTimeHelper.NowVietnam
+                });
+                isFirst = false;
+            }
+
+            return ServiceResult.Success();
         }
 
         // ========== PRIVATE HELPERS ==========
