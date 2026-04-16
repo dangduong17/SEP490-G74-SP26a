@@ -9,6 +9,8 @@ public partial class Subscription
 
     public int UserId { get; set; }
 
+    public int? CompanyId { get; set; }
+
     public int PlanId { get; set; }
 
     public DateTime? StartDate { get; set; }
@@ -24,6 +26,8 @@ public partial class Subscription
     public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
 
     public virtual SubscriptionPlan Plan { get; set; } = null!;
+
+    public virtual Company? Company { get; set; }
 
     public virtual User User { get; set; } = null!;
 
