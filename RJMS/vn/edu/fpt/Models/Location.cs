@@ -19,5 +19,6 @@ public partial class Location
 
     public string? DetailAddress { get; set; }
 
-    public virtual ICollection<Job> Jobs { get; set; } = new List<Job>();
+
+    public virtual ICollection<CompanyLocation> CompanyLocations { get; set; } = new List<CompanyLocation>();
 }
