@@ -400,10 +400,13 @@
                                     </div>
                                 </div>
 
-                                <!-- Message Icon -->
-                                <a asp-controller="Chat" asp-action="Index" class="header-icon-btn text-decoration-none" title="Tin nhắn">
-                                    <i class="fas fa-comment-dots"></i>
-                                </a>
+                                @if (userRole == "Employee")
+                                {
+                                    <!-- Message Icon -->
+                                    <a asp-controller="Chat" asp-action="Index" class="header-icon-btn text-decoration-none" title="Tin nhắn">
+                                        <i class="fas fa-comment-dots"></i>
+                                    </a>
+                                }
 
                                 <div class="profile-dropdown" id="profileDropdown">
                                     <div class="profile-avatar-wrapper" onclick="toggleProfileMenu()">
