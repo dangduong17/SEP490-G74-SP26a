@@ -34,9 +34,15 @@ namespace RJMS.Vn.Edu.Fpt.Repository
             var plan = await _context.SubscriptionPlans.FindAsync(planId);
             if (plan == null) return 0;
 
+            var companyId = await _context.Recruiters
+                .Where(r => r.UserId == userId && r.CompanyId != null)
+                .Select(r => r.CompanyId)
+                .FirstOrDefaultAsync();
+
             var subscription = new Subscription
             {
                 UserId = userId,
+                CompanyId = companyId,
                 PlanId = planId,
                 StartDate = DateTime.UtcNow,
                 EndDate = DateTime.UtcNow.AddDays(plan.DurationDays ?? 30),
