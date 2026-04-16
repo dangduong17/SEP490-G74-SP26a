@@ -22,10 +22,15 @@ namespace RJMS.Vn.Edu.Fpt.Service
         public async Task<int> StartConversationAsync(int candidateUserId, int jobId, int applicationId)
         {
             // verify job and get recruiter user ID
-            var job = await _context.Jobs.Include(j => j.Recruiter).FirstOrDefaultAsync(j => j.Id == jobId);
-            if (job == null || job.Recruiter == null) return 0;
+            var job = await _context.Jobs
+                .Include(j => j.JobRecruiters)
+                    .ThenInclude(jr => jr.Recruiter)
+                .FirstOrDefaultAsync(j => j.Id == jobId);
+            var primaryRecruiter = job?.JobRecruiters.FirstOrDefault(jr => jr.IsPrimary)?.Recruiter
+                ?? job?.JobRecruiters.FirstOrDefault()?.Recruiter;
+            if (job == null || primaryRecruiter == null) return 0;
             
-            int recruiterUserId = job.Recruiter.UserId;
+            int recruiterUserId = primaryRecruiter.UserId;
 
             // Check if there is already a conversation for this exact app
             var existingConv = await _context.ConversationJobs
@@ -146,7 +151,8 @@ namespace RJMS.Vn.Edu.Fpt.Service
                         model.ActiveConversation.JobInfo = new JobInfoViewModel
                         {
                             Title = cJob.Title ?? "",
-                            Location = cJob.Location?.CityName ?? "N/A",
+                            Location = cJob.JobRecruiters.FirstOrDefault(jr => jr.IsPrimary)?.CompanyLocation?.Location?.CityName
+                                ?? cJob.Company?.CompanyLocations.FirstOrDefault(cl => cl.IsPrimary)?.Location?.CityName ?? "N/A",
                             Salary = cJob.MinSalary != null ? $"{cJob.MinSalary:N0} - {cJob.MaxSalary:N0}" : "Thỏa thuận",
                             Status = "Đang tuyển"
                         };
