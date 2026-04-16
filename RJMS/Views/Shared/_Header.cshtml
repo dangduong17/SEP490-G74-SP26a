@@ -305,7 +305,7 @@
                 <div class="d-flex align-items-center gap-2">
                     @if (isAuthenticated)
                     {
-                        if (userRole == "Admin")
+                        if (userRole == "Admin" || userRole == "Manager")
                         {
                             <div class="header-icons">
                                 <div class="profile-dropdown" id="profileDropdown">
@@ -329,24 +329,30 @@
                                                 }
                                                 <span class="profile-verified">
                                                     <i class="fas fa-check-circle"></i>
-                                                    Quản trị viên
+                                                    @(userRole == "Admin" ? "Quản trị viên" : "Quản lý nội dung")
                                                 </span>
                                             </div>
                                         </div>
 
                                         <div class="profile-menu-section">
-                                            <a asp-controller="Admin" asp-action="Index" class="profile-menu-item">
+                                            <a asp-controller="@(userRole == "Admin" ? "Admin" : "Manager")" asp-action="Index" class="profile-menu-item">
                                                 <i class="fas fa-chart-line"></i>
                                                 <span class="label">Bảng điều khiển</span>
                                             </a>
-                                            <a asp-controller="Admin" asp-action="UserList" class="profile-menu-item">
-                                                <i class="fas fa-users"></i>
-                                                <span class="label">Quản lý người dùng</span>
-                                            </a>
-                                            <a asp-controller="Subscription" asp-action="ManageSubscription" class="profile-menu-item">
-                                                <i class="fas fa-crown"></i>
-                                                <span class="label">Quản lý gói dịch vụ</span>
-                                            </a>
+                                            @if (userRole == "Admin")
+                                            {
+                                                <a asp-controller="Admin" asp-action="UserList" class="profile-menu-item">
+                                                    <i class="fas fa-users"></i>
+                                                    <span class="label">Quản lý người dùng</span>
+                                                </a>
+                                            }
+                                            else if (userRole == "Manager")
+                                            {
+                                                <a asp-controller="Subscription" asp-action="ManageSubscription" class="profile-menu-item">
+                                                    <i class="fas fa-crown"></i>
+                                                    <span class="label">Quản lý gói dịch vụ</span>
+                                                </a>
+                                            }
                                         </div>
 
                                         <div class="profile-menu-section">
@@ -374,7 +380,7 @@
                                 </div>
                             </div>
                         }
-                        else if (userRole == "Recruiter")
+                        else if (userRole == "Recruiter" || userRole == "Employee")
                         {
                             <div class="header-icons">
                                 <!-- Notification Dropdown -->
@@ -422,7 +428,7 @@
                                                 }
                                                 <span class="profile-verified" style="background:#dcfce7;color:#16a34a;">
                                                     <i class="fas fa-briefcase"></i>
-                                                    Nhà tuyển dụng
+                                                    @(userRole == "Employee" ? "Nhân viên" : "Nhà tuyển dụng")
                                                 </span>
                                             </div>
                                         </div>

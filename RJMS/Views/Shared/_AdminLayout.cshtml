@@ -185,44 +185,53 @@
                 Admin Panel
             </div>
             <nav class="nav flex-column pt-1">
+                @{
+                    var role = Context.Request.Cookies["UserRole"];
+                }
                 <span class="nav-section">Tổng quan</span>
                 <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Index" ? "active" : "")"
-                   asp-controller="Admin" asp-action="Index">
+                   asp-controller="@(role == "Admin" ? "Admin" : "Manager")" asp-action="Index">
                     Bảng điều khiển
                 </a>
                 <span class="nav-section">Quản lý</span>
-                <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() is "UserList" or "EditUser" or "CreateAdmin" or "CreateCandidate" or "CreateRecruiter" ? "active" : "")"
-                   asp-controller="Admin" asp-action="UserList">
-                    Người dùng
-                </a>
-                <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() is "SkillList" or "CreateSkill" or "EditSkill" ? "active" : "")"
-                   asp-controller="Admin" asp-action="SkillList">
-                    Kỹ năng
-                </a>
-                <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() is "JobCategoryList" or "CreateJobCategory" or "EditJobCategory" ? "active" : "")"
-                   asp-controller="Admin" asp-action="JobCategoryList">
-                    Danh mục nghề nghiệp
-                </a>
-                <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() is "CompanyList" or "CompanyDetail" ? "active" : "")"
-                   asp-controller="Admin" asp-action="CompanyList">
-                    Công ty
-                </a>
-                <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() is "SubscriptionList" or "SubscriptionDetail" ? "active" : "")"
-                   asp-controller="Admin" asp-action="SubscriptionList">
-                    Danh sách sử dụng gói dịch vụ
-                </a>
-                <a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Subscription" ? "active" : "")"
-                   asp-controller="Subscription" asp-action="ManageSubscription">
-                    Quản lí gói Dịch vụ
-                </a>
-                <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() is "CvTemplates" or "CvTemplateCreate" or "CvTemplateEdit" ? "active" : "")"
-                   asp-controller="Admin" asp-action="CvTemplates">
-                    Quản lý CV Template
-                </a>
-                <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "TemplateCategories" ? "active" : "")"
-                   asp-controller="Admin" asp-action="TemplateCategories">
-                    Danh mục Template
-                </a>
+                @if (role == "Admin")
+                {
+                    <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() is "UserList" or "EditUser" or "CreateAdmin" or "CreateCandidate" or "CreateRecruiter" or "CreateManager" ? "active" : "")"
+                       asp-controller="Admin" asp-action="UserList">
+                        Người dùng
+                    </a>
+                    <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() is "CvTemplates" or "CvTemplateCreate" or "CvTemplateEdit" ? "active" : "")"
+                       asp-controller="Admin" asp-action="CvTemplates">
+                        Quản lý CV Template
+                    </a>
+                    <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "TemplateCategories" ? "active" : "")"
+                       asp-controller="Admin" asp-action="TemplateCategories">
+                        Danh mục Template
+                    </a>
+                }
+                else if (role == "Manager")
+                {
+                    <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() is "SkillList" or "CreateSkill" or "EditSkill" ? "active" : "")"
+                       asp-controller="Manager" asp-action="SkillList">
+                        Kỹ năng
+                    </a>
+                    <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() is "JobCategoryList" or "CreateJobCategory" or "EditJobCategory" ? "active" : "")"
+                       asp-controller="Manager" asp-action="JobCategoryList">
+                        Danh mục nghề nghiệp
+                    </a>
+                    <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() is "CompanyList" or "CompanyDetail" ? "active" : "")"
+                       asp-controller="Manager" asp-action="CompanyList">
+                        Công ty
+                    </a>
+                    <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() is "SubscriptionList" or "SubscriptionDetail" ? "active" : "")"
+                       asp-controller="Manager" asp-action="SubscriptionList">
+                        Danh sách sử dụng gói dịch vụ
+                    </a>
+                    <a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Subscription" ? "active" : "")"
+                       asp-controller="Subscription" asp-action="ManageSubscription">
+                        Quản lí gói Dịch vụ
+                    </a>
+                }
             </nav>
         </aside>
 
