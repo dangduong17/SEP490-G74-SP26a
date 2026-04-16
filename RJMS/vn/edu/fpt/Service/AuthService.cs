@@ -22,13 +22,15 @@ namespace RJMS.Vn.Edu.Fpt.Service
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IEmailService _emailService;
         private readonly IConfiguration _configuration;
+        private readonly ILocationLookupService _locationLookupService;
 
         public AuthService(
             IAuthRepository authRepository,
             IAdminRepository adminRepository,
             IHttpContextAccessor httpContextAccessor,
             IEmailService emailService,
-            IConfiguration configuration
+            IConfiguration configuration,
+            ILocationLookupService locationLookupService
         )
         {
             _authRepository = authRepository;
@@ -36,6 +38,7 @@ namespace RJMS.Vn.Edu.Fpt.Service
             _httpContextAccessor = httpContextAccessor;
             _emailService = emailService;
             _configuration = configuration;
+            _locationLookupService = locationLookupService;
         }
 
         public async Task<(bool Success, string Message)> LoginAsync(LoginDTO loginDto)
@@ -319,7 +322,37 @@ namespace RJMS.Vn.Edu.Fpt.Service
                     Console.WriteLine($"[REGISTER ERROR] Recruiter role not found in database!");
                 }
 
-                // Create company
+                // 1. Handle Location
+                var provinceName = registerDto.ProvinceName;
+                var wardName = registerDto.WardName;
+
+                // Fallback to API if names are missing but codes are present
+                if (string.IsNullOrWhiteSpace(provinceName) && registerDto.ProvinceCode.HasValue)
+                {
+                    var provinces = await _locationLookupService.GetProvincesAsync();
+                    provinceName = provinces.FirstOrDefault(p => p.Code == registerDto.ProvinceCode)?.Name;
+                }
+                if (string.IsNullOrWhiteSpace(wardName) && registerDto.WardCode.HasValue && registerDto.ProvinceCode.HasValue)
+                {
+                    var wards = await _locationLookupService.GetWardsByProvinceCodeAsync(registerDto.ProvinceCode.Value);
+                    wardName = wards.FirstOrDefault(w => w.Code == registerDto.WardCode)?.Name;
+                }
+
+                var location = await _adminRepository.GetLocationAsync(registerDto.ProvinceCode, registerDto.WardCode, registerDto.WorkAddress);
+                if (location == null)
+                {
+                    location = new Location
+                    {
+                        ProvinceCode = registerDto.ProvinceCode,
+                        CityName = provinceName ?? "N/A",
+                        WardCode = registerDto.WardCode,
+                        WardName = wardName,
+                        Address = registerDto.WorkAddress
+                    };
+                    await _adminRepository.AddLocationAsync(location);
+                }
+
+                // 2. Handle Company
                 var company = new Company
                 {
                     Name = registerDto.CompanyName,
@@ -330,18 +363,24 @@ namespace RJMS.Vn.Edu.Fpt.Service
                     Email = registerDto.CompanyEmail,
                     Phone = registerDto.CompanyPhone ?? registerDto.PhoneNumber,
                     Description = registerDto.CompanyDescription,
-                    ProvinceCode = registerDto.ProvinceCode,
-                    ProvinceName = registerDto.ProvinceName,
-                    WardCode = registerDto.WardCode,
-                    WardName = registerDto.WardName,
-                    Address = registerDto.WorkAddress,
-                    IsVerified = false, // New registrations need verification
+                    IsVerified = false,
                     CreatedAt = DateTimeHelper.NowVietnam,
                     UpdatedAt = DateTimeHelper.NowVietnam
                 };
                 await _adminRepository.AddCompanyAsync(company);
 
-                // Create recruiter
+                // 3. Handle CompanyLocation
+                var companyLocation = new CompanyLocation
+                {
+                    CompanyId = company.Id,
+                    LocationId = location.Id,
+                    AddressLabel = "Trụ sở chính",
+                    IsPrimary = true,
+                    CreatedAt = DateTimeHelper.NowVietnam
+                };
+                await _adminRepository.AddCompanyLocationAsync(companyLocation);
+
+                // 4. Handle Recruiter
                 var recruiter = new Recruiter
                 {
                     UserId = created.Id,
@@ -349,10 +388,20 @@ namespace RJMS.Vn.Edu.Fpt.Service
                     FullName = $"{registerDto.FirstName} {registerDto.LastName}".Trim(),
                     Phone = registerDto.PhoneNumber,
                     Position = registerDto.Position,
-                    IsVerified = false, // New registrations need verification
+                    IsVerified = false,
                     CreatedAt = DateTimeHelper.NowVietnam
                 };
                 await _adminRepository.AddRecruiterAsync(recruiter);
+
+                // 5. Handle RecruiterLocation
+                var recruiterLocation = new RecruiterLocation
+                {
+                    RecruiterId = recruiter.Id,
+                    CompanyLocationId = companyLocation.Id,
+                    IsDefault = true,
+                    AssignedAt = DateTimeHelper.NowVietnam
+                };
+                await _adminRepository.AddRecruiterLocationAsync(recruiterLocation);
 
                 // Send email confirmation
                 var token = GenerateEmailToken(
