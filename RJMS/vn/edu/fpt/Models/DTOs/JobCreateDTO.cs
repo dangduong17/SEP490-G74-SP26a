@@ -29,11 +29,8 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
         public decimal? MaxSalary { get; set; }
 
         // Location Info
-        public int? ProvinceCode { get; set; }
-        public string? ProvinceName { get; set; }
-        public int? WardCode { get; set; }
-        public string? WardName { get; set; }
-        public string? Address { get; set; }
+        [Required(ErrorMessage = "Vui lòng chọn ít nhất một địa điểm làm việc")]
+        public List<int>? SelectedCompanyLocationIds { get; set; } = new List<int>();
 
         [Required(ErrorMessage = "Vui lòng nhập mô tả công việc")]
         public string Description { get; set; } = string.Empty;

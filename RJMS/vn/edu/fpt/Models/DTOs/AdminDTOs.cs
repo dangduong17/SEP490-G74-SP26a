@@ -103,6 +103,34 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
         public string? Department { get; set; }
     }
 
+    // ---------- Create Manager ----------
+
+    public class AdminCreateManagerViewModel
+    {
+        [Required(ErrorMessage = "Email là bắt buộc.")]
+        [EmailAddress(ErrorMessage = "Email không đúng định dạng.")]
+        public string Email { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Mật khẩu là bắt buộc.")]
+        [MinLength(8, ErrorMessage = "Mật khẩu phải có ít nhất 8 ký tự.")]
+        public string Password { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Họ là bắt buộc.")]
+        [MaxLength(100)]
+        public string FirstName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Tên là bắt buộc.")]
+        [MaxLength(100)]
+        public string LastName { get; set; } = string.Empty;
+
+        [Phone(ErrorMessage = "Số điện thoại không đúng định dạng.")]
+        [MaxLength(20)]
+        public string? PhoneNumber { get; set; }
+
+        [MaxLength(100)]
+        public string? Department { get; set; }
+    }
+
     // ---------- Create Candidate ----------
 
     public class AdminCreateCandidateViewModel
@@ -359,6 +387,7 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
         public string? WardName { get; set; }
         public string? Address { get; set; }
         public bool IsVerified { get; set; }
+        public int LocationCount { get; set; }
         public DateTime? VerifiedAt { get; set; }
         public DateTime? CreatedAt { get; set; }
         public List<CompanyRecruiterViewModel> Recruiters { get; set; } = new();
@@ -449,5 +478,115 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
         public string? TransactionId { get; set; }
         public string Status { get; set; } = string.Empty;
         public string? PaymentMethod { get; set; }
+    }
+
+    // ========== COMPANY LOCATION MANAGEMENT ==========
+
+    public class CompanyLocationViewModel
+    {
+        public int Id { get; set; }
+        public int CompanyId { get; set; }
+        public string CompanyName { get; set; } = string.Empty;
+        public int LocationId { get; set; }
+        public string CityName { get; set; } = string.Empty;
+        public string? WardName { get; set; }
+        public string? Address { get; set; }
+        public string? AddressLabel { get; set; }
+        public bool IsPrimary { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public int EmployeeCount { get; set; }
+    }
+
+    public class AdminCreateCompanyLocationViewModel
+    {
+        [Required(ErrorMessage = "Tên nhãn địa chỉ là bắt buộc.")]
+        [MaxLength(100)]
+        public string AddressLabel { get; set; } = string.Empty;
+
+        public bool IsPrimary { get; set; }
+
+        // Location fields
+        public int? ProvinceCode { get; set; }
+        public string? ProvinceName { get; set; }
+        public int? WardCode { get; set; }
+        public string? WardName { get; set; }
+
+        [MaxLength(500)]
+        public string? WorkAddress { get; set; }
+    }
+
+    // ========== EMPLOYEE MANAGEMENT ==========
+
+    public class AdminCreateEmployeeViewModel
+    {
+        [Required(ErrorMessage = "Email là bắt buộc.")]
+        [EmailAddress(ErrorMessage = "Email không đúng định dạng.")]
+        public string Email { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Mật khẩu là bắt buộc.")]
+        [MinLength(8, ErrorMessage = "Mật khẩu phải có ít nhất 8 ký tự.")]
+        public string Password { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Họ là bắt buộc.")]
+        [MaxLength(100)]
+        public string FirstName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Tên là bắt buộc.")]
+        [MaxLength(100)]
+        public string LastName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Số điện thoại là bắt buộc.")]
+        [Phone(ErrorMessage = "Số điện thoại không đúng định dạng.")]
+        [MaxLength(20)]
+        public string PhoneNumber { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Vị trí công việc là bắt buộc.")]
+        [MaxLength(255)]
+        public string Position { get; set; } = string.Empty;
+
+        [MaxLength(100)]
+        public string? Department { get; set; }
+
+        /// <summary>ID công ty mà employee thuộc về.</summary>
+        [Required(ErrorMessage = "Vui lòng chọn công ty.")]
+        public int CompanyId { get; set; }
+
+        /// <summary>Danh sách CompanyLocationId được gán cho employee (ít nhất 1).</summary>
+        public List<int> CompanyLocationIds { get; set; } = new();
+    }
+
+    public class AdminEmployeeListItemViewModel
+    {
+        public int Id { get; set; }
+        public int UserId { get; set; }
+        public string Email { get; set; } = string.Empty;
+        public string FullName { get; set; } = string.Empty;
+        public string? Phone { get; set; }
+        public string? Position { get; set; }
+        public string CompanyName { get; set; } = string.Empty;
+        public List<string> LocationLabels { get; set; } = new();
+        public bool IsVerified { get; set; }
+        public DateTime? CreatedAt { get; set; }
+    }
+
+    public class AdminEmployeeListViewModel
+    {
+        public string? Keyword { get; set; }
+        public int? CompanyId { get; set; }
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 10;
+        public int TotalItems { get; set; }
+        public List<AdminEmployeeListItemViewModel> Employees { get; set; } = new();
+        public List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> Companies { get; set; } = new();
+        public int TotalPages => (int)Math.Ceiling((double)TotalItems / PageSize);
+    }
+
+    public class AdminAssignEmployeeLocationViewModel
+    {
+        [Required]
+        public int RecruiterId { get; set; }
+
+        /// <summary>Danh sách CompanyLocationId mới (thay thế toàn bộ gán cũ).</summary>
+        public List<int> CompanyLocationIds { get; set; } = new();
     }
 }
