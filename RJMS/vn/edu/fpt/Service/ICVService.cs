@@ -19,6 +19,7 @@ namespace RJMS.Vn.Edu.Fpt.Service
         Task<CvEditorViewModel?> GetEditorViewModelAsync(int cvId, int userId);
         Task<(bool Success, string Message)> SaveCvDataAsync(int cvId, int userId, string jsonData, string title);
         Task<string> RenderCvHtmlAsync(int cvId);
+        Task<string> RenderCvHtmlAsync(int cvId, string dataJsonOverride);
 
         // Delete
         Task<(bool Success, string Message)> DeleteCvAsync(int cvId, int userId);

@@ -4,6 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using UglyToad.PdfPig;
@@ -15,6 +17,13 @@ namespace RJMS.Vn.Edu.Fpt.Service
 {
     public class CVService : ICVService
     {
+        private static readonly JsonSerializerOptions JsonOptions = new()
+        {
+            PropertyNameCaseInsensitive = true,
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+            WriteIndented = true
+        };
+
         private readonly ICVRepository _cvRepository;
         private readonly ICloudinaryService _cloudinaryService;
         private readonly ICVRenderService _cvRenderService;
@@ -113,19 +122,16 @@ namespace RJMS.Vn.Edu.Fpt.Service
 
             var created = await _cvRepository.CreateCvAsync(cv);
 
-            if (ext == ".pdf")
+            var cvDataModel = BuildCvDataModelFromRawText(extractedText);
+            var jsonStr = JsonSerializer.Serialize(cvDataModel, JsonOptions);
+            var cvData = new CvData
             {
-                var cvDataModel = new CvDataModel { RawText = extractedText };
-                var jsonStr = JsonSerializer.Serialize(cvDataModel);
-                var cvData = new CvData
-                {
-                    CvId = created.Id,
-                    JsonData = jsonStr,
-                    CreatedAt = DateTime.Now,
-                    UpdatedAt = DateTime.Now
-                };
-                await _cvRepository.CreateCvDataAsync(cvData);
-            }
+                CvId = created.Id,
+                JsonData = jsonStr,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
+            };
+            await _cvRepository.CreateCvDataAsync(cvData);
             
             return (true, "Upload CV thành công!", created.Id);
         }
@@ -159,7 +165,7 @@ namespace RJMS.Vn.Edu.Fpt.Service
             };
             await _cvRepository.CreateCvAsync(cv);
 
-            var cvData = new CvData { CvId = cv.Id, JsonData = "{}", CreatedAt = DateTime.Now };
+            var cvData = new CvData { CvId = cv.Id, JsonData = JsonSerializer.Serialize(new CvDataModel(), JsonOptions), CreatedAt = DateTime.Now };
             await _cvRepository.CreateCvDataAsync(cvData);
 
             return (true, "Tạo CV thành công!", cv.Id);
@@ -190,7 +196,7 @@ namespace RJMS.Vn.Edu.Fpt.Service
                 HtmlContent = template.HtmlContent,
                 CssContent = template.CssContent,
                 ConfigJson = template.ConfigJson,
-                JsonData = cvData?.JsonData ?? "{}"
+                JsonData = cvData?.JsonData ?? JsonSerializer.Serialize(new CvDataModel(), JsonOptions)
             };
         }
 
@@ -204,19 +210,22 @@ namespace RJMS.Vn.Edu.Fpt.Service
                 return (false, "Không tìm thấy CV hoặc bạn không có quyền.");
 
             // Update title
-            cv.Title = title;
+            cv.Title = string.IsNullOrWhiteSpace(title) ? cv.Title : title;
             cv.UpdatedAt = DateTime.Now;
             await _cvRepository.UpdateCvAsync(cv);
+
+            var normalized = NormalizeCvDataJson(jsonData);
+            var serialized = JsonSerializer.Serialize(normalized, JsonOptions);
 
             // Update or create CvData
             var cvData = await _cvRepository.GetCvDataByCvIdAsync(cvId);
             if (cvData == null)
             {
-                await _cvRepository.CreateCvDataAsync(new CvData { CvId = cvId, JsonData = jsonData, CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now });
+                await _cvRepository.CreateCvDataAsync(new CvData { CvId = cvId, JsonData = serialized, CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now });
             }
             else
             {
-                cvData.JsonData = jsonData;
+                cvData.JsonData = serialized;
                 cvData.UpdatedAt = DateTime.Now;
                 await _cvRepository.UpdateCvDataAsync(cvData);
             }
@@ -229,10 +238,17 @@ namespace RJMS.Vn.Edu.Fpt.Service
         // ──────────────────────────────────────────────────────────────────
         public async Task<string> RenderCvHtmlAsync(int cvId)
         {
+            return await RenderCvHtmlAsync(cvId, string.Empty);
+        }
+
+        public async Task<string> RenderCvHtmlAsync(int cvId, string dataJsonOverride)
+        {
             var cv = await _cvRepository.GetCvByIdAsync(cvId);
             if (cv?.Template == null) return "<p>Không tìm thấy template.</p>";
 
-            var dataJson = cv.CvData?.JsonData ?? "{}";
+            var dataJson = string.IsNullOrWhiteSpace(dataJsonOverride)
+                ? cv.CvData?.JsonData ?? "{}"
+                : dataJsonOverride;
             var configJson = cv.Template.ConfigJson ?? "{}";
 
             return _cvRenderService.Render(configJson, dataJson);
@@ -399,6 +415,241 @@ namespace RJMS.Vn.Edu.Fpt.Service
         private string GenerateSlug(string name)
         {
             return name.ToLower().Replace(" ", "-").Replace("đ", "d"); // simple stub
+        }
+
+        private static CvDataModel BuildCvDataModelFromRawText(string rawText)
+        {
+            var normalizedText = NormalizeText(rawText);
+            var model = new CvDataModel
+            {
+                RawText = rawText?.Trim() ?? string.Empty,
+                Email = ExtractEmail(normalizedText),
+                Phone = ExtractPhone(normalizedText),
+                Address = ExtractAddress(normalizedText)
+            };
+
+            var lines = normalizedText
+                .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Where(line => !IsNoiseLine(line))
+                .ToList();
+
+            model.FullName = ExtractLikelyName(lines);
+            model.Position = ExtractLikelyPosition(lines);
+            model.Summary = ExtractSectionText(normalizedText, new[] { "TÓM TẮT", "SUMMARY", "MỤC TIÊU", "GIỚI THIỆU" });
+            model.Skills = ExtractSectionText(normalizedText, new[] { "KỸ NĂNG", "SKILLS" });
+
+            return model;
+        }
+
+        private static CvDataModel NormalizeCvDataJson(string jsonData)
+        {
+            if (string.IsNullOrWhiteSpace(jsonData))
+            {
+                return new CvDataModel();
+            }
+
+            CvDataModel model;
+            try
+            {
+                model = JsonSerializer.Deserialize<CvDataModel>(jsonData, JsonOptions) ?? new CvDataModel();
+            }
+            catch
+            {
+                model = new CvDataModel();
+            }
+
+            model.CustomLayout = NormalizeLayout(model.CustomLayout);
+            model.AdditionalSections = model.AdditionalSections?
+                .Where(s => !string.IsNullOrWhiteSpace(s.Type) || !string.IsNullOrWhiteSpace(s.Content))
+                .Select(s => new CvSectionContentModel
+                {
+                    Type = s.Type,
+                    Content = s.Content,
+                    Top = s.Top,
+                    Left = s.Left,
+                    Width = s.Width,
+                    Height = s.Height
+                })
+                .ToList() ?? new List<CvSectionContentModel>();
+
+            model.FullName = model.FullName?.Trim() ?? string.Empty;
+            model.Position = model.Position?.Trim() ?? string.Empty;
+            model.Email = model.Email?.Trim() ?? string.Empty;
+            model.Phone = model.Phone?.Trim() ?? string.Empty;
+            model.Address = model.Address?.Trim() ?? string.Empty;
+            model.Summary = model.Summary?.Trim() ?? string.Empty;
+            model.Skills = model.Skills?.Trim() ?? string.Empty;
+            model.RawText = model.RawText?.Trim() ?? string.Empty;
+
+            model.Experiences = model.Experiences?
+                .Where(e => !string.IsNullOrWhiteSpace(e.Company) || !string.IsNullOrWhiteSpace(e.Role) || !string.IsNullOrWhiteSpace(e.Description))
+                .Select(e => new ExperienceModel
+                {
+                    Company = e.Company?.Trim() ?? string.Empty,
+                    Role = e.Role?.Trim() ?? string.Empty,
+                    Period = e.Period?.Trim() ?? string.Empty,
+                    Description = e.Description?.Trim() ?? string.Empty
+                })
+                .ToList() ?? new List<ExperienceModel>();
+
+            model.Educations = model.Educations?
+                .Where(e => !string.IsNullOrWhiteSpace(e.School) || !string.IsNullOrWhiteSpace(e.Degree))
+                .Select(e => new EducationModel
+                {
+                    School = e.School?.Trim() ?? string.Empty,
+                    Degree = e.Degree?.Trim() ?? string.Empty,
+                    Period = e.Period?.Trim() ?? string.Empty
+                })
+                .ToList() ?? new List<EducationModel>();
+
+            return model;
+        }
+
+        private static TemplateConfig? NormalizeLayout(TemplateConfig? layout)
+        {
+            if (layout == null)
+            {
+                return null;
+            }
+
+            if (layout.Pages != null)
+            {
+                foreach (var page in layout.Pages)
+                {
+                    foreach (var section in page.Sections)
+                    {
+                        section.Html = null;
+                    }
+                }
+            }
+
+            if (layout.Sections != null)
+            {
+                layout.Sections = layout.Sections
+                    .Where(s => !string.IsNullOrWhiteSpace(s.Type))
+                    .ToList();
+            }
+
+            return layout;
+        }
+
+        private static string NormalizeText(string? text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                return string.Empty;
+            }
+
+            var normalized = text.Replace("\r\n", "\n").Replace("\r", "\n");
+            normalized = Regex.Replace(normalized, @"[ \t]+", " ");
+            normalized = Regex.Replace(normalized, @"\n{3,}", "\n\n");
+            return normalized.Trim();
+        }
+
+        private static bool IsNoiseLine(string line)
+        {
+            var upper = line.ToUpperInvariant();
+            return upper is "KINH NGHIỆM LÀM VIỆC" or "HỌC VẤN" or "KỸ NĂNG" or "MỤC TIÊU NGHỀ NGHIỆP" or "DANH HIỆU & GIẢI THƯỞNG" or "CHỨNG CHỈ" or "HOẠT ĐỘNG" or "NGƯỜI GIỚI THIỆU" or "SỞ THÍCH";
+        }
+
+        private static string ExtractLikelyName(List<string> lines)
+        {
+            var candidate = lines.FirstOrDefault(line => line.Length is > 3 and < 60 && HasManyWords(line) && !ContainsContactTokens(line));
+            return candidate ?? string.Empty;
+        }
+
+        private static string ExtractLikelyPosition(List<string> lines)
+        {
+            var candidate = lines.FirstOrDefault(line =>
+                line.Length is > 3 and < 80 &&
+                !HasManyWords(line) &&
+                !ContainsContactTokens(line) &&
+                !IsNoiseLine(line) &&
+                !Regex.IsMatch(line, @"\d"));
+
+            return candidate ?? string.Empty;
+        }
+
+        private static bool HasManyWords(string line)
+        {
+            return line.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length >= 2;
+        }
+
+        private static bool ContainsContactTokens(string line)
+        {
+            var upper = line.ToUpperInvariant();
+            return upper.Contains("@") || upper.Contains("WWW.") || upper.Contains("HTTP") || Regex.IsMatch(line, @"\+?\d[\d\s().-]{6,}");
+        }
+
+        private static string ExtractEmail(string text)
+        {
+            var match = Regex.Match(text, @"[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}", RegexOptions.IgnoreCase);
+            return match.Success ? match.Value.Trim() : string.Empty;
+        }
+
+        private static string ExtractPhone(string text)
+        {
+            var match = Regex.Match(text, @"(?:\+?84|0)\d{8,10}");
+            if (match.Success)
+            {
+                return match.Value.Trim();
+            }
+
+            match = Regex.Match(text, @"(?:\+?84[\s.-]?)?(?:\d[\s.-]?){9,12}");
+            return match.Success ? Regex.Replace(match.Value, @"\s+", " ").Trim() : string.Empty;
+        }
+
+        private static string ExtractAddress(string text)
+        {
+            var markers = new[] { "ĐỊA CHỈ", "ADDRESS", "LIÊN HỆ", "CONTACT" };
+            foreach (var marker in markers)
+            {
+                var idx = text.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
+                if (idx >= 0)
+                {
+                    var snippet = text[(idx + marker.Length)..].Trim();
+                    var endIdx = FindFirstOf(snippet, new[] { "\n", "@", "www.", "http" });
+                    if (endIdx > 0)
+                    {
+                        snippet = snippet[..endIdx];
+                    }
+
+                    return snippet.Trim(new[] { ' ', ':', '-', ',', ';' });
+                }
+            }
+
+            return string.Empty;
+        }
+
+        private static string ExtractSectionText(string text, IReadOnlyCollection<string> markers)
+        {
+            foreach (var marker in markers)
+            {
+                var idx = text.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
+                if (idx >= 0)
+                {
+                    var snippet = text[(idx + marker.Length)..].Trim();
+                    var nextMarkerIndex = FindFirstOf(snippet, new[] { "KINH NGHIỆM", "HỌC VẤN", "KỸ NĂNG", "DANH HIỆU", "CHỨNG CHỈ", "HOẠT ĐỘNG", "NGƯỜI GIỚI THIỆU", "SỞ THÍCH" });
+                    if (nextMarkerIndex > 0)
+                    {
+                        snippet = snippet[..nextMarkerIndex];
+                    }
+
+                    return snippet.Trim();
+                }
+            }
+
+            return string.Empty;
+        }
+
+        private static int FindFirstOf(string text, IReadOnlyCollection<string> tokens)
+        {
+            var indices = tokens
+                .Select(token => text.IndexOf(token, StringComparison.OrdinalIgnoreCase))
+                .Where(index => index >= 0)
+                .ToList();
+
+            return indices.Count == 0 ? -1 : indices.Min();
         }
 
         // ──────────────────────────────────────────────────────────────────
