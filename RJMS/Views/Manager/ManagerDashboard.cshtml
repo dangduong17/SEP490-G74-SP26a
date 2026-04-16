@@ -1,0 +1,474 @@
+@model AdminDashboardViewModel
+@{
+    ViewData["Title"] = "Bảng điều khiển quản trị";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <style>
+        /* ===== Dashboard Override: make admin-card transparent so charts fill naturally ===== */
+        .admin-card {
+            background: transparent;
+            border: none;
+            padding: 0;
+        }
+
+        /* ===== Toolbar ===== */
+        .dash-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .dash-toolbar-title {
+            flex: 1 1 auto;
+        }
+
+        .dash-toolbar-title h2 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #111827;
+            margin: 0 0 2px;
+        }
+
+        .dash-toolbar-title p {
+            font-size: 0.82rem;
+            color: #6b7280;
+            margin: 0;
+        }
+
+        .dash-period-btn {
+            border: 1px solid #e5e7eb;
+            background: #fff;
+            color: #374151;
+            font-size: 0.82rem;
+            padding: 6px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .dash-period-btn:hover,
+        .dash-period-btn.active {
+            background: #00b14f;
+            color: #fff;
+            border-color: #00b14f;
+        }
+
+        .dash-select-wrap select {
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 0.82rem;
+            color: #374151;
+            cursor: pointer;
+        }
+
+        /* ===== Stat Cards ===== */
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 18px 20px;
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            transition: box-shadow 0.2s;
+        }
+
+        .stat-card:hover {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        }
+
+        .stat-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .stat-info .label {
+            font-size: 0.78rem;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+
+        .stat-info .value {
+            font-size: 1.55rem;
+            font-weight: 700;
+            color: #111827;
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+
+        .stat-info .trend {
+            font-size: 0.78rem;
+            font-weight: 600;
+        }
+
+        .trend-up { color: #00b14f; }
+        .trend-down { color: #ef4444; }
+
+        /* ===== Chart cards ===== */
+        .chart-row {
+            display: grid;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .chart-row-2 {
+            grid-template-columns: 3fr 2fr;
+        }
+
+        .chart-row-2b {
+            grid-template-columns: 2fr 2fr;
+        }
+
+        .chart-card {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .chart-card-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 2px;
+        }
+
+        .chart-card-sub {
+            font-size: 0.75rem;
+            color: #6b7280;
+            margin-bottom: 14px;
+        }
+
+        /* ===== Activity Table ===== */
+        .activity-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+
+        .activity-table th {
+            font-weight: 600;
+            color: #6b7280;
+            padding: 8px 10px;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+            font-size: 0.78rem;
+        }
+
+        .activity-table td {
+            padding: 10px 10px;
+            border-bottom: 1px solid #f3f4f6;
+            color: #374151;
+            vertical-align: middle;
+        }
+
+        .activity-table tr:last-child td { border-bottom: none; }
+
+        .status-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            font-weight: 600;
+        }
+
+        .status-active   { background: #dcfce7; color: #16a34a; }
+        .status-success  { background: #dbeafe; color: #1d4ed8; }
+        .status-pending  { background: #fef9c3; color: #92400e; }
+
+        /* ===== Alerts ===== */
+        .alert-section .alert-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 0.84rem;
+            font-weight: 500;
+        }
+
+        .alert-item.danger  { background: #fef2f2; color: #991b1b; border-left: 4px solid #ef4444; }
+        .alert-item.warning { background: #fffbeb; color: #92400e; border-left: 4px solid #f59e0b; }
+        .alert-item.success { background: #f0fdf4; color: #166534; border-left: 4px solid #22c55e; }
+
+        @@media (max-width: 1100px) {
+            .stat-grid { grid-template-columns: repeat(2, 1fr); }
+            .chart-row-2, .chart-row-2b { grid-template-columns: 1fr; }
+        }
+    </style>
+}
+
+<!-- Toolbar -->
+<div class="dash-toolbar">
+    <div class="dash-toolbar-title">
+        <h2>Manager Dashboard</h2>
+        <p>Tổng quan hoạt động hệ thống và doanh thu.</p>
+    </div>
+    <button class="dash-period-btn active" onclick="setPeriod(this,7)">7 ngày</button>
+    <button class="dash-period-btn" onclick="setPeriod(this,30)">30 ngày</button>
+    <button class="dash-period-btn" onclick="setPeriod(this,90)">90 ngày</button>
+    <div class="dash-select-wrap">
+        <select>
+            <option>Theo tháng</option>
+            <option>Theo tuần</option>
+            <option>Theo năm</option>
+        </select>
+    </div>
+    <button class="dash-period-btn">
+        <i class="fas fa-download me-1"></i> Xuất báo cáo
+    </button>
+</div>
+
+<!-- Stat Cards -->
+<div class="stat-grid" style="grid-template-columns: repeat(2, 1fr);">
+    <div class="stat-card">
+        <div class="stat-icon" style="background:#ecfdf5;">
+            <i class="fas fa-chart-line" style="color:#00b14f;"></i>
+        </div>
+        <div class="stat-info">
+            <div class="label">Doanh thu</div>
+            <div class="value">245,000,000 đ</div>
+            <div class="trend trend-up"><i class="fas fa-arrow-up"></i> +12%</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon" style="background:#eff6ff;">
+            <i class="fas fa-briefcase" style="color:#3b82f6;"></i>
+        </div>
+        <div class="stat-info">
+            <div class="label">Tin tuyển dụng</div>
+            <div class="value">@Model.TotalRecruiters</div>
+            <div class="trend trend-up"><i class="fas fa-arrow-up"></i> +8%</div>
+        </div>
+    </div>
+</div>
+
+<!-- Row 1: Line Chart + Bar Chart -->
+<div class="chart-row chart-row-2">
+    <div class="chart-card">
+        <div class="chart-card-title">Doanh thu</div>
+        <div class="chart-card-sub">Theo thời gian</div>
+        <canvas id="revenueChart" height="110"></canvas>
+    </div>
+    <div class="chart-card">
+        <div class="chart-card-title">Bài đăng tuyển dụng</div>
+        <div class="chart-card-sub">&nbsp;</div>
+        <canvas id="jobPostChart" height="110"></canvas>
+    </div>
+</div>
+
+<!-- Row 2: Donut Chart -->
+<div class="chart-row">
+    <div class="chart-card">
+        <div class="chart-card-title">Doanh thu theo gói</div>
+        <div class="chart-card-sub">&nbsp;</div>
+        <div style="display:flex;align-items:center;gap:20px;">
+            <canvas id="revenueDonut" width="200" height="200" style="max-width:200px;max-height:200px;"></canvas>
+            <div id="donutLegend" style="font-size:0.8rem;line-height:2;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="chart-card mb-4">
+    <div class="chart-card-title mb-3">Hoạt động gần đây</div>
+    <table class="activity-table">
+        <thead>
+            <tr>
+                <th>Thời gian</th>
+                <th>Loại sự kiện</th>
+                <th>Người dùng / Công ty</th>
+                <th>Chi tiết</th>
+                <th>Trạng thái</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>10:30 AM</td>
+                <td>Đăng tin</td>
+                <td>FPT Software</td>
+                <td>Senior Frontend Developer</td>
+                <td><span class="status-badge status-active">Hoạt động</span></td>
+            </tr>
+            <tr>
+                <td>09:15 AM</td>
+                <td>Mua gói</td>
+                <td>Vietcombank</td>
+                <td>Gói Enterprise – 3 tháng</td>
+                <td><span class="status-badge status-success">Thành công</span></td>
+            </tr>
+            <tr>
+                <td>08:45 AM</td>
+                <td>Tạo tài khoản</td>
+                <td>Nguyễn Văn A</td>
+                <td>Ứng viên mới đăng ký</td>
+                <td><span class="status-badge status-pending">Đang xử lý</span></td>
+            </tr>
+            <tr>
+                <td>07:50 AM</td>
+                <td>Đăng tin</td>
+                <td>Vingroup</td>
+                <td>Product Manager</td>
+                <td><span class="status-badge status-active">Hoạt động</span></td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- Alerts -->
+<div class="chart-card alert-section mb-2">
+    <div class="chart-card-title mb-3">Cảnh báo</div>
+    <div class="alert-item danger">
+        <i class="fas fa-exclamation-triangle"></i>
+        5 tin tuyển dụng bị báo cáo trong 24h
+    </div>
+    <div class="alert-item warning">
+        <i class="fas fa-clock"></i>
+        2 recruiter sắp hết gói
+    </div>
+    <div class="alert-item success">
+        <i class="fas fa-arrow-trend-up"></i>
+        Tăng đột biến đăng ký 30%
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+    <script>
+        // ===== Revenue Line Chart =====
+        new Chart(document.getElementById('revenueChart'), {
+            type: 'line',
+            data: {
+                labels: ['T1','T2','T3','T4','T5','T6','T7'],
+                datasets: [
+                    {
+                        label: 'Gói Basic',
+                        data: [62,58,65,70,68,72,75],
+                        borderColor: '#22c55e',
+                        backgroundColor: 'rgba(34,197,94,0.07)',
+                        tension: 0.4,
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        fill: false,
+                    },
+                    {
+                        label: 'Gói Pro',
+                        data: [80,76,85,80,88,84,90],
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59,130,246,0.07)',
+                        tension: 0.4,
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        fill: false,
+                    },
+                    {
+                        label: 'Gói Enterprise',
+                        data: [90,92,88,95,96,100,105],
+                        borderColor: '#a855f7',
+                        backgroundColor: 'rgba(168,85,247,0.07)',
+                        tension: 0.4,
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        fill: false,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { position: 'top', labels: { font: { size: 11 }, boxWidth: 16 } } },
+                scales: {
+                    y: {
+                        ticks: { font: { size: 10 }, callback: v => v + 'M' },
+                        grid: { color: '#f3f4f6' }
+                    },
+                    x: { ticks: { font: { size: 10 } }, grid: { display: false } }
+                }
+            }
+        });
+
+        // ===== Job Post Bar Chart =====
+        new Chart(document.getElementById('jobPostChart'), {
+            type: 'bar',
+            data: {
+                labels: ['T1','T2','T3','T4','T5','T6','T7','CN'],
+                datasets: [{
+                    label: 'Bài đăng',
+                    data: [130,160,150,185,175,195,210,90],
+                    backgroundColor: '#10b981',
+                    borderRadius: 4,
+                    borderSkipped: false,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { ticks: { font: { size: 10 } }, grid: { color: '#f3f4f6' } },
+                    x: { ticks: { font: { size: 10 } }, grid: { display: false } }
+                }
+            }
+        });
+
+        // ===== Revenue Donut Chart =====
+        const donutData = {
+            labels: ['Pro', 'Enterprise', 'Basic'],
+            datasets: [{
+                data: [40, 31.7, 28.3],
+                backgroundColor: ['#3b82f6', '#a855f7', '#22c55e'],
+                borderWidth: 3,
+                borderColor: '#fff',
+                hoverOffset: 6,
+            }]
+        };
+
+        new Chart(document.getElementById('revenueDonut'), {
+            type: 'doughnut',
+            data: donutData,
+            options: {
+                responsive: false,
+                cutout: '60%',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: ctx => ctx.label + ': ' + ctx.parsed + '%' } }
+                }
+            }
+        });
+
+        // Custom legend for donut
+        const colors = ['#3b82f6','#a855f7','#22c55e'];
+        const legend = document.getElementById('donutLegend');
+        ['Pro – 40%','Enterprise – 31.7%','Basic – 28.3%'].forEach((item, i) => {
+            const div = document.createElement('div');
+            div.style.display = 'flex';
+            div.style.alignItems = 'center';
+            div.style.gap = '8px';
+            div.innerHTML = `<span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:${colors[i]};"></span> ${item}`;
+            legend.appendChild(div);
+        });
+
+        // Period button toggle
+        function setPeriod(btn, days) {
+            document.querySelectorAll('.dash-period-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+    </script>
+}
