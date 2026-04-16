@@ -48,6 +48,47 @@ namespace RJMS.Vn.Edu.Fpt.Service
             return BCrypt.Net.BCrypt.HashPassword(raw);
         }
 
+        private static string GetLocationDisplayText(CompanyLocation? companyLocation)
+        {
+            if (companyLocation == null)
+            {
+                return string.Empty;
+            }
+
+            var addressParts = new List<string>();
+
+            var detailAddress = companyLocation.Location?.DetailAddress?.Trim();
+            var streetAddress = companyLocation.Location?.Address?.Trim();
+            var wardName = companyLocation.Location?.WardName?.Trim();
+            var cityName = companyLocation.Location?.CityName?.Trim();
+            var label = companyLocation.AddressLabel?.Trim();
+
+            if (!string.IsNullOrWhiteSpace(detailAddress))
+            {
+                addressParts.Add(detailAddress);
+            }
+            else if (!string.IsNullOrWhiteSpace(streetAddress))
+            {
+                addressParts.Add(streetAddress);
+            }
+            else if (!string.IsNullOrWhiteSpace(label))
+            {
+                addressParts.Add(label);
+            }
+
+            if (!string.IsNullOrWhiteSpace(wardName))
+            {
+                addressParts.Add(wardName);
+            }
+
+            if (!string.IsNullOrWhiteSpace(cityName))
+            {
+                addressParts.Add(cityName);
+            }
+
+            return string.Join(", ", addressParts.Where(part => !string.IsNullOrWhiteSpace(part)));
+        }
+
         // ── Company Locations ──────────────────────────────────────────────
 
         public async Task<CompanyLocationsPageViewModel?> GetCompanyLocationsAsync(int userId)
@@ -183,7 +224,7 @@ namespace RJMS.Vn.Edu.Fpt.Service
                 IsActive = r.User?.IsActive ?? true,
                 IsVerified = r.IsVerified ?? false,
                 LocationLabels = r.RecruiterLocations?
-                    .Select(rl => rl.CompanyLocation?.AddressLabel ?? rl.CompanyLocation?.Location?.CityName ?? "")
+                    .Select(rl => GetLocationDisplayText(rl.CompanyLocation))
                     .Where(s => !string.IsNullOrEmpty(s)).ToList() ?? new(),
                 CreatedAt = r.CreatedAt
             }).ToList();
@@ -198,7 +239,10 @@ namespace RJMS.Vn.Edu.Fpt.Service
                 Locations = locations.Select(cl => new RecruiterCompanyLocationViewModel
                 {
                     Id = cl.Id,
-                    AddressLabel = cl.AddressLabel ?? cl.Location?.CityName ?? "",
+                    AddressLabel = cl.AddressLabel ?? "",
+                    CityName = cl.Location?.CityName ?? "",
+                    WardName = cl.Location?.WardName,
+                    Address = GetLocationDisplayText(cl),
                     IsPrimary = cl.IsPrimary
                 }).ToList()
             };
@@ -282,7 +326,10 @@ namespace RJMS.Vn.Edu.Fpt.Service
                 Locations = locations.Select(cl => new RecruiterCompanyLocationViewModel
                 {
                     Id = cl.Id,
-                    AddressLabel = cl.AddressLabel ?? cl.Location?.CityName ?? "",
+                    AddressLabel = cl.AddressLabel ?? "",
+                    CityName = cl.Location?.CityName ?? "",
+                    WardName = cl.Location?.WardName,
+                    Address = GetLocationDisplayText(cl),
                     IsPrimary = cl.IsPrimary
                 }).ToList()
             };
