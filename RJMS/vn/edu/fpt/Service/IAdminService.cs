@@ -9,6 +9,7 @@ namespace RJMS.Vn.Edu.Fpt.Service
         Task<AdminUserListViewModel> GetUserListAsync(string? keyword, string? role, string? status, int page, int pageSize);
         Task<AdminUpdateUserViewModel?> GetUpdateUserAsync(int id);
         Task<ServiceResult> CreateAdminAsync(AdminCreateAdminViewModel model);
+        Task<ServiceResult> CreateManagerAsync(AdminCreateManagerViewModel model);
         Task<ServiceResult> CreateCandidateAsync(AdminCreateCandidateViewModel model);
         Task<ServiceResult> CreateRecruiterAsync(AdminCreateRecruiterViewModel model);
         Task<ServiceResult> UpdateUserAsync(AdminUpdateUserViewModel model);
@@ -26,6 +27,16 @@ namespace RJMS.Vn.Edu.Fpt.Service
         Task<AdminCompanyDetailViewModel?> GetCompanyDetailAsync(int id);
         Task<ServiceResult> VerifyCompanyAsync(int id);
         Task<ServiceResult> UnverifyCompanyAsync(int id);
+
+        // Company Location management
+        Task<List<CompanyLocationViewModel>> GetCompanyLocationsAsync(int companyId);
+        Task<ServiceResult> AddCompanyLocationAsync(int companyId, AdminCreateCompanyLocationViewModel model);
+        Task<ServiceResult> DeleteCompanyLocationAsync(int companyLocationId);
+
+        // Employee management
+        Task<AdminEmployeeListViewModel> GetEmployeeListAsync(string? keyword, int? companyId, int page, int pageSize);
+        Task<ServiceResult> CreateEmployeeAsync(AdminCreateEmployeeViewModel model);
+        Task<ServiceResult> AssignEmployeeLocationsAsync(AdminAssignEmployeeLocationViewModel model);
 
         // Subscriptions management
         Task<AdminSubscriptionListViewModel> GetSubscriptionListAsync(string? keyword, string? status, int? planId, int page, int pageSize);
