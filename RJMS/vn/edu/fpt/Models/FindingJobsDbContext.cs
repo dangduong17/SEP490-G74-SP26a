@@ -68,6 +68,9 @@ public partial class FindingJobsDbContext : DbContext
     public virtual DbSet<MessageRead> MessageReads { get; set; }
     public virtual DbSet<MessageAttachment> MessageAttachments { get; set; }
     public virtual DbSet<ConversationJob> ConversationJobs { get; set; }
+    public virtual DbSet<CompanyLocation> CompanyLocations { get; set; }
+    public virtual DbSet<RecruiterLocation> RecruiterLocations { get; set; }
+    public virtual DbSet<JobRecruiter> JobRecruiters { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 {
@@ -132,11 +135,11 @@ public partial class FindingJobsDbContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("PK__Companie__3214EC0756E23280");
 
-            entity.Property(e => e.Benefits).HasColumnType("text");
+            entity.Property(e => e.Benefits).HasColumnType("nvarchar(max)");
             entity.Property(e => e.CompanySize).HasMaxLength(50);
             entity.Property(e => e.CoverImage).HasMaxLength(500);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
-            entity.Property(e => e.Description).HasColumnType("text");
+            entity.Property(e => e.Description).HasColumnType("nvarchar(max)");
             entity.Property(e => e.Email).HasMaxLength(100);
             entity.Property(e => e.Industry).HasMaxLength(200);
             entity.Property(e => e.IsVerified).HasDefaultValue(false);
@@ -145,6 +148,7 @@ public partial class FindingJobsDbContext : DbContext
             entity.Property(e => e.Phone).HasMaxLength(20);
             entity.Property(e => e.TaxCode).HasMaxLength(100);
             entity.Property(e => e.Website).HasMaxLength(500);
+            // Note: ProvinceCode/ProvinceName/WardCode/WardName/Address removed - now in CompanyLocations
         });
 
         modelBuilder.Entity<Cv>(entity =>
@@ -223,6 +227,7 @@ public partial class FindingJobsDbContext : DbContext
             entity.Property(e => e.Status).HasMaxLength(50);
             entity.Property(e => e.Title).HasMaxLength(500);
             entity.Property(e => e.ViewCount).HasDefaultValue(0);
+            entity.Property(e => e.PublishDate).HasColumnType("datetime");
 
             entity.HasOne(d => d.Company).WithMany(p => p.Jobs)
                 .HasForeignKey(d => d.CompanyId)
@@ -232,15 +237,6 @@ public partial class FindingJobsDbContext : DbContext
             entity.HasOne(d => d.JobCategory).WithMany(p => p.Jobs)
                 .HasForeignKey(d => d.JobCategoryId)
                 .HasConstraintName("FK__Jobs__JobCategor__5EBF139D");
-
-            entity.HasOne(d => d.Location).WithMany(p => p.Jobs)
-                .HasForeignKey(d => d.LocationId)
-                .HasConstraintName("FK__Jobs__LocationId__5FB337D6");
-
-            entity.HasOne(d => d.Recruiter).WithMany(p => p.Jobs)
-                .HasForeignKey(d => d.RecruiterId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Jobs__RecruiterI__5DCAEF64");
         });
 
         modelBuilder.Entity<JobCategory>(entity =>
@@ -461,6 +457,54 @@ public partial class FindingJobsDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull);
+        });
+
+        modelBuilder.Entity<CompanyLocation>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.HasIndex(e => new { e.CompanyId, e.LocationId }).IsUnique();
+
+            entity.HasOne(d => d.Company).WithMany(p => p.CompanyLocations)
+                .HasForeignKey(d => d.CompanyId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(d => d.Location).WithMany(p => p.CompanyLocations)
+                .HasForeignKey(d => d.LocationId)
+                .OnDelete(DeleteBehavior.NoAction);
+        });
+
+        modelBuilder.Entity<RecruiterLocation>(entity =>
+        {
+            entity.HasKey(e => new { e.RecruiterId, e.CompanyLocationId });
+            entity.Property(e => e.AssignedAt).HasDefaultValueSql("(sysutcdatetime())");
+
+            entity.HasOne(d => d.Recruiter).WithMany(p => p.RecruiterLocations)
+                .HasForeignKey(d => d.RecruiterId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(d => d.CompanyLocation).WithMany(p => p.RecruiterLocations)
+                .HasForeignKey(d => d.CompanyLocationId)
+                .OnDelete(DeleteBehavior.NoAction);
+        });
+
+        modelBuilder.Entity<JobRecruiter>(entity =>
+        {
+            entity.HasKey(e => new { e.JobId, e.RecruiterId });
+            entity.Property(e => e.AssignedAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.IsPrimary).HasDefaultValue(true);
+
+            entity.HasOne(d => d.Job).WithMany(p => p.JobRecruiters)
+                .HasForeignKey(d => d.JobId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(d => d.Recruiter).WithMany(p => p.JobRecruiters)
+                .HasForeignKey(d => d.RecruiterId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            entity.HasOne(d => d.CompanyLocation).WithMany(p => p.JobRecruiters)
+                .HasForeignKey(d => d.CompanyLocationId)
+                .OnDelete(DeleteBehavior.NoAction);
         });
 
         OnModelCreatingPartial(modelBuilder);
