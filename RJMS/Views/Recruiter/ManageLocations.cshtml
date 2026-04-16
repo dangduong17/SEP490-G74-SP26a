@@ -1,0 +1,159 @@
+@{
+    ViewData["Title"] = "Quản lý địa chỉ công ty";
+    Layout = "~/Views/Shared/_RecruiterLayout.cshtml";
+    var locations = ViewBag.CompanyLocations as List<RJMS.vn.edu.fpt.Models.CompanyLocation>;
+}
+
+@section Styles {
+<style>
+    .page-title { font-size: 1.4rem; font-weight: 700; color: #111827; margin-bottom: 1.5rem; border-left: 4px solid #00b14f; padding-left: 0.75rem; }
+    .card-location { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 1.25rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s; }
+    .card-location:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.05); transform: translateY(-2px); }
+    .btn-add { background: #00b14f; color: #fff; border: none; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; }
+    .btn-add:hover { background: #009744; color: #fff; }
+    .btn-danger-outline { color: #dc3545; border: 1px solid #dc3545; background: transparent; padding: 0.4rem 0.8rem; border-radius: 6px; transition: 0.15s; }
+    .btn-danger-outline:hover { background: #dc3545; color: white; }
+    
+    .modal-backdrop-custom { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(2px); z-index: 1040; display: none; }
+    .modal-box { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.95); opacity: 0; background: white; border-radius: 12px; padding: 2rem; width: 500px; max-width: 95vw; box-shadow: 0 20px 60px rgba(0,0,0,.2); z-index: 1050; display: flex; flex-direction: column; pointer-events: none; transition: 0.25s ease; }
+    .modal-box.show { transform: translate(-50%, -50%) scale(1); opacity: 1; pointer-events: auto; }
+</style>
+}
+
+<div class="container-fluid py-3">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="page-title mb-0">Quản lý địa chỉ công ty</h2>
+        <button class="btn btn-add" onclick="openAddModal()">
+            <i class="fas fa-plus"></i> Thêm địa chỉ mới
+        </button>
+    </div>
+
+    @if (locations != null && locations.Any())
+    {
+        <div class="row">
+            @foreach (var loc in locations)
+            {
+                <div class="col-md-6 mb-3">
+                    <div class="card-location">
+                        <div>
+                            <h5 class="mb-1 fw-bold fs-6">
+                                <i class="fas fa-map-marker-alt text-success me-2"></i>@loc.Location.Address
+                            </h5>
+                            <div class="text-muted small mb-1">@loc.Location.WardName, @loc.Location.CityName</div>
+                            <span class="badge bg-light text-secondary border">Tạo ngày: @loc.CreatedAt.ToString("dd/MM/yyyy")</span>
+                        </div>
+                        <div>
+                            <form asp-action="DeleteLocation" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn xóa địa chỉ này?');">
+                                <input type="hidden" name="clId" value="@loc.Id" />
+                                <button type="submit" class="btn btn-danger-outline" title="Xóa">
+                                    <i class="fas fa-trash-alt"></i> Xóa
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-5 bg-white border rounded" style="color: #6c757d;">
+            <i class="fas fa-map-signs fs-1 text-muted mb-3"></i>
+            <h5>Công ty chưa thiết lập địa chỉ nào</h5>
+            <p>Trang này giúp bạn tạo trước danh sách địa điểm để chọn nhanh khi đăng tin tuyển dụng.</p>
+            <button class="btn btn-primary mt-2" onclick="openAddModal()">Thêm địa chỉ đầu tiên</button>
+        </div>
+    }
+</div>
+
+<!-- Modal Thêm Địa chỉ -->
+<div class="modal-backdrop-custom" id="addModalBackdrop" onclick="closeAddModal()"></div>
+<div class="modal-box" id="addModal">
+    <div class="d-flex justify-content-between align-items-start mb-3">
+        <h4 class="fw-bold mb-0">Thêm địa chỉ công ty</h4>
+        <button type="button" class="btn-close" onclick="closeAddModal()"></button>
+    </div>
+    <form asp-action="AddLocation" method="post" id="addLocationForm">
+        <input type="hidden" name="provinceName" id="modalProvinceName" />
+        <input type="hidden" name="wardName" id="modalWardName" />
+        
+        <div class="mb-3">
+            <label class="form-label fw-bold">Tỉnh / Thành phố <span class="text-danger">*</span></label>
+            <select name="provinceCode" class="form-select" id="modalProvinceCode" required>
+                <option value="">Đang tải thông tin...</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label class="form-label fw-bold">Quận / Huyện</label>
+            <select name="wardCode" class="form-select" id="modalWardCode">
+                <option value="">Chọn tỉnh thành trước</option>
+            </select>
+        </div>
+        <div class="mb-4">
+            <label class="form-label fw-bold">Địa chỉ cụ thể (Số nhà, Tên đường) <span class="text-danger">*</span></label>
+            <input type="text" name="address" class="form-control" required placeholder="Ví dụ: Tòa nhà FPT, Số 1, Đường X..." />
+        </div>
+        
+        <div class="d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-light border" onclick="closeAddModal()">Hủy</button>
+            <button type="submit" class="btn btn-add">Lưu địa chỉ</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        function openAddModal() {
+            document.getElementById('addModalBackdrop').style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('addModal').classList.add('show');
+            }, 10);
+            
+            if (document.getElementById('modalProvinceCode').options.length <= 1) {
+                loadProvinces();
+            }
+        }
+        
+        function closeAddModal() {
+            document.getElementById('addModal').classList.remove('show');
+            setTimeout(() => {
+                document.getElementById('addModalBackdrop').style.display = 'none';
+            }, 250);
+        }
+
+        async function loadProvinces() {
+            try {
+                let data = await fetch('https://provinces.open-api.vn/api/v2/p/').then(r => r.json());
+                let $p = document.getElementById('modalProvinceCode');
+                $p.innerHTML = '<option value="">Chọn tỉnh/thành phố</option>';
+                data.forEach(p => {
+                    $p.add(new Option(p.name, p.code));
+                });
+            } catch(e) {}
+        }
+
+        async function loadWards(provinceCode) {
+            let $w = document.getElementById('modalWardCode');
+            $w.innerHTML = '<option value="">Đang tải...</option>';
+            try {
+                let data = await fetch(`https://provinces.open-api.vn/api/v2/w/?province=${provinceCode}`).then(r => r.json());
+                $w.innerHTML = '<option value="">Chọn quận/huyện</option>';
+                data.forEach(w => {
+                    $w.add(new Option(w.name, w.code));
+                });
+            } catch(e) { $w.innerHTML = '<option value="">Không tải được</option>'; }
+        }
+
+        document.getElementById('modalProvinceCode').addEventListener('change', function() {
+            let opt = this.options[this.selectedIndex];
+            document.getElementById('modalProvinceName').value = opt.value ? opt.text : '';
+            if (this.value) loadWards(this.value);
+            else document.getElementById('modalWardCode').innerHTML = '<option value="">Chọn tỉnh trước</option>';
+        });
+
+        document.getElementById('modalWardCode').addEventListener('change', function() {
+            let opt = this.options[this.selectedIndex];
+            document.getElementById('modalWardName').value = opt.value ? opt.text : '';
+        });
+    </script>
+}
