@@ -49,12 +49,12 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         }
 
         // ── Auth guard ────────────────────────────────────────────────────────
-        private IActionResult? RequireAdmin()
+        private IActionResult? RequireManagerRole()
         {
             var role = Request.Cookies["UserRole"];
-            if (role != "Admin")
+            if (role != "Manager")
             {
-                TempData["WarningToast"] = "Hành động yêu cầu quyền Quản trị viên.";
+                TempData["WarningToast"] = "Hành động yêu cầu quyền Quản lý nội dung.";
                 return RedirectToAction("Login", "Auth");
             }
             return null;
@@ -65,7 +65,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         public async Task<IActionResult> ManageSubscription(
             string? keyword, string? status, string? type, int page = 1, int pageSize = 5)
         {
-            if (RequireAdmin() is { } redirect) return redirect;
+            if (RequireManagerRole() is { } redirect) return redirect;
 
             var model = await _subscriptionService.GetPlanListAsync(keyword, status, type, page, pageSize);
             ViewData["Title"] = "Quản lý gói đăng ký";
@@ -76,7 +76,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         [HttpGet]
         public IActionResult CreatePlan()
         {
-            if (RequireAdmin() is { } redirect) return redirect;
+            if (RequireManagerRole() is { } redirect) return redirect;
             ViewData["Title"] = "Tạo gói đăng ký mới";
             return View(new SubscriptionPlanFormViewModel());
         }
@@ -86,7 +86,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreatePlan(SubscriptionPlanFormViewModel model)
         {
-            if (RequireAdmin() is { } redirect) return redirect;
+            if (RequireManagerRole() is { } redirect) return redirect;
             ViewData["Title"] = "Tạo gói đăng ký mới";
 
             if (!ModelState.IsValid)
@@ -105,7 +105,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         [HttpGet]
         public async Task<IActionResult> EditPlan(int id)
         {
-            if (RequireAdmin() is { } redirect) return redirect;
+            if (RequireManagerRole() is { } redirect) return redirect;
             ViewData["Title"] = "Chỉnh sửa gói đăng ký";
 
             var model = await _subscriptionService.GetPlanForEditAsync(id);
@@ -118,7 +118,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditPlan(SubscriptionPlanFormViewModel model)
         {
-            if (RequireAdmin() is { } redirect) return redirect;
+            if (RequireManagerRole() is { } redirect) return redirect;
             ViewData["Title"] = "Chỉnh sửa gói đăng ký";
 
             if (!ModelState.IsValid)
@@ -135,7 +135,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ToggleStatus(int id)
         {
-            if (RequireAdmin() is { } redirect) return redirect;
+            if (RequireManagerRole() is { } redirect) return redirect;
 
             await _subscriptionService.TogglePlanStatusAsync(id);
             TempData["SuccessToast"] = "Đã thay đổi trạng thái gói.";
@@ -147,7 +147,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeletePlan(int id)
         {
-            if (RequireAdmin() is { } redirect) return redirect;
+            if (RequireManagerRole() is { } redirect) return redirect;
 
             bool result = await _subscriptionService.DeletePlanAsync(id);
             
@@ -163,7 +163,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         [HttpGet]
         public async Task<IActionResult> PlanDetail(int id)
         {
-            if (RequireAdmin() is { } redirect) return redirect;
+            if (RequireManagerRole() is { } redirect) return redirect;
 
             var detail = await _subscriptionService.GetPlanDetailAsync(id);
             if (detail == null) return NotFound();
