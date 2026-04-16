@@ -19,9 +19,11 @@ namespace RJMS.Vn.Edu.Fpt.Service
         {
             var company = await _context.Companies
                 .Include(c => c.Jobs.Where(j => j.Status == "Active"))
-                .ThenInclude(j => j.Location)
-                .Include(c => c.Jobs)
                 .ThenInclude(j => j.JobCategory)
+                .Include(c => c.Jobs)
+                .ThenInclude(j => j.JobRecruiters)
+                .Include(c => c.CompanyLocations)
+                .ThenInclude(cl => cl.Location)
                 .FirstOrDefaultAsync(c => c.Id == id);
 
             if (company == null) return null;
@@ -40,7 +42,9 @@ namespace RJMS.Vn.Edu.Fpt.Service
                 CompanySize = company.CompanySize,
                 Industry = company.Industry,
                 Website = company.Website,
-                Address = company.Address,
+                Address = company.CompanyLocations
+                    .FirstOrDefault(cl => cl.IsPrimary)?.Location?.Address
+                    ?? company.CompanyLocations.FirstOrDefault()?.Location?.Address,
                 IsVerified = company.IsVerified,
                 FollowerCount = followerCount,
                 IsFollowing = isFollowing,
@@ -52,7 +56,8 @@ namespace RJMS.Vn.Edu.Fpt.Service
                         Title = j.Title,
                         CompanyName = company.Name,
                         CompanyLogo = company.Logo,
-                        LocationName = j.Location?.CityName,
+                        LocationName = company.CompanyLocations.FirstOrDefault(cl => cl.IsPrimary)?.Location?.CityName
+                            ?? company.CompanyLocations.FirstOrDefault()?.Location?.CityName,
                         MinSalary = j.MinSalary,
                         MaxSalary = j.MaxSalary,
                         CreatedAt = j.CreatedAt,
