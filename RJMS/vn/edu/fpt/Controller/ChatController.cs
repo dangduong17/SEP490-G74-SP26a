@@ -18,9 +18,31 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             _hubContext = hubContext;
         }
 
+        private IActionResult? GuardChatAccess()
+        {
+            var role = Request.Cookies["UserRole"];
+            if (string.IsNullOrEmpty(role))
+            {
+                return RedirectToAction("Login", "Auth");
+            }
+
+            if (role == "Recruiter")
+            {
+                TempData["WarningToast"] = "Nhà tuyển dụng không quản lý chat. Vui lòng dùng tài khoản Employee để trao đổi với ứng viên.";
+                return RedirectToAction("RecruiterDashboard", "Recruiter");
+            }
+
+            return null;
+        }
+
         [HttpGet]
         public async Task<IActionResult> Index(int? id)
         {
+            if (GuardChatAccess() is { } redirect)
+            {
+                return redirect;
+            }
+
             var userIdStr = Request.Cookies["UserId"];
             if (!int.TryParse(userIdStr, out int userId) || userId == 0) 
             {
@@ -34,6 +56,11 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         [HttpGet]
         public async Task<IActionResult> Start(int jobId, int applicationId)
         {
+            if (GuardChatAccess() is { } redirect)
+            {
+                return redirect;
+            }
+
             var userIdStr = Request.Cookies["UserId"];
             if (!int.TryParse(userIdStr, out int userId) || userId == 0) 
             {
@@ -52,6 +79,11 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         [HttpPost]
         public async Task<IActionResult> SendMessage([FromBody] SendMessageRequest req)
         {
+            if (GuardChatAccess() is { })
+            {
+                return Unauthorized();
+            }
+
             var userIdStr = Request.Cookies["UserId"];
             if (!int.TryParse(userIdStr, out int userId) || userId == 0) 
             {
