@@ -58,7 +58,15 @@ builder.Services.AddScoped<ICVRenderService, CVRenderService>();
 builder.Services.AddScoped<ICompanyService, CompanyService>();
 builder.Services.AddScoped<SubscriptionRenewalJob>();
 builder.Services.AddScoped<IApplicationService, ApplicationService>();
-builder.Services.AddScoped<ICompanyService, CompanyService>();
+builder.Services.AddScoped<IRecruiterManagementRepository, RecruiterManagementRepository>();
+builder.Services.AddScoped<IRecruiterManagementService, RecruiterManagementService>();
+
+// Location lookup (HttpClient-based) – must be registered BEFORE IAuthService & IAdminService
+builder.Services.AddHttpClient<ILocationLookupService, LocationLookupService>(client =>
+{
+    client.BaseAddress = new Uri("https://provinces.open-api.vn");
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+});
 
 var app = builder.Build();
 
@@ -68,7 +76,7 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<FindingJobsDbContext>();
 
     // Ensure roles exist
-    var roleNames = new[] { "Admin", "Candidate", "Recruiter" };
+    var roleNames = new[] { "Admin", "Manager", "Candidate", "Recruiter", "Employee" };
     foreach (var roleName in roleNames)
     {
         if (!db.Roles.Any(r => r.Name == roleName))
@@ -76,7 +84,11 @@ using (var scope = app.Services.CreateScope())
             db.Roles.Add(new Role
             {
                 Name = roleName,
-                Description = $"{roleName} role",
+                Description = roleName switch
+                {
+                    "Employee" => "Nh\u00e2n vi\u00ean tuy\u1ec3n d\u1ee5ng thu\u1ed9c c\u00f4ng ty",
+                    _          => $"{roleName} role"
+                },
                 CreatedAt = DateTime.UtcNow
             });
         }
@@ -87,8 +99,10 @@ using (var scope = app.Services.CreateScope())
     var seeds = new[]
     {
         new { Email = "admin@rjms.com",     Password = "Admin@123456",     RoleName = "Admin",     FirstName = "System", LastName = "Admin" },
+        new { Email = "manager@rjms.com",   Password = "Manager@123456",   RoleName = "Manager",   FirstName = "System", LastName = "Manager" },
         new { Email = "candidate@rjms.com", Password = "Candidate@123456", RoleName = "Candidate", FirstName = "Demo",   LastName = "Candidate" },
         new { Email = "recruiter@rjms.com", Password = "Recruiter@123456", RoleName = "Recruiter", FirstName = "Demo",   LastName = "Recruiter" },
+        new { Email = "employee@rjms.com",  Password = "Employee@123456",  RoleName = "Employee",  FirstName = "Demo",   LastName = "Employee" },
     };
 
     foreach (var seed in seeds)
