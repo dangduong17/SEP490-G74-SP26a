@@ -351,6 +351,11 @@ public partial class FindingJobsDbContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Subscript__UserI__74AE54BC");
+
+            entity.HasOne(d => d.Company).WithMany(p => p.Subscriptions)
+                .HasForeignKey(d => d.CompanyId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("FK_Subscriptions_Companies");
         });
 
         modelBuilder.Entity<SubscriptionPlan>(entity =>
