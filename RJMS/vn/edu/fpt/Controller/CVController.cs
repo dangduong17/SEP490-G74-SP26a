@@ -133,9 +133,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             var userId = GetCurrentUserId();
             if (!userId.HasValue) return Unauthorized();
 
-            // Save temporarily, then render
-            await _cvService.SaveCvDataAsync(cvId, userId.Value, jsonData.GetRawText(), string.Empty);
-            var html = await _cvService.RenderCvHtmlAsync(cvId);
+            var html = await _cvService.RenderCvHtmlAsync(cvId, jsonData.GetRawText());
             return Content(html, "text/html");
         }
 
