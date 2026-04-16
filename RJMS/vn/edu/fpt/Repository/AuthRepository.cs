@@ -141,9 +141,15 @@ namespace RJMS.Vn.Edu.Fpt.Repository
                 var startDate = DateTime.UtcNow;
                 var endDate = startDate.AddDays(freePlan.DurationDays ?? 30);
 
+                var companyId = await _context.Recruiters
+                    .Where(r => r.UserId == user.Id && r.CompanyId != null)
+                    .Select(r => r.CompanyId)
+                    .FirstOrDefaultAsync();
+
                 var subscription = new Subscription
                 {
                     UserId = user.Id,
+                    CompanyId = companyId,
                     PlanId = freePlan.Id,
                     StartDate = startDate,
                     EndDate = endDate,

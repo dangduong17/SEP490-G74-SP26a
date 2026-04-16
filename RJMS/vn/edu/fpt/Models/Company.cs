@@ -40,6 +40,7 @@ public partial class Company
     public virtual ICollection<Job> Jobs { get; set; } = new List<Job>();
 
     public virtual ICollection<Recruiter> Recruiters { get; set; } = new List<Recruiter>();
+    public virtual ICollection<Subscription> Subscriptions { get; set; } = new List<Subscription>();
     public virtual ICollection<CompanyFollower> Followers { get; set; } = new List<CompanyFollower>();
     public virtual ICollection<CompanyLocation> CompanyLocations { get; set; } = new List<CompanyLocation>();
 }
