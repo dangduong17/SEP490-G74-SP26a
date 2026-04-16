@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace RJMS.vn.edu.fpt.Models;
@@ -27,7 +27,9 @@ public partial class Recruiter
 
     public virtual Company? Company { get; set; }
 
-    public virtual ICollection<Job> Jobs { get; set; } = new List<Job>();
+
 
     public virtual User User { get; set; } = null!;
+    public virtual ICollection<RecruiterLocation> RecruiterLocations { get; set; } = new List<RecruiterLocation>();
+    public virtual ICollection<JobRecruiter> JobRecruiters { get; set; } = new List<JobRecruiter>();
 }
