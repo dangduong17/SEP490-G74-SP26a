@@ -174,6 +174,112 @@ namespace RJMS.Vn.Edu.Fpt.Repository
             return _db.SaveChangesAsync();
         }
 
+        // ── Location ──────────────────────────────────────────────────────────
+        public async Task<Location?> GetLocationAsync(int? provinceCode, int? wardCode, string? address)
+        {
+            return await _db.Locations.FirstOrDefaultAsync(l => 
+                l.ProvinceCode == provinceCode && 
+                l.WardCode == wardCode && 
+                l.Address == address);
+        }
+
+        public async Task AddLocationAsync(Location location)
+        {
+            _db.Locations.Add(location);
+            await _db.SaveChangesAsync();
+        }
+
+        public async Task AddCompanyLocationAsync(CompanyLocation companyLocation)
+        {
+            _db.CompanyLocations.Add(companyLocation);
+            await _db.SaveChangesAsync();
+        }
+
+        public async Task AddRecruiterLocationAsync(RecruiterLocation recruiterLocation)
+        {
+            _db.RecruiterLocations.Add(recruiterLocation);
+            await _db.SaveChangesAsync();
+        }
+
+        public Task<List<RecruiterLocation>> GetRecruiterLocationsByRecruiterIdAsync(int recruiterId)
+        {
+            return _db.RecruiterLocations
+                .Include(rl => rl.CompanyLocation).ThenInclude(cl => cl.Location)
+                .Where(rl => rl.RecruiterId == recruiterId)
+                .ToListAsync();
+        }
+
+        public async Task RemoveRecruiterLocationAsync(RecruiterLocation recruiterLocation)
+        {
+            _db.RecruiterLocations.Remove(recruiterLocation);
+            await _db.SaveChangesAsync();
+        }
+
+        public Task<List<CompanyLocation>> GetCompanyLocationsAsync(int companyId)
+        {
+            return _db.CompanyLocations
+                .Include(cl => cl.Location)
+                .Include(cl => cl.RecruiterLocations)
+                .Where(cl => cl.CompanyId == companyId)
+                .OrderByDescending(cl => cl.IsPrimary)
+                .ThenBy(cl => cl.AddressLabel)
+                .ToListAsync();
+        }
+
+        public Task<CompanyLocation?> GetCompanyLocationByIdAsync(int id)
+        {
+            return _db.CompanyLocations
+                .Include(cl => cl.Location)
+                .Include(cl => cl.RecruiterLocations)
+                .FirstOrDefaultAsync(cl => cl.Id == id);
+        }
+
+        public async Task DeleteCompanyLocationAsync(CompanyLocation companyLocation)
+        {
+            _db.CompanyLocations.Remove(companyLocation);
+            await _db.SaveChangesAsync();
+        }
+
+        // ── Employee ──────────────────────────────────────────────────────────
+        public async Task<(int total, List<Recruiter> items)> GetEmployeesPagedAsync(string? keyword, int? companyId, int page, int pageSize)
+        {
+            // Employees = Recruiters whose User has role "Employee"
+            var query = _db.Recruiters
+                .Include(r => r.User).ThenInclude(u => u.UserRoles).ThenInclude(ur => ur.Role)
+                .Include(r => r.Company)
+                .Include(r => r.RecruiterLocations).ThenInclude(rl => rl.CompanyLocation).ThenInclude(cl => cl.Location)
+                .Where(r => r.User.UserRoles.Any(ur => ur.Role.Name == "Employee"))
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                var key = keyword.Trim().ToLower();
+                query = query.Where(r =>
+                    (r.FullName != null && r.FullName.ToLower().Contains(key)) ||
+                    (r.User.Email != null && r.User.Email.ToLower().Contains(key)));
+            }
+
+            if (companyId.HasValue)
+                query = query.Where(r => r.CompanyId == companyId.Value);
+
+            var total = await query.CountAsync();
+            var items = await query
+                .OrderByDescending(r => r.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (total, items);
+        }
+
+        public Task<List<RecruiterLocation>> GetRecruiterLocationsAsync(int recruiterId)
+        {
+            return _db.RecruiterLocations
+                .Include(rl => rl.CompanyLocation).ThenInclude(cl => cl.Location)
+                .Where(rl => rl.RecruiterId == recruiterId)
+                .ToListAsync();
+        }
+
         // ── Skills ────────────────────────────────────────────────────────────
 
         public async Task<(int total, List<Skill> items)> GetSkillsPagedAsync(string? keyword, string? category, int page, int pageSize)
@@ -298,6 +404,8 @@ namespace RJMS.Vn.Edu.Fpt.Repository
             return _db.Companies
                 .Include(c => c.Recruiters).ThenInclude(r => r.User)
                 .Include(c => c.Jobs)
+                .Include(c => c.CompanyLocations).ThenInclude(cl => cl.Location)
+                .Include(c => c.Followers)
                 .FirstOrDefaultAsync(c => c.Id == id);
         }
 

@@ -229,6 +229,8 @@ namespace RJMS.Vn.Edu.Fpt.Repository
             var recruiter = await _context.Recruiters
                 .Include(r => r.User)
                 .Include(r => r.Company)
+                    .ThenInclude(c => c.CompanyLocations)
+                    .ThenInclude(cl => cl.Location)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(r => r.UserId == userId);
 
@@ -236,6 +238,11 @@ namespace RJMS.Vn.Edu.Fpt.Repository
 
             var user = recruiter.User;
             var company = recruiter.Company;
+
+            // Read primary location
+            var primaryCl = company?.CompanyLocations.FirstOrDefault(cl => cl.IsPrimary)
+                ?? company?.CompanyLocations.FirstOrDefault();
+            var primaryLoc = primaryCl?.Location;
 
             return new RecruiterEditProfileViewModel
             {
@@ -247,9 +254,8 @@ namespace RJMS.Vn.Edu.Fpt.Repository
                 LastName = user?.LastName ?? string.Empty,
                 PhoneNumber = recruiter.Phone ?? string.Empty,
                 Position = recruiter.Position ?? string.Empty,
-                Department = null, // Not stored in current schema
+                Department = null,
                 Avatar = recruiter.Avatar,
-                // Company fields
                 CompanyName = company?.Name ?? string.Empty,
                 CompanyTaxCode = company?.TaxCode,
                 CompanySize = company?.CompanySize,
@@ -258,11 +264,11 @@ namespace RJMS.Vn.Edu.Fpt.Repository
                 CompanyEmail = company?.Email,
                 CompanyPhone = company?.Phone,
                 CompanyDescription = company?.Description,
-                ProvinceCode = company?.ProvinceCode,
-                ProvinceName = company?.ProvinceName,
-                WardCode = company?.WardCode,
-                WardName = company?.WardName,
-                WorkAddress = company?.Address,
+                ProvinceCode = primaryLoc?.ProvinceCode,
+                ProvinceName = primaryLoc?.CityName,
+                WardCode = primaryLoc?.WardCode,
+                WardName = primaryLoc?.WardName,
+                WorkAddress = primaryLoc?.Address,
                 IsVerified = recruiter.IsVerified ?? false,
                 CompanyLogo = company?.Logo
             };
@@ -270,19 +276,15 @@ namespace RJMS.Vn.Edu.Fpt.Repository
 
         public async Task<bool> UpdateRecruiterProfileNewAsync(int userId, RecruiterEditProfileViewModel model)
         {
-            // 1. Update User (but not email)
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
             if (user == null) return false;
 
-            // Don't update email - it's readonly
             user.FirstName = model.FirstName;
             user.LastName = model.LastName;
             user.Phone = model.PhoneNumber;
             user.UpdatedAt = DateTimeHelper.NowVietnam;
-
             if (!string.IsNullOrEmpty(model.Avatar)) user.Avatar = model.Avatar;
 
-            // 2. Update Recruiter
             var recruiter = await _context.Recruiters.FirstOrDefaultAsync(r => r.UserId == userId);
             if (recruiter == null) return false;
 
@@ -291,7 +293,6 @@ namespace RJMS.Vn.Edu.Fpt.Repository
             recruiter.Position = model.Position;
             if (!string.IsNullOrEmpty(model.Avatar)) recruiter.Avatar = model.Avatar;
 
-            // 3. Update Company
             if (model.CompanyId.HasValue)
             {
                 var company = await _context.Companies.FirstOrDefaultAsync(c => c.Id == model.CompanyId.Value);
@@ -305,13 +306,27 @@ namespace RJMS.Vn.Edu.Fpt.Repository
                     company.Email = model.CompanyEmail;
                     company.Phone = model.CompanyPhone ?? model.PhoneNumber;
                     company.Description = model.CompanyDescription;
-                    company.ProvinceCode = model.ProvinceCode;
-                    company.ProvinceName = model.ProvinceName;
-                    company.WardCode = model.WardCode;
-                    company.WardName = model.WardName;
-                    company.Address = model.WorkAddress;
                     company.UpdatedAt = DateTimeHelper.NowVietnam;
                     if (!string.IsNullOrEmpty(model.CompanyLogo)) company.Logo = model.CompanyLogo;
+
+                    // Update primary CompanyLocation address if changed
+                    if (model.ProvinceCode.HasValue || !string.IsNullOrWhiteSpace(model.WorkAddress))
+                    {
+                        var primaryCl = await _context.CompanyLocations
+                            .Include(cl => cl.Location)
+                            .Where(cl => cl.CompanyId == company.Id)
+                            .OrderByDescending(cl => cl.IsPrimary)
+                            .FirstOrDefaultAsync();
+
+                        if (primaryCl?.Location != null)
+                        {
+                            primaryCl.Location.ProvinceCode = model.ProvinceCode;
+                            primaryCl.Location.CityName = model.ProvinceName ?? primaryCl.Location.CityName;
+                            primaryCl.Location.WardCode = model.WardCode;
+                            primaryCl.Location.WardName = model.WardName;
+                            primaryCl.Location.Address = model.WorkAddress;
+                        }
+                    }
                 }
             }
 
@@ -323,12 +338,17 @@ namespace RJMS.Vn.Edu.Fpt.Repository
         {
             var recruiter = await _context.Recruiters
                 .Include(r => r.Company)
+                    .ThenInclude(c => c.CompanyLocations)
+                    .ThenInclude(cl => cl.Location)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(r => r.UserId == userId);
 
             if (recruiter == null || recruiter.Company == null) return null;
 
             var company = recruiter.Company;
+            var primaryLoc = company.CompanyLocations.FirstOrDefault(cl => cl.IsPrimary)?.Location
+                ?? company.CompanyLocations.FirstOrDefault()?.Location;
+
             return new CompanyEditProfileViewModel
             {
                 CompanyId = company.Id,
@@ -341,11 +361,11 @@ namespace RJMS.Vn.Edu.Fpt.Repository
                 Email = company.Email,
                 Phone = company.Phone,
                 Description = company.Description,
-                ProvinceCode = company.ProvinceCode,
-                ProvinceName = company.ProvinceName,
-                WardCode = company.WardCode,
-                WardName = company.WardName,
-                Address = company.Address
+                ProvinceCode = primaryLoc?.ProvinceCode,
+                ProvinceName = primaryLoc?.CityName,
+                WardCode = primaryLoc?.WardCode,
+                WardName = primaryLoc?.WardName,
+                Address = primaryLoc?.Address
             };
         }
 
@@ -365,14 +385,27 @@ namespace RJMS.Vn.Edu.Fpt.Repository
             company.Email = model.Email;
             company.Phone = model.Phone;
             company.Description = model.Description;
-            company.ProvinceCode = model.ProvinceCode;
-            company.ProvinceName = model.ProvinceName;
-            company.WardCode = model.WardCode;
-            company.WardName = model.WardName;
-            company.Address = model.Address;
             company.UpdatedAt = DateTimeHelper.NowVietnam;
-
             if (!string.IsNullOrEmpty(model.Logo)) company.Logo = model.Logo;
+
+            // Update primary CompanyLocation address
+            if (model.ProvinceCode.HasValue || !string.IsNullOrWhiteSpace(model.Address))
+            {
+                var primaryCl = await _context.CompanyLocations
+                    .Include(cl => cl.Location)
+                    .Where(cl => cl.CompanyId == company.Id)
+                    .OrderByDescending(cl => cl.IsPrimary)
+                    .FirstOrDefaultAsync();
+
+                if (primaryCl?.Location != null)
+                {
+                    primaryCl.Location.ProvinceCode = model.ProvinceCode;
+                    primaryCl.Location.CityName = model.ProvinceName ?? primaryCl.Location.CityName;
+                    primaryCl.Location.WardCode = model.WardCode;
+                    primaryCl.Location.WardName = model.WardName;
+                    primaryCl.Location.Address = model.Address;
+                }
+            }
 
             await _context.SaveChangesAsync();
             return true;

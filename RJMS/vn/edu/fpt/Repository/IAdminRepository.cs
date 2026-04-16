@@ -33,6 +33,21 @@ namespace RJMS.Vn.Edu.Fpt.Repository
         Task AddCompanyAsync(Company company);
         Task<int> SaveChangesAsync();
 
+        // Location
+        Task<Location?> GetLocationAsync(int? provinceCode, int? wardCode, string? address);
+        Task AddLocationAsync(Location location);
+        Task AddCompanyLocationAsync(CompanyLocation companyLocation);
+        Task AddRecruiterLocationAsync(RecruiterLocation recruiterLocation);
+        Task<List<RecruiterLocation>> GetRecruiterLocationsByRecruiterIdAsync(int recruiterId);
+        Task RemoveRecruiterLocationAsync(RecruiterLocation recruiterLocation);
+        Task<List<CompanyLocation>> GetCompanyLocationsAsync(int companyId);
+        Task<CompanyLocation?> GetCompanyLocationByIdAsync(int id);
+        Task DeleteCompanyLocationAsync(CompanyLocation companyLocation);
+
+        // Employee
+        Task<(int total, List<Recruiter> items)> GetEmployeesPagedAsync(string? keyword, int? companyId, int page, int pageSize);
+        Task<List<RecruiterLocation>> GetRecruiterLocationsAsync(int recruiterId);
+
         // Skills
         Task<(int total, List<Skill> items)> GetSkillsPagedAsync(string? keyword, string? category, int page, int pageSize);
         Task<List<string>> GetSkillCategoriesAsync();
