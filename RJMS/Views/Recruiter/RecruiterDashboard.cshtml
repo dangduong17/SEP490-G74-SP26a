@@ -4,6 +4,7 @@
     ViewData["Title"] = "Recruiter Dashboard";
     ViewData["HidePageTitle"] = true;
     Layout = "~/Views/Shared/_RecruiterLayout.cshtml";
+    var userRole = Context.Request.Cookies["UserRole"];
 }
 
 @section Styles {
@@ -537,7 +538,10 @@
                             <td>
                                 <div class="rapp-action">
                                     <a asp-action="ViewCV" asp-route-id="@app.CvId" class="rapp-btn" target="_blank"><i class="fas fa-file-alt"></i> Xem CV</a>
-                                    <a href="#" class="rapp-btn"><i class="fas fa-comment"></i> Chat</a>
+                                    @if (userRole == "Employee")
+                                    {
+                                        <a asp-controller="Chat" asp-action="Index" class="rapp-btn"><i class="fas fa-comment"></i> Chat</a>
+                                    }
                                 </div>
                             </td>
                         </tr>
