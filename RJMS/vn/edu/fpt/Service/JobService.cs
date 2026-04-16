@@ -26,7 +26,9 @@ namespace RJMS.Vn.Edu.Fpt.Service
                 Title = j.Title,
                 CompanyName = j.Company?.Name ?? "N/A",
                 CompanyLogo = j.Company?.Logo,
-                LocationName = j.Location?.CityName,
+                LocationName = j.Company?.CompanyLocations
+                    .FirstOrDefault(cl => cl.IsPrimary)?.Location?.CityName
+                    ?? j.Company?.CompanyLocations.FirstOrDefault()?.Location?.CityName,
                 MinSalary = j.MinSalary,
                 MaxSalary = j.MaxSalary,
                 CreatedAt = j.CreatedAt,
@@ -69,10 +71,15 @@ namespace RJMS.Vn.Edu.Fpt.Service
                 ExpiryDate = job.ExpiryDate,
                 CreatedAt = job.CreatedAt,
                 Status = job.Status,
-                LocationName = job.Location?.CityName,
-                LocationWardName = job.Location?.WardName,
-                LocationProvinceName = null, // Province resolved from CityName for now
-                LocationAddress = job.Location?.DetailAddress ?? job.Location?.Address,
+                // Location resolved from JobRecruiters -> CompanyLocation -> Location
+                LocationName = job.JobRecruiters.FirstOrDefault(jr => jr.IsPrimary)?.CompanyLocation?.Location?.CityName
+                    ?? job.Company?.CompanyLocations.FirstOrDefault(cl => cl.IsPrimary)?.Location?.CityName
+                    ?? job.Company?.CompanyLocations.FirstOrDefault()?.Location?.CityName,
+                LocationWardName = job.JobRecruiters.FirstOrDefault(jr => jr.IsPrimary)?.CompanyLocation?.Location?.WardName
+                    ?? job.Company?.CompanyLocations.FirstOrDefault()?.Location?.WardName,
+                LocationProvinceName = null,
+                LocationAddress = job.JobRecruiters.FirstOrDefault(jr => jr.IsPrimary)?.CompanyLocation?.Location?.Address
+                    ?? job.Company?.CompanyLocations.FirstOrDefault()?.Location?.Address,
                 CategoryName = job.JobCategory?.Name,
                 Skills = job.JobSkills?.Where(s => s.Skill != null).Select(s => s.Skill.Name).ToList() ?? new(),
                 CompanyId = job.CompanyId,
@@ -82,8 +89,13 @@ namespace RJMS.Vn.Edu.Fpt.Service
                 CompanySize = job.Company?.CompanySize,
                 CompanyIndustry = job.Company?.Industry,
                 CompanyWebsite = job.Company?.Website,
-                CompanyAddress = job.Company?.Address,
-                CompanyProvince = job.Company?.ProvinceName,
+                // Address now sourced from primary CompanyLocation
+                CompanyAddress = job.Company?.CompanyLocations
+                    .FirstOrDefault(cl => cl.IsPrimary)?.Location?.Address
+                    ?? job.Company?.CompanyLocations.FirstOrDefault()?.Location?.Address,
+                CompanyProvince = job.Company?.CompanyLocations
+                    .FirstOrDefault(cl => cl.IsPrimary)?.Location?.CityName
+                    ?? job.Company?.CompanyLocations.FirstOrDefault()?.Location?.CityName,
             };
         }
 

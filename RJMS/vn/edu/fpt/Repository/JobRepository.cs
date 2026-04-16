@@ -21,7 +21,8 @@ namespace RJMS.Vn.Edu.Fpt.Repository
         {
             var query = _context.Jobs
                 .Include(j => j.Company)
-                .Include(j => j.Location)
+                    .ThenInclude(c => c.CompanyLocations)
+                    .ThenInclude(cl => cl.Location)
                 .Include(j => j.JobCategory)
                 .Where(j => j.Status == "Active")
                 .AsQueryable();
@@ -40,7 +41,10 @@ namespace RJMS.Vn.Edu.Fpt.Repository
             }
 
             if (locationId.HasValue)
-                query = query.Where(j => j.LocationId == locationId.Value);
+            {
+                // Filter by CompanyLocation now instead of Job.LocationId
+                query = query.Where(j => j.Company.CompanyLocations.Any(cl => cl.LocationId == locationId.Value));
+            }
 
             var totalCount = await query.CountAsync();
             var jobs = await query
@@ -75,16 +79,17 @@ namespace RJMS.Vn.Edu.Fpt.Repository
                 })
                 .ToList();
 
-            // Only locations that have active jobs
-            var locations = await _context.Jobs
-                .Where(j => j.Status == "Active" && j.LocationId != null)
-                .Include(j => j.Location)
-                .GroupBy(j => new { j.Location!.Id, j.Location.CityName })
+            // Locations from JobRecruiters mapping to active jobs (distinct properly)
+            var locations = await _context.JobRecruiters
+                .Include(jr => jr.CompanyLocation)
+                .ThenInclude(cl => cl.Location)
+                .Where(jr => jr.Job.Status == "Active")
+                .GroupBy(jr => new { jr.CompanyLocation.Location.Id, jr.CompanyLocation.Location.CityName })
                 .Select(g => new JobFilterLocationDTO
                 {
                     Id = g.Key.Id,
                     Name = g.Key.CityName,
-                    JobCount = g.Count()
+                    JobCount = g.Select(jr => jr.JobId).Distinct().Count()
                 })
                 .OrderBy(l => l.Name)
                 .ToListAsync();
@@ -96,7 +101,11 @@ namespace RJMS.Vn.Edu.Fpt.Repository
         {
             return await _context.Jobs
                 .Include(j => j.Company)
-                .Include(j => j.Location)
+                    .ThenInclude(c => c.CompanyLocations)
+                    .ThenInclude(cl => cl.Location)
+                .Include(j => j.JobRecruiters)
+                    .ThenInclude(jr => jr.CompanyLocation)
+                    .ThenInclude(cl => cl!.Location)
                 .Include(j => j.JobCategory)
                 .Include(j => j.JobSkills)
                     .ThenInclude(js => js.Skill)
