@@ -205,23 +205,30 @@
                 <!-- CARD: Địa điểm -->
                 <div class="section-card">
                     <h3>Địa điểm làm việc</h3>
-                    <input type="hidden" asp-for="ProvinceName" id="ProvinceName" />
-                    <input type="hidden" asp-for="WardName" id="WardName" />
                     <div class="mb-2">
-                        <label class="form-label required">Tỉnh / Thành phố</label>
-                        <select asp-for="ProvinceCode" class="form-select" id="ProvinceCode">
-                            <option value="">Đang tải...</option>
-                        </select>
-                    </div>
-                    <div class="mb-2">
-                        <label class="form-label">Quận / Huyện</label>
-                        <select asp-for="WardCode" class="form-select" id="WardCode">
-                            <option value="">Chọn tỉnh trước</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label asp-for="Address" class="form-label">Địa chỉ cụ thể</label>
-                        <input asp-for="Address" class="form-control" placeholder="Số 123, đường ABC..." />
+                        <label class="form-label required">Chọn địa điểm làm việc (Có thể chọn nhiều)</label>
+                        <div class="company-locations-list border rounded p-2" style="max-height: 200px; overflow-y: auto; background: #fafafa;">
+                            @if(ViewBag.CompanyLocations != null && ((List<RJMS.vn.edu.fpt.Models.CompanyLocation>)ViewBag.CompanyLocations).Any())
+                            {
+                                foreach(var loc in ViewBag.CompanyLocations)
+                                {
+                                    <div class="form-check mb-1">
+                                        <input class="form-check-input" type="checkbox" name="SelectedCompanyLocationIds" value="@loc.Id" id="loc_@loc.Id"
+                                               @(Model.SelectedCompanyLocationIds != null && Model.SelectedCompanyLocationIds.Contains(loc.Id) ? "checked" : "")>
+                                        <label class="form-check-label" for="loc_@loc.Id" style="font-size: 0.85rem;">
+                                            @loc.Location.Address, @loc.Location.WardName, @loc.Location.CityName
+                                        </label>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="text-muted small">Công ty chưa cập nhật địa chỉ nào. <br>
+                                    <a asp-controller="Recruiter" asp-action="ManageLocations" class="text-decoration-underline text-success">Thêm địa chỉ ngay</a>
+                                </div>
+                            }
+                        </div>
+                        <span asp-validation-for="SelectedCompanyLocationIds" class="text-danger small"></span>
                     </div>
                 </div>
 
@@ -346,51 +353,8 @@
         }
         renderSelectedSkills();
     })();
+    // ---------- Location handling removed (using mapped locations instead) ----------
 
-    // ---------- Location ----------
-    async function loadProvinces() {
-        try {
-            let data = await fetch('https://provinces.open-api.vn/api/v2/p/').then(r => r.json());
-            let $p = document.getElementById('ProvinceCode');
-            $p.innerHTML = '<option value="">Chọn tỉnh/thành phố</option>';
-            let prefilled = "@Model.ProvinceCode";
-            data.forEach(p => {
-                let o = new Option(p.name, p.code);
-                if (p.code == prefilled) o.selected = true;
-                $p.add(o);
-            });
-            if (prefilled) await loadWards(prefilled);
-        } catch(e) {}
-    }
-
-    async function loadWards(provinceCode) {
-        let $w = document.getElementById('WardCode');
-        $w.innerHTML = '<option value="">Đang tải...</option>';
-        try {
-            let data = await fetch(`https://provinces.open-api.vn/api/v2/w/?province=${provinceCode}`).then(r => r.json());
-            let prefilled = "@Model.WardCode";
-            $w.innerHTML = '<option value="">Chọn quận/huyện</option>';
-            data.forEach(w => {
-                let o = new Option(w.name, w.code);
-                if (w.code == prefilled) o.selected = true;
-                $w.add(o);
-            });
-        } catch(e) { $w.innerHTML = '<option value="">Không tải được</option>'; }
-    }
-
-    document.getElementById('ProvinceCode').addEventListener('change', function() {
-        let opt = this.options[this.selectedIndex];
-        document.getElementById('ProvinceName').value = opt.value ? opt.text : '';
-        if (this.value) loadWards(this.value);
-        else document.getElementById('WardCode').innerHTML = '<option value="">Chọn tỉnh trước</option>';
-    });
-
-    document.getElementById('WardCode').addEventListener('change', function() {
-        let opt = this.options[this.selectedIndex];
-        document.getElementById('WardName').value = opt.value ? opt.text : '';
-    });
-
-    // ---------- Deadline ----------
     (function() {
         let elApp = document.getElementById('ApplicationDeadline');
         let elExp = document.getElementById('ExpiryDate');
