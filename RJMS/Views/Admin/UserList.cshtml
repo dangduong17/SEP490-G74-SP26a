@@ -179,6 +179,7 @@
         letter-spacing: 0.02em;
     }
     .role-admin { background: #fee2e2; color: #991b1b; }
+    .role-manager { background: #fef3c7; color: #b45309; }
     .role-candidate { background: #dbeafe; color: #1e40af; }
     .role-recruiter { background: #d1fae5; color: #065f46; }
 
@@ -285,6 +286,9 @@
         <a asp-action="CreateAdmin" class="btn-create">
             Tạo Admin
         </a>
+        <a asp-action="CreateManager" class="btn-create btn-create-outline">
+            Tạo Manager
+        </a>
         <a asp-action="CreateCandidate" class="btn-create btn-create-outline">
             Tạo Ứng viên
         </a>
@@ -337,6 +341,7 @@
         <select name="role" class="form-select" style="width:160px;">
             <option value="" selected="@(string.IsNullOrEmpty(Model.Role))">Tất cả</option>
             <option value="Admin" selected="@(Model.Role == "Admin")">Admin</option>
+            <option value="Manager" selected="@(Model.Role == "Manager")">Manager</option>
             <option value="Candidate" selected="@(Model.Role == "Candidate")">Ứng viên</option>
             <option value="Recruiter" selected="@(Model.Role == "Recruiter")">Nhà tuyển dụng</option>
         </select>
@@ -397,6 +402,7 @@
                             var roleClass = u.Role switch
                             {
                                 "Admin" => "role-admin",
+                                "Manager" => "role-manager",
                                 "Candidate" => "role-candidate",
                                 "Recruiter" => "role-recruiter",
                                 _ => "role-candidate"

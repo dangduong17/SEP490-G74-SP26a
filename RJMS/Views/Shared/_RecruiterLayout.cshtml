@@ -172,6 +172,22 @@
                     Tìm hồ sơ AI
                 </a>
 
+                <span class="nav-section">Quản lý công ty</span>
+                @{
+                    var _role = Context.Request.Cookies["UserRole"];
+                }
+                @if (_role != "Employee")
+                {
+                    <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "ManageLocations" ? "active" : "")"
+                       asp-controller="Recruiter" asp-action="ManageLocations">
+                        Địa chỉ văn phòng
+                    </a>
+                    <a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "RecruiterManagement" && ViewContext.RouteData.Values["Action"]?.ToString() == "Employees" ? "active" : "")"
+                       asp-controller="RecruiterManagement" asp-action="Employees">
+                        Nhân viên
+                    </a>
+                }
+
                 <span class="nav-section">Tài khoản</span>
                 <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "EditProfileNew" ? "active" : "")"
                    asp-controller="Profile" asp-action="EditProfileNew">
