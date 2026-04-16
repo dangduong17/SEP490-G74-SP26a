@@ -91,7 +91,9 @@ namespace RJMS.Vn.Edu.Fpt.Service
             // --- Job check ---
             var job = await _context.Jobs
                 .Include(j => j.Company)
-                .Include(j => j.Recruiter).ThenInclude(r => r.User)
+                .Include(j => j.JobRecruiters)
+                    .ThenInclude(jr => jr.Recruiter)
+                    .ThenInclude(r => r.User)
                 .FirstOrDefaultAsync(j => j.Id == jobId);
             if (job == null) return Fail("Không tìm thấy công việc.");
             if (job.Status != "Active") return Fail("Công việc này không còn tuyển dụng.");
@@ -168,8 +170,10 @@ namespace RJMS.Vn.Edu.Fpt.Service
             string candidateEmailArg = user?.Email ?? "";
             int candidateUserId = user?.Id ?? candidate.UserId;
             int appIfd = application.Id;
-            int? recruiterUserId = job.Recruiter?.UserId;
-            string targetRecruiterEmail = job.Company?.Email ?? job.Recruiter?.User?.Email ?? "";
+            int? recruiterUserId = job.JobRecruiters.FirstOrDefault(jr => jr.IsPrimary)?.Recruiter?.UserId
+                ?? job.JobRecruiters.FirstOrDefault()?.Recruiter?.UserId;
+            string targetRecruiterEmail = job.Company?.Email 
+                ?? job.JobRecruiters.FirstOrDefault(jr => jr.IsPrimary)?.Recruiter?.User?.Email ?? "";
             
             _ = Task.Run(async () =>
             {
