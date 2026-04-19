@@ -30,4 +30,5 @@ public partial class Job
     public virtual ICollection<JobSkill> JobSkills { get; set; } = new List<JobSkill>();
     // Location and Recruiter now via JobRecruiters junction
     public virtual ICollection<JobRecruiter> JobRecruiters { get; set; } = new List<JobRecruiter>();
+    public virtual ICollection<SavedJob> SavedJobs { get; set; } = new List<SavedJob>();
 }
