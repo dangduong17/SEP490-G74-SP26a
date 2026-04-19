@@ -100,11 +100,13 @@ namespace RJMS.Vn.Edu.Fpt.Service
                 }
                 catch (Exception)
                 {
-                    return (false, "File PDF bị lỗi định dạng hoặc có mật khẩu khóa. Vui lòng tải file khác.", 0);
+                    extractedText = string.Empty;
                 }
             }
 
-            var fileUrl = await _cloudinaryService.UploadRawAsync(dto.File, "cv-uploads");
+            var fileUrl = ext == ".pdf"
+                ? await _cloudinaryService.UploadPdfAsImageAsync(dto.File, "cv-uploads")
+                : await _cloudinaryService.UploadRawAsync(dto.File, "cv-uploads");
             if (string.IsNullOrEmpty(fileUrl))
                 return (false, "Upload file thất bại. Vui lòng thử lại.", 0);
 
