@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using RJMS.vn.edu.fpt.Models.DTOs;
 using RJMS.Vn.Edu.Fpt.Repository;
 
@@ -14,11 +15,21 @@ namespace RJMS.Vn.Edu.Fpt.Service
             _jobRepository = jobRepository;
         }
 
-        public async Task<PublicJobListViewModel> GetPublicJobListAsync(string? keyword, int? categoryId, int? locationId, int page)
+        public async Task<PublicJobListViewModel> GetPublicJobListAsync(string? keyword, int? categoryId, int? locationId, int page, int? currentUserId = null)
         {
             const int pageSize = 10;
             var (jobs, totalCount) = await _jobRepository.GetPublicJobListAsync(keyword, categoryId, locationId, page, pageSize);
             var (categories, locations) = await _jobRepository.GetFilterDataAsync();
+
+            HashSet<int> savedIds = new();
+            if (currentUserId.HasValue)
+            {
+                var candidateId = await _jobRepository.GetCandidateIdByUserIdAsync(currentUserId.Value);
+                if (candidateId.HasValue)
+                {
+                    savedIds = await _jobRepository.GetSavedJobIdsAsync(candidateId.Value, jobs.Select(j => j.Id));
+                }
+            }
 
             var jobDtos = jobs.Select(j => new PublicJobListItemDTO
             {
@@ -33,7 +44,8 @@ namespace RJMS.Vn.Edu.Fpt.Service
                 MaxSalary = j.MaxSalary,
                 CreatedAt = j.CreatedAt,
                 JobType = j.JobType,
-                CategoryName = j.JobCategory?.Name
+                CategoryName = j.JobCategory?.Name,
+                IsSaved = savedIds.Contains(j.Id)
             }).ToList();
 
             return new PublicJobListViewModel
@@ -48,6 +60,71 @@ namespace RJMS.Vn.Edu.Fpt.Service
                 Categories = categories,
                 CategoryGroups = BuildCategoryGroups(categories),
                 Locations = locations
+            };
+        }
+
+        public async Task<bool> ToggleSavedJobAsync(int currentUserId, int jobId)
+        {
+            var candidateId = await _jobRepository.GetCandidateIdByUserIdAsync(currentUserId);
+            if (!candidateId.HasValue)
+            {
+                return false;
+            }
+
+            return await _jobRepository.ToggleSavedJobAsync(candidateId.Value, jobId);
+        }
+
+        public async Task<bool> IsJobSavedAsync(int currentUserId, int jobId)
+        {
+            var candidateId = await _jobRepository.GetCandidateIdByUserIdAsync(currentUserId);
+            if (!candidateId.HasValue)
+            {
+                return false;
+            }
+
+            return await _jobRepository.IsJobSavedAsync(candidateId.Value, jobId);
+        }
+
+        public async Task<PublicJobListViewModel> GetSavedJobListAsync(int currentUserId, int page)
+        {
+            const int pageSize = 12;
+            var candidateId = await _jobRepository.GetCandidateIdByUserIdAsync(currentUserId);
+            if (!candidateId.HasValue)
+            {
+                return new PublicJobListViewModel
+                {
+                    Jobs = new(),
+                    TotalItems = 0,
+                    CurrentPage = page,
+                    PageSize = pageSize
+                };
+            }
+
+            var (jobs, totalCount) = await _jobRepository.GetSavedJobListAsync(candidateId.Value, page, pageSize);
+
+            var jobDtos = jobs.Select(j => new PublicJobListItemDTO
+            {
+                Id = j.Id,
+                Title = j.Title,
+                CompanyName = j.Company?.Name ?? "N/A",
+                CompanyLogo = j.Company?.Logo,
+                LocationName = j.Company?.CompanyLocations
+                    .FirstOrDefault(cl => cl.IsPrimary)?.Location?.CityName
+                    ?? j.Company?.CompanyLocations.FirstOrDefault()?.Location?.CityName,
+                MinSalary = j.MinSalary,
+                MaxSalary = j.MaxSalary,
+                CreatedAt = j.CreatedAt,
+                JobType = j.JobType,
+                CategoryName = j.JobCategory?.Name,
+                IsSaved = true
+            }).ToList();
+
+            return new PublicJobListViewModel
+            {
+                Jobs = jobDtos,
+                TotalItems = totalCount,
+                CurrentPage = page,
+                PageSize = pageSize
             };
         }
 
