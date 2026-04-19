@@ -1336,13 +1336,7 @@ WHERE cp.Id IS NULL
 GROUP BY tc.ConversationId, tc.EmployeeUserId;
 GO
 
-<<<<<<< Updated upstream
-
-=======
-<<<<<<< Updated upstream
-=======
 /* Saved jobs for candidates */
->>>>>>> Stashed changes
 IF OBJECT_ID(N'dbo.SavedJobs', N'U') IS NULL
 BEGIN
 	CREATE TABLE [dbo].[SavedJobs](
@@ -1362,7 +1356,88 @@ BEGIN
 END
 GO
 
-<<<<<<< Updated upstream
-=======
->>>>>>> Stashed changes
->>>>>>> Stashed changes
+
+
+IF COL_LENGTH('SubscriptionPlans', 'IsArchived') IS NULL
+    ALTER TABLE SubscriptionPlans ADD IsArchived BIT DEFAULT 0;
+GO
+
+
+/* =====================================================
+UPDATE TABLE: Subscriptions - Add cancellation & billing tracking
+===================================================== */
+IF COL_LENGTH('Subscriptions', 'CancelledAt') IS NULL
+    ALTER TABLE Subscriptions ADD CancelledAt DATETIME2 NULL;
+GO
+
+IF COL_LENGTH('Subscriptions', 'CancellationReason') IS NULL
+    ALTER TABLE Subscriptions ADD CancellationReason NVARCHAR(255) NULL;
+GO
+
+IF COL_LENGTH('Subscriptions', 'NextBillingDate') IS NULL
+    ALTER TABLE Subscriptions ADD NextBillingDate DATETIME2 NULL;
+GO
+
+IF COL_LENGTH('Subscriptions', 'UpdatedAt') IS NULL
+    ALTER TABLE Subscriptions ADD UpdatedAt DATETIME2 NULL;
+GO
+
+
+/* =====================================================
+UPDATE TABLE: Payments - Add retry and refund tracking
+===================================================== */
+IF COL_LENGTH('Payments', 'RetryCount') IS NULL
+    ALTER TABLE Payments ADD RetryCount INT DEFAULT 0;
+GO
+
+IF COL_LENGTH('Payments', 'FailureReason') IS NULL
+    ALTER TABLE Payments ADD FailureReason NVARCHAR(500) NULL;
+GO
+
+IF COL_LENGTH('Payments', 'LastRetryAt') IS NULL
+    ALTER TABLE Payments ADD LastRetryAt DATETIME2 NULL;
+GO
+
+IF COL_LENGTH('Payments', 'RefundedAt') IS NULL
+    ALTER TABLE Payments ADD RefundedAt DATETIME2 NULL;
+GO
+
+IF COL_LENGTH('Payments', 'UpdatedAt') IS NULL
+    ALTER TABLE Payments ADD UpdatedAt DATETIME2 NULL;
+GO
+
+
+/* =====================================================
+UPDATE TABLE: Invoices - Add tax, discount, and payment tracking
+===================================================== */
+IF COL_LENGTH('Invoices', 'TaxAmount') IS NULL
+    ALTER TABLE Invoices ADD TaxAmount DECIMAL(18,2) DEFAULT 0;
+GO
+
+IF COL_LENGTH('Invoices', 'DiscountAmount') IS NULL
+    ALTER TABLE Invoices ADD DiscountAmount DECIMAL(18,2) DEFAULT 0;
+GO
+
+IF COL_LENGTH('Invoices', 'PaidAt') IS NULL
+    ALTER TABLE Invoices ADD PaidAt DATETIME2 NULL;
+GO
+
+
+/* =====================================================
+UPDATE TABLE: SubscriptionPeriods - Add timestamps
+===================================================== */
+IF COL_LENGTH('SubscriptionPeriods', 'CreatedAt') IS NULL
+    ALTER TABLE SubscriptionPeriods ADD CreatedAt DATETIME2 DEFAULT GETDATE();
+GO
+
+
+/* =====================================================
+UPDATE TABLE: SubscriptionUsage - Add audit trail
+===================================================== */
+IF COL_LENGTH('SubscriptionUsage', 'CreatedAt') IS NULL
+    ALTER TABLE SubscriptionUsage ADD CreatedAt DATETIME2 DEFAULT GETDATE();
+GO
+
+IF COL_LENGTH('SubscriptionUsage', 'UpdatedAt') IS NULL
+    ALTER TABLE SubscriptionUsage ADD UpdatedAt DATETIME2 NULL;
+GO
