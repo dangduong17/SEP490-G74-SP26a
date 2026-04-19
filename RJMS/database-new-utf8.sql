@@ -1267,3 +1267,95 @@ GO
 ALTER DATABASE [G74-Finding-Jobs2] SET  READ_WRITE 
 GO
 
+<<<<<<< Updated upstream
+=======
+/*
+One-time chat history migration
+Goal:
+- For company-based job conversations, replace recruiter participants with an employee participant from the same company.
+- Keep message history intact.
+- Safe to re-run: it avoids duplicate employee participants and only touches conversations tied to a company that has at least one Employee account.
+*/
+;WITH CompanyEmployee AS (
+	SELECT
+		c.Id AS CompanyId,
+		r.UserId AS EmployeeUserId,
+		ROW_NUMBER() OVER (PARTITION BY c.Id ORDER BY r.Id) AS rn
+	FROM dbo.Companies c
+	INNER JOIN dbo.Recruiters r ON r.CompanyId = c.Id
+	INNER JOIN dbo.UserRoles ur ON ur.UserId = r.UserId
+	INNER JOIN dbo.Roles ro ON ro.Id = ur.RoleId AND ro.Name = N'Employee'
+),
+TargetConversations AS (
+	SELECT DISTINCT
+		cj.ConversationId,
+		j.CompanyId,
+		ce.EmployeeUserId
+	FROM dbo.ConversationJobs cj
+	INNER JOIN dbo.Jobs j ON j.Id = cj.JobId
+	INNER JOIN CompanyEmployee ce ON ce.CompanyId = j.CompanyId AND ce.rn = 1
+)
+DELETE cp
+FROM dbo.ConversationParticipants cp
+INNER JOIN dbo.ConversationJobs cj ON cj.ConversationId = cp.ConversationId
+INNER JOIN dbo.Jobs j ON j.Id = cj.JobId
+INNER JOIN dbo.Recruiters r ON r.UserId = cp.UserId AND r.CompanyId = j.CompanyId
+INNER JOIN dbo.UserRoles ur ON ur.UserId = r.UserId
+INNER JOIN dbo.Roles ro ON ro.Id = ur.RoleId AND ro.Name = N'Recruiter'
+INNER JOIN CompanyEmployee ce ON ce.CompanyId = j.CompanyId AND ce.rn = 1
+WHERE cp.UserId <> ce.EmployeeUserId;
+GO
+
+;WITH CompanyEmployee AS (
+	SELECT
+		c.Id AS CompanyId,
+		r.UserId AS EmployeeUserId,
+		ROW_NUMBER() OVER (PARTITION BY c.Id ORDER BY r.Id) AS rn
+	FROM dbo.Companies c
+	INNER JOIN dbo.Recruiters r ON r.CompanyId = c.Id
+	INNER JOIN dbo.UserRoles ur ON ur.UserId = r.UserId
+	INNER JOIN dbo.Roles ro ON ro.Id = ur.RoleId AND ro.Name = N'Employee'
+),
+TargetConversations AS (
+	SELECT DISTINCT
+		cj.ConversationId,
+		j.CompanyId,
+		ce.EmployeeUserId
+	FROM dbo.ConversationJobs cj
+	INNER JOIN dbo.Jobs j ON j.Id = cj.JobId
+	INNER JOIN CompanyEmployee ce ON ce.CompanyId = j.CompanyId AND ce.rn = 1
+)
+INSERT INTO dbo.ConversationParticipants (ConversationId, UserId, JoinedAt)
+SELECT
+	tc.ConversationId,
+	tc.EmployeeUserId,
+	ISNULL(MIN(cp.JoinedAt), SYSUTCDATETIME())
+FROM TargetConversations tc
+LEFT JOIN dbo.ConversationParticipants cp
+	ON cp.ConversationId = tc.ConversationId
+   AND cp.UserId = tc.EmployeeUserId
+WHERE cp.Id IS NULL
+GROUP BY tc.ConversationId, tc.EmployeeUserId;
+GO
+
+/* Saved jobs for candidates */
+IF OBJECT_ID(N'dbo.SavedJobs', N'U') IS NULL
+BEGIN
+	CREATE TABLE [dbo].[SavedJobs](
+		[Id] [int] IDENTITY(1,1) NOT NULL,
+		[CandidateId] [int] NOT NULL,
+		[JobId] [int] NOT NULL,
+		[CreatedAt] [datetime2](7) NOT NULL CONSTRAINT [DF_SavedJobs_CreatedAt] DEFAULT (sysutcdatetime()),
+		CONSTRAINT [PK_SavedJobs] PRIMARY KEY CLUSTERED ([Id] ASC),
+		CONSTRAINT [UQ_SavedJobs_Candidate_Job] UNIQUE NONCLUSTERED ([CandidateId] ASC, [JobId] ASC)
+	);
+
+	ALTER TABLE [dbo].[SavedJobs]  WITH CHECK ADD CONSTRAINT [FK_SavedJobs_Candidates]
+	FOREIGN KEY([CandidateId]) REFERENCES [dbo].[Candidates]([Id]) ON DELETE CASCADE;
+
+	ALTER TABLE [dbo].[SavedJobs]  WITH CHECK ADD CONSTRAINT [FK_SavedJobs_Jobs]
+	FOREIGN KEY([JobId]) REFERENCES [dbo].[Jobs]([Id]) ON DELETE CASCADE;
+END
+GO
+
+>>>>>>> Stashed changes
