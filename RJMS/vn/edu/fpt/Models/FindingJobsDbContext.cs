@@ -54,6 +54,8 @@ public partial class FindingJobsDbContext : DbContext
 
     public virtual DbSet<SubscriptionUsage> SubscriptionUsages { get; set; }
 
+    public virtual DbSet<SavedJob> SavedJobs { get; set; }
+
     public virtual DbSet<User> Users { get; set; }
 
     public virtual DbSet<UserRole> UserRoles { get; set; }
@@ -376,6 +378,24 @@ public partial class FindingJobsDbContext : DbContext
                 .WithMany(p => p.SubscriptionUsages)
                 .HasForeignKey(d => d.PeriodId)
                 .OnDelete(DeleteBehavior.ClientSetNull);
+        });
+
+        modelBuilder.Entity<SavedJob>(entity =>
+        {
+            entity.ToTable("SavedJobs");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.CandidateId, e.JobId }).IsUnique();
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
+
+            entity.HasOne(d => d.Candidate)
+                .WithMany(p => p.SavedJobs)
+                .HasForeignKey(d => d.CandidateId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(d => d.Job)
+                .WithMany(p => p.SavedJobs)
+                .HasForeignKey(d => d.JobId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<User>(entity =>
