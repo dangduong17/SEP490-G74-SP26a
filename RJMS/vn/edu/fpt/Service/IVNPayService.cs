@@ -4,6 +4,6 @@ namespace RJMS.Vn.Edu.Fpt.Service
     {
         string CreatePaymentUrl(int subscriptionId, int paymentId, decimal amount, string orderInfo, string ipAddress);
         bool ValidateSignature(IQueryCollection queryCollection, string inputHash);
-        (bool Success, string Message, string TransactionId) ProcessPaymentCallback(IQueryCollection queryCollection);
+        (bool Success, string Message, string TransactionId) ProcessPaymentCallback(IQueryCollection queryCollection, string? rawQueryString = null);
     }
 }

@@ -11,6 +11,9 @@ namespace RJMS.Vn.Edu.Fpt.Service
 
         Task<SubscriptionPlanFormViewModel?> GetPlanForEditAsync(int id);
 
+        /// <summary>Get grouped plans for UI display (Monthly + Yearly variants).</summary>
+        Task<List<SubscriptionPlanGroupDto>> GetGroupedPlansForDisplayAsync();
+
         /// <summary>Create 1 or 2 plans depending on BillingCycles checkbox.</summary>
         Task<List<int>> CreatePlansForCyclesAsync(SubscriptionPlanFormViewModel model);
 

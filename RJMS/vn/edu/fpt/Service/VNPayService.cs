@@ -92,11 +92,19 @@ namespace RJMS.Vn.Edu.Fpt.Service
             return checkSum.Equals(inputHash, StringComparison.InvariantCultureIgnoreCase);
         }
 
-        public (bool Success, string Message, string TransactionId) ProcessPaymentCallback(IQueryCollection queryCollection)
+        public (bool Success, string Message, string TransactionId) ProcessPaymentCallback(IQueryCollection queryCollection, string? rawQueryString = null)
         {
             var vnpSecureHash = queryCollection["vnp_SecureHash"].ToString();
-            
-            if (string.IsNullOrEmpty(vnpSecureHash) || !ValidateSignature(queryCollection, vnpSecureHash))
+
+            var isValid = false;
+            if (!string.IsNullOrEmpty(vnpSecureHash))
+            {
+                isValid = !string.IsNullOrWhiteSpace(rawQueryString)
+                    ? ValidateSignatureFromRawQueryString(rawQueryString!, vnpSecureHash)
+                    : ValidateSignature(queryCollection, vnpSecureHash);
+            }
+
+            if (string.IsNullOrEmpty(vnpSecureHash) || !isValid)
             {
                 return (false, "Chữ ký không hợp lệ", string.Empty);
             }
@@ -132,6 +140,58 @@ namespace RJMS.Vn.Edu.Fpt.Service
             }
 
             return hash.ToString();
+        }
+
+        private bool ValidateSignatureFromRawQueryString(string rawQueryString, string inputHash)
+        {
+            var hashSecret = _configuration["VNPay:HashSecret"]!;
+            var signString = BuildCanonicalRawQueryString(rawQueryString);
+            var checkSum = HmacSHA512(hashSecret, signString);
+
+            return checkSum.Equals(inputHash, StringComparison.InvariantCultureIgnoreCase);
+        }
+
+        private string BuildCanonicalRawQueryString(string rawQueryString)
+        {
+            if (string.IsNullOrWhiteSpace(rawQueryString))
+            {
+                return string.Empty;
+            }
+
+            var query = rawQueryString.TrimStart('?');
+            var items = new List<KeyValuePair<string, string>>();
+
+            foreach (var part in query.Split('&', StringSplitOptions.RemoveEmptyEntries))
+            {
+                var equalsIndex = part.IndexOf('=');
+                var key = equalsIndex >= 0 ? part[..equalsIndex] : part;
+                var value = equalsIndex >= 0 ? part[(equalsIndex + 1)..] : string.Empty;
+
+                if (key == "vnp_SecureHash" || key == "vnp_SecureHashType")
+                {
+                    continue;
+                }
+
+                if (!string.IsNullOrEmpty(value))
+                {
+                    items.Add(new KeyValuePair<string, string>(key, value));
+                }
+            }
+
+            var sorted = items.OrderBy(item => item.Key, StringComparer.Ordinal);
+            var builder = new StringBuilder();
+
+            foreach (var item in sorted)
+            {
+                builder.Append(item.Key).Append('=').Append(item.Value).Append('&');
+            }
+
+            if (builder.Length > 0)
+            {
+                builder.Length--;
+            }
+
+            return builder.ToString();
         }
 
         private string GetResponseDescription(string responseCode)

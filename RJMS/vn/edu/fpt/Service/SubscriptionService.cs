@@ -25,6 +25,9 @@ namespace RJMS.Vn.Edu.Fpt.Service
         public Task<SubscriptionPlanFormViewModel?> GetPlanForEditAsync(int id)
             => _repo.GetPlanForEditAsync(id);
 
+        public Task<List<SubscriptionPlanGroupDto>> GetGroupedPlansForDisplayAsync()
+            => _repo.GetGroupedPlansForDisplayAsync();
+
         public Task<List<int>> CreatePlansForCyclesAsync(SubscriptionPlanFormViewModel model)
             => _repo.CreatePlansForCyclesAsync(model);
 

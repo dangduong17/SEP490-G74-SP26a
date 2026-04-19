@@ -45,7 +45,8 @@ namespace RJMS.Vn.Edu.Fpt.Service
             var paymentId = await _paymentRepo.CreatePaymentAsync(subscriptionId, plan.Price ?? 0);
 
             // 3. Generate VNPay payment URL
-            var orderInfo = $"Thanh toan goi {plan.Name}";
+            var billingCycleLabel = plan.BillingCycle == "Yearly" ? "Hàng năm" : "Hàng tháng";
+            var orderInfo = $"Thanh toan goi {plan.Name} - {billingCycleLabel}";
             var paymentUrl = _vnPayService.CreatePaymentUrl(
                 subscriptionId,
                 paymentId,
