@@ -216,40 +216,11 @@
         color: #fff;
     }
 
-    /* ===== Info box ===== */
-    .info-box {
-        background: #eff6ff;
-        border: 1px solid #bfdbfe;
-        border-radius: 10px;
-        padding: 14px 18px;
-        margin-bottom: 24px;
-        display: flex;
-        gap: 12px;
-        align-items: flex-start;
-    }
-    .info-box-icon {
-        display: none;
-    }
-    .info-box-content {
-        flex: 1;
-    }
-    .info-box-title {
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: #1e40af;
-        margin-bottom: 4px;
-    }
-    .info-box-text {
-        font-size: 0.8rem;
-        color: #3b82f6;
-        line-height: 1.5;
-    }
-
     /* ===== Grid layout ===== */
     .form-row {
         display: grid;
-        gap: 20px;
-        margin-bottom: 20px;
+        gap: 16px;
+        margin-bottom: 16px;
     }
     .form-row.cols-2 {
         grid-template-columns: 1fr 1fr;
@@ -274,22 +245,10 @@
         <p>Cập nhật thông tin và cấu hình cho gói dịch vụ đã tạo.</p>
     </div>
 
-    <!-- Info box -->
-    <div class="info-box">
-        <div class="info-box-content">
-            <div class="info-box-title">Lưu ý khi chỉnh sửa gói</div>
-            <div class="info-box-text">
-                Việc thay đổi giá hoặc giới hạn sẽ không ảnh hưởng đến các gói đăng ký đã kích hoạt trước đó. 
-                Chỉ áp dụng cho các đăng ký mới sau khi lưu thay đổi.
-            </div>
-        </div>
-    </div>
-
     <!-- Form -->
     <form asp-action="EditPlan" method="post">
         @Html.AntiForgeryToken()
         <input type="hidden" asp-for="Id" />
-        <input type="hidden" asp-for="BillingCycle" />
 
         <!-- Basic Info Section -->
         <div class="form-card">
@@ -337,7 +296,7 @@
                 Giá và giới hạn
             </div>
 
-            <div class="form-row cols-3">
+            <div class="form-row cols-2">
                 <div>
                     <label class="form-label-custom">
                         Giá / tháng <span class="required">*</span>
@@ -353,8 +312,26 @@
 
                 <div>
                     <label class="form-label-custom">
+                        Giá / năm
+                    </label>
+                    <div style="display:flex;">
+                        <input asp-for="YearlyPrice" type="number" min="0" step="1000"
+                               class="form-control-custom" placeholder="0"
+                               style="border-top-right-radius:0;border-bottom-right-radius:0;" />
+                        <span class="input-group-addon">VND</span>
+                    </div>
+                    <span asp-validation-for="YearlyPrice" class="text-danger"></span>
+                    <div class="form-check-custom" style="margin-top:8px; padding: 8px 12px; background: none; border: none;">
+                        <input asp-for="EnableYearly" type="checkbox" id="enableYearly" />
+                        <label for="enableYearly" style="margin-left: 8px;">Bật gói năm</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-row cols-2">
+                <div>
+                    <label class="form-label-custom">
                         Giới hạn tin đăng
-                        <span class="hint">(Để trống = vô hạn)</span>
                     </label>
                     <div style="display:flex;">
                         <input asp-for="JobLimit" type="number" min="1" 
@@ -368,7 +345,6 @@
                 <div>
                     <label class="form-label-custom">
                         Lọc CV bằng AI
-                        <span class="hint">(Để trống = vô hạn)</span>
                     </label>
                     <div style="display:flex;">
                         <input asp-for="CvAiLimit" type="number" min="1" 
@@ -392,33 +368,16 @@
                         <span class="input-group-addon">ngày</span>
                     </div>
                     <span asp-validation-for="DurationDays" class="text-danger"></span>
-                    <span class="text-muted-small">Thời gian sử dụng gói sau khi kích hoạt (1-3650 ngày)</span>
                 </div>
 
                 <div>
                     <label class="form-label-custom">
                         Chu kỳ thanh toán
                     </label>
-                    <select asp-for="BillingCycle" class="form-select-custom" disabled>
-                        <option value="Monthly">Monthly (Hàng tháng)</option>
-                        <option value="Yearly">Yearly (Hàng năm)</option>
-                        <option value="Custom">Custom (Tùy chỉnh)</option>
-                    </select>
-                    <span class="text-muted-small">Không thể thay đổi chu kỳ sau khi tạo gói.</span>
+                    <input class="form-control-custom" value="Hàng tháng / Hàng năm" disabled />
                 </div>
             </div>
 
-            <div class="form-row cols-2">
-                <div>
-                    <label class="form-label-custom">
-                        Phiên bản
-                    </label>
-                    <input asp-for="Version" type="number" min="1" 
-                           class="form-control-custom" placeholder="1" />
-                    <span asp-validation-for="Version" class="text-danger"></span>
-                    <span class="text-muted-small">Số phiên bản của gói (tự động tăng khi cập nhật)</span>
-                </div>
-            </div>
         </div>
 
         <!-- Status Section -->

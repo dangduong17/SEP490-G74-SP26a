@@ -1,7 +1,9 @@
-@model List<RJMS.vn.edu.fpt.Models.SubscriptionPlan>
+@model List<RJMS.vn.edu.fpt.Models.DTOs.SubscriptionPlanGroupDto>
 @{
     ViewData["Title"] = "Chọn gói dịch vụ";
     Layout = "~/Views/Shared/_Layout.cshtml";
+    var userRole = Context.Request.Cookies["UserRole"];
+    var canSubscribe = userRole == "Recruiter";
 }
 
 <style>
@@ -134,46 +136,53 @@
         border-radius: 12px;
         overflow: hidden;
         box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        border: 1px solid #e9ecef;
     }
 
     .comparison-table th {
         background: #f8f9fa;
-        padding: 16px;
+        padding: 14px 16px;
         font-weight: 600;
+        white-space: nowrap;
     }
 
     .comparison-table td {
-        padding: 16px;
+        padding: 14px 16px;
         border-bottom: 1px solid #e9ecef;
+        vertical-align: middle;
     }
 
     .comparison-table .featured-col {
         background: #f0fdf4;
     }
 
-    .faq-section {
-        background: white;
-        border-radius: 12px;
-        padding: 30px;
-    }
-
-    .faq-item {
-        border-bottom: 1px solid #e9ecef;
-        padding: 20px 0;
-    }
-
-    .faq-item:last-child {
-        border-bottom: none;
-    }
-
-    .faq-question {
+    .cycle-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 0.75rem;
         font-weight: 600;
-        font-size: 1rem;
+        margin-right: 6px;
+        margin-bottom: 4px;
+    }
+
+    .cycle-monthly { background: #dbeafe; color: #1d4ed8; }
+    .cycle-yearly { background: #dcfce7; color: #15803d; }
+
+    .price-stack {
         display: flex;
-        justify-content: space-between;
-        align-items: center;
-        cursor: pointer;
-        color: #212529;
+        flex-direction: column;
+        gap: 3px;
+    }
+
+    .price-main {
+        font-weight: 700;
+        color: #111827;
+    }
+
+    .price-sub {
+        font-size: 0.78rem;
+        color: #6b7280;
     }
 </style>
 
@@ -182,9 +191,12 @@
     <div class="container text-center">
         <h1 class="display-5 fw-bold mb-3">Chọn gói dịch vụ</h1>
         <p class="lead text-muted mb-4">Chọn gói phù hợp để đăng tin tuyển dụng và quản lý ứng viên.</p>
-        <div class="btn-group" role="group">
-            <button type="button" class="btn btn-outline-secondary active">Theo tháng</button>
-            <button type="button" class="btn btn-outline-secondary">Theo năm</button>
+        <div class="btn-group billing-toggle" role="group">
+            <input type="radio" class="btn-check" name="billing" id="billing-monthly" checked>
+            <label class="btn btn-outline-secondary" for="billing-monthly">Theo tháng</label>
+            
+            <input type="radio" class="btn-check" name="billing" id="billing-yearly">
+            <label class="btn btn-outline-secondary" for="billing-yearly">Theo năm</label>
         </div>
     </div>
 </div>
@@ -194,82 +206,122 @@
     <div class="row g-4">
         @if (Model != null && Model.Any())
         {
-            @for (int i = 0; i < Model.Count; i++)
+            @foreach (var group in Model)
             {
-                var plan = Model[i];
-                var isFeatured = Model.Count == 3 && i == 1; // Middle plan is featured if 3 plans
-                var jobLimit = plan.PlanFeatures?.FirstOrDefault(f => f.FeatureCode == "JOB_POSTING")?.FeatureLimit ?? 0;
-                var aiLimit = plan.PlanFeatures?.FirstOrDefault(f => f.FeatureCode == "CV_AI_FILTER")?.FeatureLimit ?? 0;
-                
                 <div class="col-lg-4">
-                    <div class="pricing-card @(isFeatured ? "featured" : "")">
-                        @if (isFeatured)
+                    <div class="pricing-card" data-plan-group="@group.BaseName">
+                        @if (group.MonthlyPlan != null && group.MonthlyPlan.Price > 5000000)
                         {
                             <span class="pricing-badge">Phổ biến</span>
                         }
-                        <h3 class="pricing-title">@plan.Name</h3>
-                        <div class="pricing-price">
-                            @(plan.Price?.ToString("N0") ?? "0") <small>đ</small>
-                            <span class="pricing-period">/ @(plan.BillingCycle ?? "tháng")</span>
-                        </div>
-                        <p class="pricing-subtitle">@plan.Description</p>
-                        <p class="pricing-vat">Thanh toán hết cho suất thời hạn</p>
                         
-                        <ul class="pricing-features">
-                            @if (jobLimit == -1)
-                            {
-                                <li><i class="fas fa-check-circle"></i> Không giới hạn tin đăng</li>
-                            }
-                            else
-                            {
-                                <li><i class="fas fa-check-circle"></i> @jobLimit tin đăng / tháng</li>
-                            }
+                        <!-- Monthly Plan -->
+                        <div class="pricing-plan-monthly" style="display: block;">
+                            <h3 class="pricing-title">@group.MonthlyPlan?.Name?.Replace(" (Hàng tháng)", "")</h3>
+                            <div class="pricing-price">
+                                @(group.MonthlyPlan?.Price.ToString("N0") ?? "0") <small>đ</small>
+                                <span class="pricing-period">/ tháng</span>
+                            </div>
+                            <p class="pricing-subtitle">@group.MonthlyPlan?.Name?.Replace(" (Hàng tháng)", "")</p>
+                            <p class="pricing-vat">Thanh toán hết cho suất thời hạn</p>
                             
-                            @if (aiLimit > 0)
-                            {
-                                <li><i class="fas fa-check-circle"></i> @aiLimit lượt lọc CV bằng AI / tháng</li>
-                            }
-                            else if (aiLimit == -1)
-                            {
-                                <li><i class="fas fa-check-circle"></i> Không giới hạn lọc CV bằng AI</li>
-                            }
-                            else
-                            {
-                                <li><i class="fas fa-times-circle text-muted"></i> <span class="text-muted">Không có tính năng lọc CV bằng AI</span></li>
-                            }
-                            
-                            <li><i class="fas fa-check-circle"></i> Hiển thị đến @plan.DurationDays ngày</li>
-                        </ul>
-
-                        @if (plan.Price > 3000000 || plan.Price > 7000000)
-                        {
-                            <div style="border-top: 1px solid #e9ecef; padding-top: 20px;">
-                                @if (plan.Price > 3000000)
-                                {
-                                    <div class="mb-2"><i class="fas fa-check-circle text-success"></i> Hỗ trợ ưu tiên</div>
+                            <ul class="pricing-features">
+                                @{
+                                    var jobLimit = group.MonthlyPlan?.Features?.FirstOrDefault(f => f.FeatureCode == "JOB_POSTING")?.FeatureLimit ?? 0;
+                                    var aiLimit = group.MonthlyPlan?.Features?.FirstOrDefault(f => f.FeatureCode == "CV_AI_FILTER")?.FeatureLimit ?? 0;
                                 }
-                                @if (plan.Price > 7000000)
+                                @if (jobLimit > 0)
                                 {
-                                    <div class="mb-2"><i class="fas fa-check-circle text-success"></i> Branding công ty</div>
+                                    <li><i class="fas fa-check-circle"></i> @jobLimit tin đăng / tháng</li>
+                                }
+                                else
+                                {
+                                    <li><i class="fas fa-times-circle text-muted"></i> <span class="text-muted">Không có tính năng đăng tin</span></li>
+                                }
+                                
+                                @if (aiLimit > 0)
+                                {
+                                    <li><i class="fas fa-check-circle"></i> @aiLimit lượt lọc CV bằng AI / tháng</li>
+                                }
+                                else
+                                {
+                                    <li><i class="fas fa-times-circle text-muted"></i> <span class="text-muted">Không có tính năng lọc CV bằng AI</span></li>
+                                }
+                                
+                                <li><i class="fas fa-check-circle"></i> Hiển thị đến @group.MonthlyPlan?.DurationDays ngày</li>
+                            </ul>
+
+                            @if (canSubscribe)
+                            {
+                                @if (ViewBag.CurrentPlanId != null && group.MonthlyPlan?.OptionId == (int)ViewBag.CurrentPlanId)
+                                {
+                                    <button class="btn btn-pricing btn-pricing-outline" disabled style="background-color: #f8f9fa; border-color: #6c757d; color: #6c757d;">Đang sử dụng</button>
+                                }
+                                else if (group.MonthlyPlan?.Price == 0)
+                                {
+                                    <button class="btn btn-pricing btn-pricing-outline" disabled>Gói miễn phí</button>
+                                }
+                                else
+                                {
+                                    <a asp-controller="Payment" asp-action="PlanDetail" asp-route-id="@group.MonthlyPlan?.OptionId" class="btn btn-pricing btn-pricing-primary">Đăng ký ngay</a>
+                                }
+                            }
+                        </div>
+
+                        <!-- Yearly Plan -->
+                        @if (group.HasYearly)
+                        {
+                            <div class="pricing-plan-yearly" style="display: none;">
+                                <h3 class="pricing-title">@group.YearlyPlan?.Name?.Replace(" (Hàng năm)", "")</h3>
+                                <div class="pricing-price">
+                                    @(group.YearlyPlan?.Price.ToString("N0") ?? "0") <small>đ</small>
+                                    <span class="pricing-period">/ năm</span>
+                                </div>
+                                @if (group.YearlyPlan?.DiscountPercentage > 0)
+                                {
+                                    <p style="background: #d4f4d4; padding: 8px; border-radius: 6px; color: #00b14f; font-weight: 600;">Tiết kiệm @group.YearlyPlan?.DiscountPercentage%</p>
+                                }
+                                <p class="pricing-subtitle">@group.YearlyPlan?.Name?.Replace(" (Hàng năm)", "")</p>
+                                <p class="pricing-vat">Thanh toán hết cho suất thời hạn</p>
+                                
+                                <ul class="pricing-features">
+                                    @{
+                                        var jobLimitY = group.YearlyPlan?.Features?.FirstOrDefault(f => f.FeatureCode == "JOB_POSTING")?.FeatureLimit ?? 0;
+                                        var aiLimitY = group.YearlyPlan?.Features?.FirstOrDefault(f => f.FeatureCode == "CV_AI_FILTER")?.FeatureLimit ?? 0;
+                                    }
+                                    @if (jobLimitY > 0)
+                                    {
+                                        <li><i class="fas fa-check-circle"></i> @jobLimitY tin đăng / tháng</li>
+                                    }
+                                    else
+                                    {
+                                        <li><i class="fas fa-times-circle text-muted"></i> <span class="text-muted">Không có tính năng đăng tin</span></li>
+                                    }
+                                    
+                                    @if (aiLimitY > 0)
+                                    {
+                                        <li><i class="fas fa-check-circle"></i> @aiLimitY lượt lọc CV bằng AI / tháng</li>
+                                    }
+                                    else
+                                    {
+                                        <li><i class="fas fa-times-circle text-muted"></i> <span class="text-muted">Không có tính năng lọc CV bằng AI</span></li>
+                                    }
+                                    
+                                    <li><i class="fas fa-check-circle"></i> Hiển thị đến @group.YearlyPlan?.DurationDays ngày</li>
+                                </ul>
+
+                                @if (canSubscribe)
+                                {
+                                    @if (ViewBag.CurrentPlanId != null && group.YearlyPlan?.OptionId == (int)ViewBag.CurrentPlanId)
+                                    {
+                                        <button class="btn btn-pricing btn-pricing-outline" disabled style="background-color: #f8f9fa; border-color: #6c757d; color: #6c757d;">Đang sử dụng</button>
+                                    }
+                                    else
+                                    {
+                                        <a asp-controller="Payment" asp-action="PlanDetail" asp-route-id="@group.YearlyPlan?.OptionId" class="btn btn-pricing btn-pricing-primary">Đăng ký ngay</a>
+                                    }
                                 }
                             </div>
-                        }
-
-                        @if (ViewBag.CurrentPlanId != null && plan.Id == (int)ViewBag.CurrentPlanId)
-                        {
-                            <button class="btn btn-pricing btn-pricing-outline" disabled style="background-color: #f8f9fa; border-color: #6c757d; color: #6c757d;">Đang sử dụng</button>
-                        }
-                        else if (plan.Price == 0)
-                        {
-                            <button class="btn btn-pricing btn-pricing-outline" disabled>Gói hiện tại</button>
-                        }
-                        else if (plan.Price > 8000000)
-                        {
-                            <a asp-controller="Payment" asp-action="PlanDetail" asp-route-id="@plan.Id" class="btn btn-pricing btn-pricing-outline">Liên hệ tư vấn</a>
-                        }
-                        else
-                        {
-                            <a asp-controller="Payment" asp-action="PlanDetail" asp-route-id="@plan.Id" class="btn btn-pricing @(isFeatured ? "btn-pricing-primary" : "btn-pricing-outline")">Chọn gói</a>
                         }
                     </div>
                 </div>
@@ -290,103 +342,154 @@
 <div class="container my-5">
     <h2 class="text-center fw-bold mb-4">So sánh gói</h2>
     <div class="comparison-table">
-        <table class="table table-hover mb-0">
+        <table class="table table-hover mb-0 align-middle">
             <thead>
                 <tr>
-                    <th style="width: 40%">Tính năng</th>
-                    <th class="text-center">Basic</th>
-                    <th class="text-center featured-col">Pro</th>
-                    <th class="text-center">Enterprise</th>
+                    <th style="width: 28%">Tính năng</th>
+                    @foreach (var group in Model ?? Enumerable.Empty<RJMS.vn.edu.fpt.Models.DTOs.SubscriptionPlanGroupDto>())
+                    {
+                        <th class="text-center @(group.HasYearly ? "featured-col" : "")">@group.BaseName</th>
+                    }
                 </tr>
             </thead>
             <tbody>
                 <tr>
+                    <td class="fw-semibold">Giá / tháng</td>
+                    @foreach (var group in Model ?? Enumerable.Empty<RJMS.vn.edu.fpt.Models.DTOs.SubscriptionPlanGroupDto>())
+                    {
+                        <td class="text-center @(group.HasYearly ? "featured-col" : "")">
+                            @if (group.MonthlyPlan != null)
+                            {
+                                <div class="price-stack">
+                                    <div class="price-main">@group.MonthlyPlan.Price.ToString("N0") VND</div>
+                                    <div class="price-sub">/@group.MonthlyPlan.BillingCycleDisplay.ToLowerInvariant()</div>
+                                </div>
+                            }
+                            else
+                            {
+                                <span>—</span>
+                            }
+                        </td>
+                    }
+                </tr>
+                <tr>
+                    <td class="fw-semibold">Giá / năm</td>
+                    @foreach (var group in Model ?? Enumerable.Empty<RJMS.vn.edu.fpt.Models.DTOs.SubscriptionPlanGroupDto>())
+                    {
+                        <td class="text-center @(group.HasYearly ? "featured-col" : "")">
+                            @if (group.YearlyPlan != null)
+                            {
+                                <div class="price-stack">
+                                    <div class="price-main">@group.YearlyPlan.Price.ToString("N0") VND</div>
+                                    <div class="price-sub">/@group.YearlyPlan.BillingCycleDisplay.ToLowerInvariant()</div>
+                                    @if (group.YearlyPlan.DiscountPercentage > 0)
+                                    {
+                                        <div class="price-sub text-success">Tiết kiệm @group.YearlyPlan.DiscountPercentage%</div>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <span>—</span>
+                            }
+                        </td>
+                    }
+                </tr>
+                <tr>
                     <td class="fw-semibold">Tin đăng / tháng</td>
-                    <td class="text-center">10</td>
-                    <td class="text-center featured-col">30</td>
-                    <td class="text-center">Không giới hạn</td>
+                    @foreach (var group in Model ?? Enumerable.Empty<RJMS.vn.edu.fpt.Models.DTOs.SubscriptionPlanGroupDto>())
+                    {
+                        var feature = group.MonthlyPlan?.Features?.FirstOrDefault(f => f.FeatureCode == "JOB_POSTING")
+                            ?? group.YearlyPlan?.Features?.FirstOrDefault(f => f.FeatureCode == "JOB_POSTING");
+                        <td class="text-center @(group.HasYearly ? "featured-col" : "")">
+                            @if (feature?.FeatureLimit.HasValue == true)
+                            {
+                                @if (feature.FeatureLimit.Value <= 0)
+                                {
+                                    <span>Không giới hạn</span>
+                                }
+                                else
+                                {
+                                    <span>@feature.FeatureLimit.Value tin</span>
+                                }
+                            }
+                            else
+                            {
+                                <span>—</span>
+                            }
+                        </td>
+                    }
                 </tr>
                 <tr>
-                    <td class="fw-semibold">Lượt xem CV / tháng</td>
-                    <td class="text-center">100</td>
-                    <td class="text-center featured-col">500</td>
-                    <td class="text-center">Không giới hạn</td>
+                    <td class="fw-semibold">Lọc CV bằng AI</td>
+                    @foreach (var group in Model ?? Enumerable.Empty<RJMS.vn.edu.fpt.Models.DTOs.SubscriptionPlanGroupDto>())
+                    {
+                        var feature = group.MonthlyPlan?.Features?.FirstOrDefault(f => f.FeatureCode == "CV_AI_FILTER")
+                            ?? group.YearlyPlan?.Features?.FirstOrDefault(f => f.FeatureCode == "CV_AI_FILTER");
+                        <td class="text-center @(group.HasYearly ? "featured-col" : "")">
+                            @if (feature?.FeatureLimit.HasValue == true)
+                            {
+                                @if (feature.FeatureLimit.Value <= 0)
+                                {
+                                    <span>Không giới hạn</span>
+                                }
+                                else
+                                {
+                                    <span>@feature.FeatureLimit.Value lượt</span>
+                                }
+                            }
+                            else
+                            {
+                                <span>—</span>
+                            }
+                        </td>
+                    }
                 </tr>
                 <tr>
-                    <td class="fw-semibold">Lượt tải CV</td>
-                    <td class="text-center">50</td>
-                    <td class="text-center featured-col">200</td>
-                    <td class="text-center">Không giới hạn</td>
-                </tr>
-                <tr>
-                    <td class="fw-semibold">Tài khoản HR</td>
-                    <td class="text-center">1</td>
-                    <td class="text-center featured-col">3</td>
-                    <td class="text-center">10</td>
-                </tr>
-                <tr>
-                    <td class="fw-semibold">Lọc CV theo từ khóa</td>
-                    <td class="text-center"><i class="fas fa-check text-success"></i></td>
-                    <td class="text-center featured-col"><i class="fas fa-check text-success"></i></td>
-                    <td class="text-center"><i class="fas fa-check text-success"></i></td>
-                </tr>
-                <tr>
-                    <td class="fw-semibold">Hỗ trợ ưu tiên</td>
-                    <td class="text-center"><i class="fas fa-times text-secondary"></i></td>
-                    <td class="text-center featured-col"><i class="fas fa-check text-success"></i></td>
-                    <td class="text-center"><i class="fas fa-check text-success"></i></td>
-                </tr>
-                <tr>
-                    <td class="fw-semibold">Branding công ty</td>
-                    <td class="text-center"><i class="fas fa-times text-secondary"></i></td>
-                    <td class="text-center featured-col"><i class="fas fa-times text-secondary"></i></td>
-                    <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                    <td class="fw-semibold">Chu kỳ có sẵn</td>
+                    @foreach (var group in Model ?? Enumerable.Empty<RJMS.vn.edu.fpt.Models.DTOs.SubscriptionPlanGroupDto>())
+                    {
+                        <td class="text-center @(group.HasYearly ? "featured-col" : "")">
+                            @if (group.HasMonthly)
+                            {
+                                <span class="cycle-badge cycle-monthly">Hàng tháng</span>
+                            }
+                            @if (group.HasYearly)
+                            {
+                                <span class="cycle-badge cycle-yearly">Hàng năm</span>
+                            }
+                        </td>
+                    }
                 </tr>
             </tbody>
         </table>
     </div>
 </div>
 
-<!-- FAQ Section -->
-<div class="container my-5">
-    <h2 class="text-center fw-bold mb-4">Câu hỏi thường gặp</h2>
-    <div class="faq-section">
-        <div class="faq-item">
-            <div class="faq-question">
-                <span>Gói cơ bản khác gì so với gói Pro?</span>
-                <i class="fas fa-chevron-down"></i>
-            </div>
-        </div>
-        <div class="faq-item">
-            <div class="faq-question">
-                <span>Có xuất hóa đơn VAT không?</span>
-                <i class="fas fa-chevron-down"></i>
-            </div>
-        </div>
-        <div class="faq-item">
-            <div class="faq-question">
-                <span>Nâng cấp gói giữa kỳ có được không?</span>
-                <i class="fas fa-chevron-down"></i>
-            </div>
-        </div>
-        <div class="faq-item">
-            <div class="faq-question">
-                <span>Hoàn tiền khi hủy gói như thế nào?</span>
-                <i class="fas fa-chevron-down"></i>
-            </div>
-        </div>
-    </div>
-</div>
-
 @section Scripts {
 <script>
-    // FAQ accordion
-    document.querySelectorAll('.faq-question').forEach(item => {
-        item.addEventListener('click', function() {
-            const icon = this.querySelector('i');
-            icon.classList.toggle('fa-chevron-down');
-            icon.classList.toggle('fa-chevron-up');
+    // Billing cycle toggle
+    const billingToggle = document.querySelectorAll('input[name="billing"]');
+    
+    billingToggle.forEach(input => {
+        input.addEventListener('change', function() {
+            const isYearly = this.id === 'billing-yearly';
+            const planCards = document.querySelectorAll('.pricing-card');
+            
+            planCards.forEach(card => {
+                const monthlyPlan = card.querySelector('.pricing-plan-monthly');
+                const yearlyPlan = card.querySelector('.pricing-plan-yearly');
+                
+                if (isYearly && yearlyPlan) {
+                    monthlyPlan.style.display = 'none';
+                    yearlyPlan.style.display = 'block';
+                } else {
+                    monthlyPlan.style.display = 'block';
+                    if (yearlyPlan) yearlyPlan.style.display = 'none';
+                }
+            });
         });
     });
+
 </script>
 }

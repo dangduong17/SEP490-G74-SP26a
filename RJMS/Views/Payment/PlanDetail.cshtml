@@ -6,6 +6,7 @@
     
     var jobLimit = Model.PlanFeatures?.FirstOrDefault(f => f.FeatureCode == "JOB_POSTING")?.FeatureLimit;
     var cvAiLimit = Model.PlanFeatures?.FirstOrDefault(f => f.FeatureCode == "CV_AI_FILTER")?.FeatureLimit;
+    var billingCycleLabel = string.Equals(Model.BillingCycle, "Yearly", StringComparison.OrdinalIgnoreCase) ? "Hàng năm" : "Hàng tháng";
 }
 
 <style>
@@ -62,11 +63,11 @@
         </div>
 
         <div class="detail-body">
-            <h2 class="section-title">Tính năng của gói</h2>
+            <h2 class="section-title">Thông số gói</h2>
             <ul class="feature-list">
                 @if (jobLimit.HasValue && jobLimit > 0)
                 {
-                    <li><span class="icon">✓</span> Đăng @jobLimit tin tuyển dụng mỗi tháng</li>
+                    <li><span class="icon">✓</span> Đăng @jobLimit tin tuyển dụng / tháng</li>
                 }
                 else
                 {
@@ -75,27 +76,15 @@
 
                 @if (cvAiLimit.HasValue && cvAiLimit > 0)
                 {
-                    <li><span class="icon">✓</span> Lọc CV bằng AI: @cvAiLimit CV/tháng</li>
-                }
-                else if (!cvAiLimit.HasValue)
-                {
-                    <li><span class="icon">✓</span> Lọc CV bằng AI không giới hạn</li>
+                    <li><span class="icon">✓</span> Lọc CV bằng AI: @cvAiLimit lượt / tháng</li>
                 }
                 else
                 {
-                    <li class="disabled"><span class="icon">—</span> Không hỗ trợ lọc CV bằng AI</li>
+                    <li class="disabled"><span class="icon">—</span> Không hỗ trợ hoặc chưa cấu hình lọc CV bằng AI</li>
                 }
 
-                <li><span class="icon">✓</span> Hỗ trợ khách hàng 24/7</li>
-                <li><span class="icon">✓</span> Quản lý ứng viên không giới hạn</li>
-                <li><span class="icon">✓</span> Xem hồ sơ ứng viên chi tiết</li>
-                
-                @if (Model.Price >= 1000000)
-                {
-                    <li><span class="icon">✓</span> Ưu tiên hiển thị tin tuyển dụng</li>
-                    <li><span class="icon">✓</span> Báo cáo chi tiết và phân tích</li>
-                    <li><span class="icon">✓</span> Tư vấn chiến lược tuyển dụng</li>
-                }
+                <li><span class="icon">✓</span> Thời hạn sử dụng: @Model.DurationDays ngày</li>
+                <li><span class="icon">✓</span> Chu kỳ thanh toán: @billingCycleLabel</li>
             </ul>
 
             @if (!string.IsNullOrEmpty(Model.Description))
@@ -105,7 +94,7 @@
             }
 
             <div class="payment-section">
-                <h3>Thông tin thanh toán</h3>
+                <h3>Đăng ký trực tiếp</h3>
                 <div class="payment-info">
                     <div class="payment-info-item">
                         <label>Gói dịch vụ</label>
@@ -114,6 +103,10 @@
                     <div class="payment-info-item">
                         <label>Thời hạn</label>
                         <div class="value">@Model.DurationDays ngày</div>
+                    </div>
+                    <div class="payment-info-item">
+                        <label>Chu kỳ</label>
+                        <div class="value">@billingCycleLabel</div>
                     </div>
                     <div class="payment-info-item">
                         <label>Phương thức thanh toán</label>
@@ -138,7 +131,7 @@
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="planId" value="@Model.Id" />
                     <button type="submit" class="btn-payment">
-                        @(Model.Price == 0 ? "Kích hoạt gói miễn phí" : "Tiến hành thanh toán")
+                        @(Model.Price == 0 ? "Kích hoạt gói miễn phí" : "Đăng ký ngay")
                     </button>
                 </form>
             </div>
