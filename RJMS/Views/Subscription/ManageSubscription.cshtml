@@ -12,7 +12,7 @@
         display: flex;
         align-items: flex-start;
         justify-content: space-between;
-        margin-bottom: 24px;
+        margin-bottom: 18px;
         gap: 16px;
     }
     .sub-toolbar h1 {
@@ -46,14 +46,14 @@
     .sub-summary {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
-        gap: 16px;
-        margin-bottom: 24px;
+        gap: 12px;
+        margin-bottom: 16px;
     }
     .sum-card {
         background: #fff;
         border: 1px solid #e5e7eb;
         border-radius: 12px;
-        padding: 24px;
+        padding: 18px;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -79,7 +79,7 @@
         display: flex;
         align-items: center;
         gap: 12px;
-        margin-bottom: 20px;
+        margin-bottom: 14px;
     }
     .sub-search {
         position: relative;
@@ -134,7 +134,7 @@
         background: #fafafa;
     }
     .sub-table td {
-        padding: 14px;
+        padding: 12px;
         border-bottom: 1px solid #f9fafb;
         vertical-align: middle;
         color: #374151;
@@ -144,6 +144,11 @@
 
     .plan-name { font-weight: 700; color: #111827; }
     .plan-code { font-size: 0.72rem; color: #9ca3af; margin-top: 2px; }
+
+    /* Billing cycle badge */
+    .bc-badge { display: inline-block; padding: 3px 8px; border-radius: 16px; font-size: 0.7rem; font-weight: 600; margin-top: 4px; }
+    .bc-monthly { background: #dbeafe; color: #1e40af; }
+    .bc-yearly  { background: #fef3c7; color: #92400e; }
 
     /* Plan type badges */
     .pt-badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; }
@@ -333,7 +338,8 @@
             <tr>
                 <th>Tên gói đăng ký</th>
                 <th>Loại gói</th>
-                <th>Giá hàng tháng</th>
+                <th>Chu kỳ</th>
+                <th>Giá</th>
                 <th>Giới hạn tin</th>
                 <th>Lọc CV AI</th>
                 <th>Thời hạn</th>
@@ -366,6 +372,13 @@
                         <span class="pt-badge @ptCls">@p.PlanType</span>
                     </td>
                     <td>
+                        @{
+                            var bcCls = p.BillingCycle == "Yearly" ? "bc-yearly" : "bc-monthly";
+                            var bcText = p.BillingCycle == "Yearly" ? "Hàng năm" : "Hàng tháng";
+                        }
+                        <span class="bc-badge @bcCls">@bcText</span>
+                    </td>
+                    <td>
                         @if (p.Price == 0)
                         { <span>0 VND</span> }
                         else
@@ -389,13 +402,9 @@
                                 <span class="feat-off">@p.CvAiLimit CV/tháng</span>
                             }
                         }
-                        else if (p.PlanType == "Premium")
-                        {
-                            <span class="feat-on">Không giới hạn</span>
-                        }
                         else
                         {
-                            <span class="feat-off">Không giới hạn</span>
+                            <span class="feat-off">Chưa cấu hình</span>
                         }
                     </td>
                     <td>

@@ -102,6 +102,113 @@
         color: #9ca3af;
     }
 
+    /* ===== Branches ===== */
+    .rbranch-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .rbranch-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+    .rbranch-title {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 4px;
+    }
+    .rbranch-sub {
+        font-size: 0.78rem;
+        color: #6b7280;
+    }
+    .rbranch-count {
+        background: #f0fdf4;
+        color: #00b14f;
+        border-radius: 20px;
+        padding: 4px 10px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+    .rbranch-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+    }
+    .rbranch-item {
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 14px;
+        background: linear-gradient(180deg, #fff, #fafafa);
+    }
+    .rbranch-item.primary {
+        border-color: #00b14f;
+        box-shadow: 0 0 0 1px rgba(0,177,79,0.08);
+    }
+    .rbranch-item-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 8px;
+    }
+    .rbranch-name {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #111827;
+    }
+    .rbranch-badge {
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: 999px;
+        background: #ecfdf5;
+        color: #00b14f;
+        align-self: flex-start;
+    }
+    .rbranch-address {
+        font-size: 0.78rem;
+        color: #6b7280;
+        line-height: 1.45;
+        margin-bottom: 12px;
+    }
+    .rbranch-metrics {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .rbranch-metric {
+        background: #f9fafb;
+        border-radius: 8px;
+        padding: 8px 10px;
+        min-width: 92px;
+    }
+    .rbranch-metric .label {
+        display: block;
+        font-size: 0.68rem;
+        color: #9ca3af;
+        margin-bottom: 2px;
+    }
+    .rbranch-metric .value {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #111827;
+    }
+    .rbranch-empty {
+        border: 1px dashed #d1d5db;
+        border-radius: 10px;
+        padding: 18px;
+        color: #6b7280;
+        font-size: 0.84rem;
+        text-align: center;
+        background: #fafafa;
+    }
+
     /* ===== Main grid: charts + content ===== */
     .rdash-grid {
         display: grid;
@@ -458,6 +565,66 @@
         <div class="rstat-label">Người theo dõi</div>
         <div class="rstat-sub">Độ quan tâm công ty</div>
     </div>
+</div>
+
+<!-- Branches from database -->
+<div class="rbranch-card">
+    <div class="rbranch-header">
+        <div>
+            <div class="rbranch-title">Chi nhánh công ty</div>
+            <div class="rbranch-sub">
+                @if (userRole == "Employee")
+                {
+                    <span>Chỉ hiển thị chi nhánh mà nhân viên đang được gán.</span>
+                }
+                else
+                {
+                    <span>Hiển thị toàn bộ chi nhánh của công ty.</span>
+                }
+            </div>
+        </div>
+        <span class="rbranch-count">@Model.CompanyLocations.Count chi nhánh</span>
+    </div>
+
+    @if (Model.CompanyLocations.Any())
+    {
+        <div class="rbranch-grid">
+            @foreach (var branch in Model.CompanyLocations)
+            {
+                <div class="rbranch-item @(branch.IsPrimary ? "primary" : "")">
+                    <div class="rbranch-item-head">
+                        <div>
+                            <div class="rbranch-name">@(string.IsNullOrWhiteSpace(branch.AddressLabel) ? branch.CityName : branch.AddressLabel)</div>
+                            <div style="font-size:0.72rem;color:#9ca3af;">@branch.CityName</div>
+                        </div>
+                        @if (branch.IsPrimary)
+                        {
+                            <span class="rbranch-badge">Mặc định</span>
+                        }
+                    </div>
+                    <div class="rbranch-address">
+                        @(!string.IsNullOrWhiteSpace(branch.Address) ? branch.Address : "Chưa có địa chỉ chi tiết")
+                    </div>
+                    <div class="rbranch-metrics">
+                        <div class="rbranch-metric">
+                            <span class="label">Nhân viên</span>
+                            <span class="value">@branch.EmployeeCount</span>
+                        </div>
+                        <div class="rbranch-metric">
+                            <span class="label">Tin đăng</span>
+                            <span class="value">@branch.JobCount</span>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="rbranch-empty">
+            Chưa có chi nhánh nào được gán trong database.
+        </div>
+    }
 </div>
 
 <!-- Main grid: charts + sidebar -->

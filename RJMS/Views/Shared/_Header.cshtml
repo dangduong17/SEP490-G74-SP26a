@@ -299,6 +299,15 @@
                             Công cụ
                         </a>
                     </li>
+                    @if (isAuthenticated)
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link fw-semibold @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Subscription" ? "active" : "")"
+                               asp-controller="Subscription" asp-action="Index">
+                                Gói dịch vụ
+                            </a>
+                        </li>
+                    }
                 </ul>
 
                 <!-- User Actions -->

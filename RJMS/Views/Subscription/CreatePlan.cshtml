@@ -43,8 +43,8 @@
         background: #fff;
         border: 1px solid #e5e7eb;
         border-radius: 12px;
-        padding: 32px;
-        margin-bottom: 24px;
+        padding: 24px;
+        margin-bottom: 16px;
     }
 
     .section-title {
@@ -249,8 +249,8 @@
     /* ===== Grid layout ===== */
     .form-row {
         display: grid;
-        gap: 20px;
-        margin-bottom: 20px;
+        gap: 16px;
+        margin-bottom: 16px;
     }
     .form-row.cols-2 {
         grid-template-columns: 1fr 1fr;
@@ -273,17 +273,6 @@
     <div class="page-header">
         <h1>Tạo gói đăng ký mới</h1>
         <p>Thiết lập thông tin và cấu hình cho gói dịch vụ mới.</p>
-    </div>
-
-    <!-- Info box -->
-    <div class="info-box">
-        <div class="info-box-content">
-            <div class="info-box-title">Lưu ý khi tạo gói mới</div>
-            <div class="info-box-text">
-                Gói sẽ chỉ hiển thị cho nhà tuyển dụng sau khi được kích hoạt. 
-                Bạn có thể chỉnh sửa thông tin gói bất kỳ lúc nào sau khi tạo.
-            </div>
-        </div>
     </div>
 
     <!-- Form -->
@@ -325,7 +314,6 @@
                     </label>
                     <textarea asp-for="Description" class="form-control-custom" rows="4" 
                               placeholder="Mô tả chi tiết về nội dung và quyền lợi của gói..."></textarea>
-                    <span class="text-muted-small">Mô tả sẽ hiển thị trên trang chọn gói dịch vụ</span>
                 </div>
             </div>
         </div>
@@ -336,7 +324,7 @@
                 Giá và giới hạn
             </div>
 
-            <div class="form-row cols-3">
+            <div class="form-row cols-2">
                 <div>
                     <label class="form-label-custom">
                         Giá / tháng <span class="required">*</span>
@@ -352,8 +340,22 @@
 
                 <div>
                     <label class="form-label-custom">
+                        Giá / năm
+                    </label>
+                    <div style="display:flex;">
+                        <input asp-for="YearlyPrice" type="number" min="0" step="1000"
+                               class="form-control-custom" placeholder="0"
+                               style="border-top-right-radius:0;border-bottom-right-radius:0;" />
+                        <span class="input-group-addon">VND</span>
+                    </div>
+                    <span asp-validation-for="YearlyPrice" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="form-row cols-2">
+                <div>
+                    <label class="form-label-custom">
                         Giới hạn tin đăng
-                        <span class="hint">(Để trống = vô hạn)</span>
                     </label>
                     <div style="display:flex;">
                         <input asp-for="JobLimit" type="number" min="1" 
@@ -367,7 +369,6 @@
                 <div>
                     <label class="form-label-custom">
                         Lọc CV bằng AI
-                        <span class="hint">(Để trống = vô hạn)</span>
                     </label>
                     <div style="display:flex;">
                         <input asp-for="CvAiLimit" type="number" min="1" 
@@ -391,7 +392,6 @@
                         <span class="input-group-addon">ngày</span>
                     </div>
                     <span asp-validation-for="DurationDays" class="text-danger"></span>
-                    <span class="text-muted-small">Thời gian sử dụng gói sau khi kích hoạt (1-3650 ngày)</span>
                 </div>
 
                 <div id="billingCyclesSection">
@@ -408,21 +408,9 @@
                             <label for="cycleYearly" style="margin-left: 8px;">Hàng năm (365 ngày)</label>
                         </div>
                     </div>
-                    <span class="text-muted-small" id="billingCycleHint">Chọn một hoặc cả hai. Nếu chọn cả hai, hệ thống sẽ tự động tạo 2 phiên bản gói (Monthly & Yearly).</span>
                 </div>
             </div>
 
-            <div class="form-row cols-2">
-                <div>
-                    <label class="form-label-custom">
-                        Phiên bản
-                    </label>
-                    <input asp-for="Version" type="number" min="1" 
-                           class="form-control-custom" placeholder="1" value="1" />
-                    <span asp-validation-for="Version" class="text-danger"></span>
-                    <span class="text-muted-small">Số phiên bản của gói (mặc định là 1)</span>
-                </div>
-            </div>
         </div>
 
         <!-- Status Section -->
@@ -476,6 +464,14 @@
                 if ($('input[name="BillingCycles"]:checked').length === 0) {
                     e.preventDefault();
                     toastr.warning('Vui lòng chọn ít nhất một chu kỳ thanh toán.');
+                    return;
+                }
+
+                const yearlySelected = $('#cycleYearly').is(':checked');
+                const yearlyPrice = $('#YearlyPrice').val();
+                if (yearlySelected && (!yearlyPrice || Number(yearlyPrice) < 0)) {
+                    e.preventDefault();
+                    toastr.warning('Vui lòng nhập giá năm hợp lệ khi chọn chu kỳ Hàng năm.');
                 }
             });
         });
