@@ -22,8 +22,51 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         {
             if (page < 1) page = 1;
 
-            var model = await _jobService.GetPublicJobListAsync(keyword, categoryId, locationId, page);
+            int? currentUserId = null;
+            var userRole = Request.Cookies["UserRole"];
+            var userIdStr = Request.Cookies["UserId"];
+            if (userRole == "Candidate" && int.TryParse(userIdStr, out var uid))
+            {
+                currentUserId = uid;
+            }
+
+            var model = await _jobService.GetPublicJobListAsync(keyword, categoryId, locationId, page, currentUserId);
             ViewData["Title"] = "Tìm việc làm tốt nhất";
+
+            return View(model);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ToggleSave(int jobId)
+        {
+            var userRole = Request.Cookies["UserRole"];
+            var userIdStr = Request.Cookies["UserId"];
+
+            if (userRole != "Candidate" || !int.TryParse(userIdStr, out var userId))
+            {
+                return Json(new { success = false, message = "Vui lòng đăng nhập bằng tài khoản ứng viên." });
+            }
+
+            var isSaved = await _jobService.ToggleSavedJobAsync(userId, jobId);
+            return Json(new { success = true, isSaved });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> SavedJobs(int page = 1)
+        {
+            var userRole = Request.Cookies["UserRole"];
+            var userIdStr = Request.Cookies["UserId"];
+
+            if (userRole != "Candidate" || !int.TryParse(userIdStr, out var userId))
+            {
+                TempData["WarningToast"] = "Vui lòng đăng nhập bằng tài khoản ứng viên.";
+                return RedirectToAction("Login", "Auth");
+            }
+
+            if (page < 1) page = 1;
+
+            var model = await _jobService.GetSavedJobListAsync(userId, page);
+            ViewData["Title"] = "Việc làm đã lưu";
 
             return View(model);
         }
@@ -46,6 +89,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             {
                 var modalData = await _applicationService.GetApplyModalDataAsync(id, uid);
                 ViewBag.AlreadyApplied = modalData?.AlreadyApplied ?? false;
+                ViewBag.IsSaved = await _jobService.IsJobSavedAsync(uid, id);
             }
 
             ViewData["Title"] = model.Title + " | " + model.CompanyName;
