@@ -9,15 +9,6 @@
 
 @section Styles {
 <style>
-    /* ===== Breadcrumb ===== */
-    .rpage-breadcrumb {
-        margin-bottom: 10px;
-        font-size: 0.8rem;
-        color: #9ca3af;
-    }
-    .rpage-breadcrumb a { color: #6b7280; text-decoration: none; }
-    .rpage-breadcrumb a:hover { color: #00b14f; }
-
     /* ===== Page Header Row ===== */
     .rpage-header {
         display: flex;
@@ -111,10 +102,10 @@
         color: #9ca3af;
     }
 
-    /* ===== Main grid: charts left + sidebar right ===== */
+    /* ===== Main grid: charts + content ===== */
     .rdash-grid {
         display: grid;
-        grid-template-columns: 1fr 300px;
+        grid-template-columns: 1fr;
         gap: 20px;
         align-items: start;
     }
@@ -158,6 +149,31 @@
         cursor: pointer;
     }
     .rchart-period-btn:hover { background: #e5e7eb; }
+    .rchart-period-btn.active {
+        background: #00b14f;
+        color: #fff;
+    }
+
+    /* ===== Filter Select ===== */
+    .rchart-period-select {
+        font-size: 0.75rem;
+        background: #f3f4f6;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        padding: 4px 12px;
+        color: #6b7280;
+        cursor: pointer;
+    }
+    .rchart-period-select:hover { background: #e5e7eb; }
+    .rchart-period-select:focus { outline: none; background: #e5e7eb; }
+
+    /* ===== Recent Apps + Subscription Row ===== */
+    .rapp-subscription-row {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
 
     /* ===== Applications table ===== */
     .rapp-card {
@@ -279,6 +295,11 @@
     /* ===== RIGHT SIDEBAR ===== */
     .rsidebar { display: flex; flex-direction: column; gap: 16px; }
 
+    /* Recent Apps + Subscription Row */
+    .rapp-subscription-row .rsub-card {
+        margin-bottom: 0;
+    }
+
     /* Subscription card */
     .rsub-card {
         background: linear-gradient(135deg, #059669 0%, #00b14f 100%);
@@ -383,16 +404,10 @@
         .rstat-grid { grid-template-columns: repeat(2, 1fr); }
         .rdash-grid  { grid-template-columns: 1fr; }
         .rchart-row  { grid-template-columns: 1fr; }
+        .rapp-subscription-row { grid-template-columns: 1fr; }
     }
 </style>
 }
-
-<!-- Breadcrumb -->
-<div class="rpage-breadcrumb">
-    <a href="#">Trang chủ</a>
-    <span class="sep">›</span>
-    <span>Recruiter Dashboard</span>
-</div>
 
 <!-- Page header -->
 <div class="rpage-header">
@@ -464,8 +479,71 @@
                 <canvas id="appOverviewChart" height="150"></canvas>
             </div>
 
-            <!-- Subscription card (Moved from sidebar) -->
-            <div class="rsub-card" style="margin-bottom: 0;">
+            <!-- Job Posts Overview - Bar -->
+            <div class="rchart-card">
+                <div class="rchart-card-header">
+                    <div>
+                        <div class="rchart-card-title">Tổng quan tin tuyển dụng</div>
+                        <div class="rchart-card-sub">Số lượng tin đăng theo trạng thái</div>
+                    </div>
+                    <select class="rchart-period-select" id="jobPostsFilter">
+                        <option value="all">Tất cả</option>
+                        <option value="thisMonth">Tháng này</option>
+                        <option value="lastMonth">Tháng trước</option>
+                    </select>
+                </div>
+                <canvas id="jobPostsOverviewChart" height="100"></canvas>
+            </div>
+        </div>
+
+        <!-- Recent Applications + Subscription Row -->
+        <div class="rapp-subscription-row">
+            <!-- Recent Applications -->
+            <div class="rapp-card">
+                <div class="rapp-header">
+                    <span class="rapp-title">Hồ sơ ứng tuyển gần đây</span>
+                    <a asp-action="Applications" class="rapp-viewall">Xem tất cả ứng tuyển</a>
+                </div>
+                <table class="rapp-table">
+                    <thead>
+                        <tr>
+                        <th>Tên ứng viên</th>
+                        <th>Vị trí tuyển dụng</th>
+                        <th>Ngày nộp</th>
+                        <th>Trạng thái</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var app in Model.RecentApplications)
+                    {
+                        <tr>
+                            <td>
+                                <div class="cand-cell">
+                                    <div class="cand-avatar">@app.Initials</div>
+                                    @app.CandidateName
+                                </div>
+                            </td>
+                            <td>@app.JobTitle</td>
+                            <td>@app.AppliedDate</td>
+                            <td><span class="abadge @app.StatusClass">@app.Status</span></td>
+                            <td>
+                                <div class="rapp-action">
+                                    <a asp-action="ViewCV" asp-route-id="@app.CvId" class="rapp-btn" target="_blank"><i class="fas fa-file-alt"></i> Xem CV</a>
+                                    @if (userRole == "Employee")
+                                    {
+                                        <a asp-controller="Chat" asp-action="Index" class="rapp-btn"><i class="fas fa-comment"></i> Chat</a>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            </div>
+
+            <!-- Subscription card -->
+            <div class="rsub-card">
                 <div class="rsub-header">
                     <span class="rsub-title">Gói dịch vụ hiện tại</span>
                     <span class="rsub-plan-badge">@Model.SubscriptionPlan</span>
@@ -504,50 +582,6 @@
                     }
                 </div>
             </div>
-        </div>
-
-        <!-- Recent Applications -->
-        <div class="rapp-card">
-            <div class="rapp-header">
-                <span class="rapp-title">Hồ sơ ứng tuyển gần đây</span>
-                <a asp-action="Applications" class="rapp-viewall">Xem tất cả ứng tuyển</a>
-            </div>
-            <table class="rapp-table">
-                <thead>
-                    <tr>
-                        <th>Tên ứng viên</th>
-                        <th>Vị trí tuyển dụng</th>
-                        <th>Ngày nộp</th>
-                        <th>Trạng thái</th>
-                        <th>Thao tác</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var app in Model.RecentApplications)
-                    {
-                        <tr>
-                            <td>
-                                <div class="cand-cell">
-                                    <div class="cand-avatar">@app.Initials</div>
-                                    @app.CandidateName
-                                </div>
-                            </td>
-                            <td>@app.JobTitle</td>
-                            <td>@app.AppliedDate</td>
-                            <td><span class="abadge @app.StatusClass">@app.Status</span></td>
-                            <td>
-                                <div class="rapp-action">
-                                    <a asp-action="ViewCV" asp-route-id="@app.CvId" class="rapp-btn" target="_blank"><i class="fas fa-file-alt"></i> Xem CV</a>
-                                    @if (userRole == "Employee")
-                                    {
-                                        <a asp-controller="Chat" asp-action="Index" class="rapp-btn"><i class="fas fa-comment"></i> Chat</a>
-                                    }
-                                </div>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
         </div>
 
         <!-- Recent Job Posts -->
@@ -589,8 +623,6 @@
         </div>
     </div><!-- /LEFT COLUMN -->
 
-    </div><!-- /RIGHT SIDEBAR -->
-
 </div><!-- /rdash-grid -->
 
 @section Scripts {
@@ -625,6 +657,55 @@
             }
         }
     });
+
+    // ===== Job Posts Overview - Doughnut Chart =====
+    let jobPostsChart = null;
+    const jobPostsData = {
+        all: { data: [@Model.ActiveJobPosts, 5, 3, 2] },
+        thisMonth: { data: [@Model.ActiveJobPosts, 3, 2, 1] },
+        lastMonth: { data: [8, 2, 1, 0] }
+    };
+
+    function initJobPostsChart(filter = 'all') {
+        const ctx = document.getElementById('jobPostsOverviewChart');
+        if (jobPostsChart) jobPostsChart.destroy();
+        
+        jobPostsChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Đang hiển thị', 'Đã lên lịch', 'Nháp', 'Hết hạn'],
+                datasets: [{
+                    data: jobPostsData[filter].data,
+                    backgroundColor: ['#00b14f', '#3b82f6', '#9ca3af', '#ef4444'],
+                    borderRadius: 4,
+                    borderColor: '#fff',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { font: { size: 10 }, boxWidth: 10, padding: 8 }
+                    }
+                }
+            }
+        });
+    }
+
+    // Initialize chart
+    initJobPostsChart('all');
+
+    // Handle filter select change
+    const jobPostsFilterSelect = document.getElementById('jobPostsFilter');
+    if (jobPostsFilterSelect) {
+        jobPostsFilterSelect.addEventListener('change', function() {
+            const filter = this.value;
+            initJobPostsChart(filter);
+        });
+    }
 
 </script>
 }
