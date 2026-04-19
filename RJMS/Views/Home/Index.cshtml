@@ -1,3 +1,4 @@
+@model RJMS.vn.edu.fpt.Models.DTOs.HomeIndexViewModel
 @{
     ViewData["Title"] = "Finding Jobs - Tìm việc làm, Tuyển dụng hiệu quả";
 }
@@ -72,28 +73,22 @@
 <section class="stats-section">
     <div class="container">
         <div class="row text-center">
-            <div class="col-6 col-md-3 mb-3">
+            <div class="col-6 col-md-4 mb-3">
                 <div class="stat-item">
-                    <h3 class="stat-number">50,000+</h3>
+                    <h3 class="stat-number">@Model.RecruiterCount.ToString("N0")+</h3>
                     <p class="stat-label">Nhà tuyển dụng</p>
                 </div>
             </div>
-            <div class="col-6 col-md-3 mb-3">
+            <div class="col-6 col-md-4 mb-3">
                 <div class="stat-item">
-                    <h3 class="stat-number">100,000+</h3>
+                    <h3 class="stat-number">@Model.CompanyCount.ToString("N0")+</h3>
                     <p class="stat-label">Doanh nghiệp</p>
                 </div>
             </div>
-            <div class="col-6 col-md-3 mb-3">
+            <div class="col-6 col-md-4 mb-3">
                 <div class="stat-item">
-                    <h3 class="stat-number">5,000,000+</h3>
+                    <h3 class="stat-number">@Model.ActiveJobCount.ToString("N0")+</h3>
                     <p class="stat-label">Việc làm kết nối</p>
-                </div>
-            </div>
-            <div class="col-6 col-md-3 mb-3">
-                <div class="stat-item">
-                    <h3 class="stat-number">10,000,000+</h3>
-                    <p class="stat-label">Lượt tải ứng dụng</p>
                 </div>
             </div>
         </div>
@@ -104,44 +99,69 @@
 <section class="featured-jobs-section">
     <div class="container">
         <div class="section-header">
-            <h2 class="section-title">Việc làm tốt nhất</h2>
-            <a asp-controller="Candidates" asp-action="JobList" class="btn btn-outline-primary">
+            <h2 class="section-title">Việc làm mới nhất</h2>
+            <a asp-controller="Job" asp-action="Index" class="btn btn-outline-primary">
                 Xem tất cả <i class="fas fa-arrow-right ms-2"></i>
             </a>
         </div>
 
         <div class="row">
-            @for (int i = 0; i < 6; i++)
+            @if (Model.LatestJobs.Any())
             {
-                <div class="col-md-6 col-lg-4 mb-4">
-                    <div class="job-card">
-                        <div class="job-card-header">
-                            <div class="company-logo">
-                                <i class="fas fa-building"></i>
+                @foreach (var job in Model.LatestJobs)
+                {
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="job-card">
+                            <div class="job-card-header">
+                                <div class="company-logo">
+                                    @if (!string.IsNullOrWhiteSpace(job.CompanyLogo))
+                                    {
+                                        <img src="@job.CompanyLogo" alt="@job.CompanyName" class="img-fluid" />
+                                    }
+                                    else
+                                    {
+                                        <i class="fas fa-building"></i>
+                                    }
+                                </div>
+                                <div class="job-actions">
+                                    <button class="btn-save"><i class="far fa-heart"></i></button>
+                                </div>
                             </div>
-                            <div class="job-actions">
-                                <button class="btn-save"><i class="far fa-heart"></i></button>
+                            <div class="job-card-body">
+                                <h3 class="job-title">
+                                    <a asp-controller="Job" asp-action="Detail" asp-route-id="@job.Id">@job.Title</a>
+                                </h3>
+                                <p class="company-name">@job.CompanyName</p>
+                                <div class="job-info">
+                                    <span class="salary">
+                                        <i class="fas fa-dollar-sign me-1"></i>
+                                        @if (job.MinSalary.HasValue || job.MaxSalary.HasValue)
+                                        {
+                                            @($"{job.MinSalary?.ToString("N0") ?? "0"} - {job.MaxSalary?.ToString("N0") ?? "Thỏa thuận"}")
+                                        }
+                                        else
+                                        {
+                                            @:Thỏa thuận
+                                        }
+                                    </span>
+                                    <span class="location"><i class="fas fa-map-marker-alt me-1"></i>@(job.LocationName ?? "Toàn quốc")</span>
+                                </div>
+                                <div class="job-tags">
+                                    <span class="job-tag">@(string.IsNullOrWhiteSpace(job.JobType) ? "Toàn thời gian" : job.JobType)</span>
+                                </div>
                             </div>
-                        </div>
-                        <div class="job-card-body">
-                            <h3 class="job-title">
-                                <a href="#">Nhân Viên Kinh Doanh - Thu Nhập Hấp Dẫn</a>
-                            </h3>
-                            <p class="company-name">Công ty TNHH ABC</p>
-                            <div class="job-info">
-                                <span class="salary"><i class="fas fa-dollar-sign me-1"></i>15 - 25 triệu</span>
-                                <span class="location"><i class="fas fa-map-marker-alt me-1"></i>Hà Nội</span>
+                            <div class="job-card-footer">
+                                <span class="job-date"><i class="far fa-clock me-1"></i>Đăng ngày @((job.PublishDate ?? job.CreatedAt)?.ToString("dd/MM/yyyy") ?? "N/A")</span>
+                                <a asp-controller="Job" asp-action="Detail" asp-route-id="@job.Id" class="btn btn-sm btn-primary">Ứng tuyển ngay</a>
                             </div>
-                            <div class="job-tags">
-                                <span class="job-tag">Full-time</span>
-                                <span class="job-tag">Kinh nghiệm 2 năm</span>
-                            </div>
-                        </div>
-                        <div class="job-card-footer">
-                            <span class="job-date"><i class="far fa-clock me-1"></i>2 ngày trước</span>
-                            <a href="#" class="btn btn-sm btn-primary">Ứng tuyển ngay</a>
                         </div>
                     </div>
+                }
+            }
+            else
+            {
+                <div class="col-12">
+                    <div class="alert alert-light border">Hiện chưa có việc làm mới để hiển thị.</div>
                 </div>
             }
         </div>
@@ -157,18 +177,34 @@
         </div>
 
         <div class="row">
-            @for (int i = 0; i < 8; i++)
+            @if (Model.TopCompanies.Any())
             {
-                <div class="col-6 col-md-4 col-lg-3 mb-4">
-                    <div class="company-card">
-                        <div class="company-logo-wrapper">
-                            <i class="fas fa-building fa-3x text-primary"></i>
+                @foreach (var company in Model.TopCompanies)
+                {
+                    <div class="col-6 col-md-4 col-lg-3 mb-4">
+                        <div class="company-card">
+                            <div class="company-logo-wrapper">
+                                @if (!string.IsNullOrWhiteSpace(company.Logo))
+                                {
+                                    <img src="@company.Logo" alt="@company.Name" class="img-fluid" style="max-height:64px;object-fit:contain;" />
+                                }
+                                else
+                                {
+                                    <i class="fas fa-building fa-3x text-primary"></i>
+                                }
+                            </div>
+                            <h4 class="company-card-name">@company.Name</h4>
+                            <p class="company-jobs-count">
+                                <i class="fas fa-briefcase me-1"></i>@company.ActiveJobCount việc làm
+                            </p>
                         </div>
-                        <h4 class="company-card-name">Công ty ABC</h4>
-                        <p class="company-jobs-count">
-                            <i class="fas fa-briefcase me-1"></i>25 việc làm
-                        </p>
                     </div>
+                }
+            }
+            else
+            {
+                <div class="col-12">
+                    <div class="alert alert-light border">Hiện chưa có công ty nổi bật.</div>
                 </div>
             }
         </div>
