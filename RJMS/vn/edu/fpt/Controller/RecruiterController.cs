@@ -197,7 +197,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         }
 
         // ── Job Posts ─────────────────────────────────────────────────────────
-        public async Task<IActionResult> JobPostingList(string? status, string? keyword, int page = 1)
+        public async Task<IActionResult> JobPostingList(string? status, string? keyword, int? locationId, int page = 1)
         {
             if (RequireRecruiter() is { } redirect) return redirect;
 
@@ -206,12 +206,16 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
 
             var recruiter = await _context.Recruiters
                 .Include(r => r.RecruiterLocations)
+                .Include(r => r.Company)
+                    .ThenInclude(c => c.CompanyLocations)
+                    .ThenInclude(cl => cl.Location)
                 .FirstOrDefaultAsync(r => r.UserId == userId);
             if (recruiter == null) return NotFound("Không tìm thấy thông tin nhà tuyển dụng.");
 
             IQueryable<Job> query;
             if (IsEmployee())
             {
+                // Employee: only see jobs at their assigned locations
                 var assignedLocationIds = recruiter.RecruiterLocations
                     .Select(rl => rl.CompanyLocationId).ToList();
                 query = _context.Jobs
@@ -221,10 +225,28 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             }
             else
             {
-                query = _context.Jobs
-                    .Include(j => j.JobCategory)
-                    .Include(j => j.JobRecruiters)
-                    .Where(j => j.JobRecruiters.Any(jr => jr.RecruiterId == recruiter.Id));
+                // Recruiter: see all company jobs, can filter by location
+                if (recruiter.CompanyId.HasValue)
+                {
+                    query = _context.Jobs
+                        .Include(j => j.JobCategory)
+                        .Include(j => j.JobRecruiters)
+                        .Where(j => j.CompanyId == recruiter.CompanyId);
+
+                    // Apply location filter if provided
+                    if (locationId.HasValue)
+                    {
+                        query = query.Where(j => j.JobRecruiters.Any(jr => jr.CompanyLocation.Id == locationId));
+                    }
+                }
+                else
+                {
+                    // Fallback: show recruiter's own jobs if no company
+                    query = _context.Jobs
+                        .Include(j => j.JobCategory)
+                        .Include(j => j.JobRecruiters)
+                        .Where(j => j.JobRecruiters.Any(jr => jr.RecruiterId == recruiter.Id));
+                }
             }
 
             // Auto-update Scheduled to Active if time reached, and Active to Expired if expired
@@ -286,6 +308,16 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
 
             ViewBag.CurrentStatus = status;
             ViewBag.Keyword = keyword;
+            ViewBag.SelectedLocationId = locationId;
+            
+            // For Recruiter: provide location filter options
+            if (!IsEmployee() && recruiter.Company?.CompanyLocations != null)
+            {
+                ViewBag.Locations = recruiter.Company.CompanyLocations
+                    .Select(cl => new { Id = cl.Id, Name = cl.Location?.CityName })
+                    .ToList();
+            }
+            
             ViewData["Title"] = "Quản lý tin tuyển dụng";
 
             return View(jobs);
