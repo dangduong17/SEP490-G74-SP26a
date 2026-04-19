@@ -11,6 +11,9 @@ namespace RJMS.Vn.Edu.Fpt.Repository
 
         Task<SubscriptionPlanFormViewModel?> GetPlanForEditAsync(int id);
 
+        /// <summary>Get active plans grouped by base name (Basic/Pro/Enterprise) for display.</summary>
+        Task<List<SubscriptionPlanGroupDto>> GetGroupedPlansForDisplayAsync();
+
         /// <summary>Insert one plan per BillingCycle checkbox selected.</summary>
         Task<List<int>> CreatePlansForCyclesAsync(SubscriptionPlanFormViewModel model);
 

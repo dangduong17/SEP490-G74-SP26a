@@ -117,7 +117,9 @@ namespace RJMS.Vn.Edu.Fpt.Service
                 if (uploadFile.Length > 10 * 1024 * 1024)
                     return Fail("File không được vượt quá 10MB.");
 
-                var fileUrl = await _cloudinaryService.UploadRawAsync(uploadFile, "cv-uploads");
+                var fileUrl = ext == ".pdf"
+                    ? await _cloudinaryService.UploadPdfAsImageAsync(uploadFile, "cv-uploads")
+                    : await _cloudinaryService.UploadRawAsync(uploadFile, "cv-uploads");
                 if (string.IsNullOrEmpty(fileUrl))
                     return Fail("Upload file thất bại. Vui lòng thử lại.");
 
