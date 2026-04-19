@@ -43,16 +43,22 @@ namespace RJMS.Vn.Edu.Fpt.Repository
                 .Applications.Where(a => a.CandidateId == candidateId)
                 .Include(a => a.Job)
                 .ThenInclude(j => j.Company)
+                .Include(a => a.Cv)
                 .AsNoTracking()
                 .OrderByDescending(a => a.CreatedAt)
                 .Select(a => new JobApplicationDTO
                 {
                     Id = a.Id,
                     JobId = a.JobId,
+                    CvId = a.Cvid,
                     PositionTitle = a.Job.Title ?? string.Empty,
                     CustomTitle = a.Job.Title ?? string.Empty,
                     CompanyName = a.Job.Company != null ? a.Job.Company.Name : string.Empty,
                     CompanyLogo = a.Job.Company != null ? a.Job.Company.Logo : null,
+                    CvTitle = a.Cv != null ? a.Cv.Title : null,
+                    CvType = a.Cv != null ? a.Cv.CvType : null,
+                    CvFileUrl = a.Cv != null ? a.Cv.FileUrl : null,
+                    CvFileName = a.Cv != null ? a.Cv.FileName : null,
                     Status = a.Status ?? string.Empty,
                     AppliedAt = a.CreatedAt ?? DateTime.MinValue,
                 })
