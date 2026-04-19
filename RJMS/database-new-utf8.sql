@@ -1336,7 +1336,13 @@ WHERE cp.Id IS NULL
 GROUP BY tc.ConversationId, tc.EmployeeUserId;
 GO
 
+<<<<<<< Updated upstream
 
+=======
+<<<<<<< Updated upstream
+=======
+/* Saved jobs for candidates */
+>>>>>>> Stashed changes
 IF OBJECT_ID(N'dbo.SavedJobs', N'U') IS NULL
 BEGIN
 	CREATE TABLE [dbo].[SavedJobs](
@@ -1356,3 +1362,7 @@ BEGIN
 END
 GO
 
+<<<<<<< Updated upstream
+=======
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
