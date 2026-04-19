@@ -136,6 +136,19 @@
                     <option value="Inactive" selected="@(currentStatus == "Inactive")">Đã tạm dừng</option>
                 </select>
             </div>
+            @if (ViewBag.Locations != null)
+            {
+                <div class="filter-group">
+                    <label>Chi nhánh</label>
+                    <select name="locationId" class="form-control-custom" style="min-width: 150px;">
+                        <option value="">-- Tất cả chi nhánh --</option>
+                        @foreach (var loc in ViewBag.Locations)
+                        {
+                            <option value="@loc.Id" selected="@(ViewBag.SelectedLocationId == loc.Id)">@loc.Name</option>
+                        }
+                    </select>
+                </div>
+            }
             <div class="d-flex gap-2">
                 <button type="submit" class="btn-filter">Lọc tin</button>
                 <a asp-action="JobPostingList" class="btn-clear text-center">Xóa lọc</a>
