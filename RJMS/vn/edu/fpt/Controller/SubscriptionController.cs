@@ -15,11 +15,11 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             _paymentService = paymentService;
         }
 
-        // ── Subscription Plans Page for Recruiter (GET /Subscription or /Subscription/Index) ──
+        // ── Subscription Plans Page for all authenticated roles (GET /Subscription or /Subscription/Index) ──
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-            // Check if user is logged in and is recruiter
+            // Check if user is logged in
             var userRole = HttpContext.Request.Cookies["UserRole"];
             
             if (string.IsNullOrWhiteSpace(userRole))
@@ -27,25 +27,21 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                 TempData["ErrorToast"] = "Vui lòng đăng nhập để xem gói dịch vụ";
                 return RedirectToAction("Login", "Auth");
             }
-
-            if (userRole != "Recruiter")
-            {
-                TempData["ErrorToast"] = "Tính năng này chỉ dành cho nhà tuyển dụng";
-                return RedirectToAction("Index", "Home");
-            }
+            ViewBag.UserRole = userRole;
+            ViewBag.CanSubscribe = userRole == "Recruiter";
             
             var userIdStr = HttpContext.Request.Cookies["UserId"];
             if (int.TryParse(userIdStr, out int userId))
             {
                 var activeSubscription = await _paymentService.GetActiveSubscriptionByUserIdAsync(userId);
-                ViewBag.CurrentPlanId = activeSubscription?.PlanId;
+                ViewBag.CurrentPlanId = activeSubscription?.PlanOptionId ?? activeSubscription?.PlanId;
             }
 
-            // Get active subscription plans with features
-            var plans = await _paymentService.GetActiveSubscriptionPlansAsync();
+            // Get active subscription plans grouped by base name (Monthly + Yearly variants)
+            var groupedPlans = await _subscriptionService.GetGroupedPlansForDisplayAsync();
             
             ViewData["Title"] = "Chọn gói dịch vụ";
-            return View(plans);
+            return View(groupedPlans);
         }
 
         // ── Auth guard ────────────────────────────────────────────────────────
@@ -89,6 +85,23 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             if (RequireManagerRole() is { } redirect) return redirect;
             ViewData["Title"] = "Tạo gói đăng ký mới";
 
+            var selectedCycles = (model.BillingCycles ?? new List<string>())
+                .Where(c => c == "Monthly" || c == "Yearly")
+                .Distinct()
+                .ToList();
+
+            model.BillingCycles = selectedCycles;
+
+            if (selectedCycles.Count == 0)
+            {
+                ModelState.AddModelError(nameof(model.BillingCycles), "Vui lòng chọn ít nhất một chu kỳ: Hàng tháng hoặc Hàng năm.");
+            }
+
+            if (selectedCycles.Contains("Yearly") && (!model.YearlyPrice.HasValue || model.YearlyPrice.Value < 0))
+            {
+                ModelState.AddModelError(nameof(model.YearlyPrice), "Vui lòng nhập giá năm hợp lệ khi chọn chu kỳ Hàng năm.");
+            }
+
             if (!ModelState.IsValid)
                 return View(model);
 
@@ -120,6 +133,11 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         {
             if (RequireManagerRole() is { } redirect) return redirect;
             ViewData["Title"] = "Chỉnh sửa gói đăng ký";
+
+            if (model.EnableYearly && (!model.YearlyPrice.HasValue || model.YearlyPrice.Value < 0))
+            {
+                ModelState.AddModelError(nameof(model.YearlyPrice), "Vui lòng nhập giá năm hợp lệ khi bật gói năm.");
+            }
 
             if (!ModelState.IsValid)
                 return View(model);

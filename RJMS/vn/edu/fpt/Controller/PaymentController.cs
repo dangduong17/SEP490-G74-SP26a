@@ -100,7 +100,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             try
             {
                 // Process callback from VNPay
-                var (success, message, transactionId) = _vnPayService.ProcessPaymentCallback(Request.Query);
+                var (success, message, transactionId) = _vnPayService.ProcessPaymentCallback(Request.Query, Request.QueryString.Value);
 
                 // Extract paymentId from vnp_TxnRef first (needed for both success and failure)
                 var txnRef = Request.Query["vnp_TxnRef"].ToString();

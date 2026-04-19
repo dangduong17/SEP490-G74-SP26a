@@ -4,6 +4,7 @@ using RJMS.vn.edu.fpt.Models;
 using RJMS.vn.edu.fpt.Models.DTOs;
 using System.Text.Json;
 using RJMS.Vn.Edu.Fpt.Service;
+using System.Net.Http;
 
 namespace RJMS.Vn.Edu.Fpt.Controllers
 {
@@ -11,11 +12,16 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
     {
         private readonly FindingJobsDbContext _context;
         private readonly ISubscriptionService _subscriptionService;
+        private readonly ICloudinaryService _cloudinaryService;
 
-        public RecruiterController(FindingJobsDbContext context, ISubscriptionService subscriptionService)
+        public RecruiterController(
+            FindingJobsDbContext context,
+            ISubscriptionService subscriptionService,
+            ICloudinaryService cloudinaryService)
         {
             _context = context;
             _subscriptionService = subscriptionService;
+            _cloudinaryService = cloudinaryService;
         }
 
         // ── Auth guard ────────────────────────────────────────────────────────────
@@ -64,35 +70,102 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             var model = new RecruiterDashboardViewModel
             {
                 RecruiterName = userName,
+                CompanyLocations = new List<RecruiterCompanyLocationViewModel>(),
+                RecentApplications = new List<RecentApplicationItem>(),
+                RecentJobPosts = new List<RecentJobPostItem>()
             };
 
             if (userId > 0)
             {
                 var recruiter = await _context.Recruiters
+                    .Include(r => r.Company)
+                        .ThenInclude(c => c.CompanyLocations)
+                        .ThenInclude(cl => cl.Location)
                     .Include(r => r.RecruiterLocations)
+                        .ThenInclude(rl => rl.CompanyLocation)
+                            .ThenInclude(cl => cl.Location)
                     .FirstOrDefaultAsync(r => r.UserId == userId);
 
                 if (recruiter != null)
                 {
-                    // Employee: chỉ thấy Job/Application thuộc địa chỉ được gán
+                    model.CompanyName = recruiter.Company?.Name ?? string.Empty;
+
+                    var assignedLocationIds = recruiter.RecruiterLocations
+                        .Select(rl => rl.CompanyLocationId)
+                        .Distinct()
+                        .ToList();
+
                     IQueryable<Job> jobQuery;
+                    IQueryable<CompanyLocation> branchQuery = _context.CompanyLocations
+                        .Include(cl => cl.Location)
+                        .Include(cl => cl.RecruiterLocations)
+                        .AsQueryable();
+
                     if (IsEmployee())
                     {
-                        var assignedLocationIds = recruiter.RecruiterLocations
-                            .Select(rl => rl.CompanyLocationId).ToList();
+                        branchQuery = branchQuery.Where(cl => assignedLocationIds.Contains(cl.Id));
                         jobQuery = _context.Jobs
                             .Where(j => j.JobRecruiters.Any(jr => assignedLocationIds.Contains(jr.CompanyLocationId)));
                     }
+                    else if (recruiter.CompanyId.HasValue)
+                    {
+                        branchQuery = branchQuery.Where(cl => cl.CompanyId == recruiter.CompanyId.Value);
+                        jobQuery = _context.Jobs
+                            .Where(j => j.CompanyId == recruiter.CompanyId.Value);
+                    }
                     else
                     {
+                        branchQuery = branchQuery.Where(cl => cl.RecruiterLocations.Any(rl => rl.RecruiterId == recruiter.Id));
                         jobQuery = _context.Jobs
                             .Where(j => j.JobRecruiters.Any(jr => jr.RecruiterId == recruiter.Id));
                     }
 
+                    var branches = await branchQuery
+                        .OrderByDescending(cl => cl.IsPrimary)
+                        .ThenBy(cl => cl.CreatedAt)
+                        .ToListAsync();
+
+                    var scopedJobLocationIds = branches.Select(cl => cl.Id).ToList();
+                    var jobCounts = await jobQuery
+                        .SelectMany(j => j.JobRecruiters
+                            .Where(jr => scopedJobLocationIds.Contains(jr.CompanyLocationId))
+                            .Select(jr => new { jr.CompanyLocationId, JobId = j.Id }))
+                        .GroupBy(jr => jr.CompanyLocationId)
+                        .Select(g => new
+                        {
+                            CompanyLocationId = g.Key,
+                            JobCount = g.Select(x => x.JobId).Distinct().Count()
+                        })
+                        .ToDictionaryAsync(x => x.CompanyLocationId, x => x.JobCount);
+
+                    model.CompanyLocations = branches.Select(cl => new RecruiterCompanyLocationViewModel
+                    {
+                        Id = cl.Id,
+                        LocationId = cl.LocationId,
+                        AddressLabel = cl.AddressLabel,
+                        IsPrimary = cl.IsPrimary,
+                        CityName = cl.Location?.CityName ?? string.Empty,
+                        WardName = cl.Location?.WardName,
+                        Address = string.Join(", ", new[]
+                        {
+                            cl.Location?.DetailAddress,
+                            cl.Location?.Address,
+                            cl.Location?.WardName,
+                            cl.Location?.CityName
+                        }.Where(s => !string.IsNullOrWhiteSpace(s))),
+                        EmployeeCount = cl.RecruiterLocations.Count,
+                        JobCount = jobCounts.TryGetValue(cl.Id, out var count) ? count : 0,
+                        CreatedAt = cl.CreatedAt
+                    }).ToList();
+
                     model.ActiveJobPosts = await jobQuery.CountAsync(j => j.Status == "Active");
-                    model.TotalApplications = await jobQuery.SumAsync(j => j.ApplicationCount ?? 0);
+                    model.TotalApplications = await jobQuery
+                        .Select(j => j.ApplicationCount ?? 0)
+                        .SumAsync();
                     model.InterviewsScheduled = 0;
-                    model.FollowerCount = await _context.CompanyFollowers.CountAsync(f => f.CompanyId == recruiter.CompanyId);
+                    model.FollowerCount = recruiter.CompanyId.HasValue
+                        ? await _context.CompanyFollowers.CountAsync(f => f.CompanyId == recruiter.CompanyId.Value)
+                        : 0;
                     
                     model.RecentJobPosts = await jobQuery
                         .OrderByDescending(j => j.CreatedAt)
@@ -1042,7 +1115,79 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                 return RedirectToAction("Applications");
             }
 
-            if (fileUrl.StartsWith("http")) return Redirect(fileUrl);
+            if (fileUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+            {
+                // Some Cloudinary PDF/raw assets return 401 when opened directly in browser.
+                // Proxy through server and use signed URL when possible.
+                var resolvedUrl = _cloudinaryService.BuildSignedRawUrl(fileUrl) ?? fileUrl;
+
+                using var httpClient = new HttpClient();
+                httpClient.Timeout = TimeSpan.FromSeconds(20);
+
+                try
+                {
+                    var response = await httpClient.GetAsync(resolvedUrl);
+                    if (!response.IsSuccessStatusCode && !string.Equals(resolvedUrl, fileUrl, StringComparison.OrdinalIgnoreCase))
+                    {
+                        response = await httpClient.GetAsync(fileUrl);
+                    }
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var bytes = await response.Content.ReadAsByteArrayAsync();
+                        if (bytes.Length > 0)
+                        {
+                            var contentType = response.Content.Headers.ContentType?.MediaType;
+                            if (string.IsNullOrWhiteSpace(contentType))
+                            {
+                                contentType = "application/pdf";
+                            }
+                            return File(bytes, contentType);
+                        }
+                    }
+
+                    if (response.Headers.TryGetValues("x-cld-error", out var cldErrors))
+                    {
+                        var cldError = string.Join(" ", cldErrors);
+                        if (cldError.Contains("customer_untrusted", StringComparison.OrdinalIgnoreCase)
+                            || cldError.Contains("show_original_customer_untrusted", StringComparison.OrdinalIgnoreCase)
+                            || cldError.Contains("PDF files can't be shared externally", StringComparison.OrdinalIgnoreCase))
+                        {
+                            var previewUrl = _cloudinaryService.BuildPdfFirstPagePreviewUrl(fileUrl);
+                            if (!string.IsNullOrWhiteSpace(previewUrl))
+                            {
+                                TempData["WarningToast"] = "Tài khoản Cloudinary đang chặn chia sẻ file PDF gốc. Hệ thống hiển thị bản xem trước trang đầu.";
+                                return Redirect(previewUrl);
+                            }
+
+                            TempData["ErrorToast"] = "Cloudinary đang chặn public delivery file PDF (customer untrusted). Hãy bật 'Allow delivery of PDF and ZIP files' trong Cloudinary Security settings.";
+                            return RedirectToAction("Applications");
+                        }
+                    }
+
+                    var errorBody = await response.Content.ReadAsStringAsync();
+                    if (errorBody.Contains("show_original_customer_untrusted", StringComparison.OrdinalIgnoreCase)
+                        || errorBody.Contains("Customer is marked as untrusted", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var previewUrl = _cloudinaryService.BuildPdfFirstPagePreviewUrl(fileUrl);
+                        if (!string.IsNullOrWhiteSpace(previewUrl))
+                        {
+                            TempData["WarningToast"] = "Tài khoản Cloudinary đang chặn chia sẻ file PDF gốc. Hệ thống hiển thị bản xem trước trang đầu.";
+                            return Redirect(previewUrl);
+                        }
+
+                        TempData["ErrorToast"] = "Cloudinary đang chặn public delivery file PDF (customer untrusted). Hãy bật 'Allow delivery of PDF and ZIP files' trong Cloudinary Security settings.";
+                        return RedirectToAction("Applications");
+                    }
+                }
+                catch
+                {
+                    // Fall through to redirect fallback below.
+                }
+
+                TempData["ErrorToast"] = "Không thể tải CV từ kho lưu trữ. Vui lòng thử lại sau.";
+                return RedirectToAction("Applications");
+            }
 
             return File(fileUrl, "application/pdf");
         }
