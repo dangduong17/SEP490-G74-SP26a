@@ -50,6 +50,8 @@ public partial class FindingJobsDbContext : DbContext
 
     public virtual DbSet<SubscriptionPlan> SubscriptionPlans { get; set; }
 
+    public virtual DbSet<SubscriptionPlanOption> SubscriptionPlanOptions { get; set; }
+
     public virtual DbSet<SubscriptionPeriod> SubscriptionPeriods { get; set; }
 
     public virtual DbSet<SubscriptionUsage> SubscriptionUsages { get; set; }
@@ -60,6 +62,7 @@ public partial class FindingJobsDbContext : DbContext
 
     public virtual DbSet<UserRole> UserRoles { get; set; }
     public virtual DbSet<CompanyFollower> CompanyFollowers { get; set; }
+    public virtual DbSet<SavedJob> SavedJobs { get; set; }
     public virtual DbSet<AppNotification> Notifications { get; set; }
     public virtual DbSet<NotificationReference> NotificationReferences { get; set; }
     
@@ -343,6 +346,9 @@ public partial class FindingJobsDbContext : DbContext
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.Status).HasMaxLength(50);
+            entity.Property(e => e.SubscribedPrice).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.SubscribedBillingCycle).HasMaxLength(20);
+            entity.Property(e => e.SubscribedPlanName).HasMaxLength(200);
 
             entity.HasOne(d => d.Plan).WithMany(p => p.Subscriptions)
                 .HasForeignKey(d => d.PlanId)
@@ -358,6 +364,11 @@ public partial class FindingJobsDbContext : DbContext
                 .HasForeignKey(d => d.CompanyId)
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("FK_Subscriptions_Companies");
+
+            entity.HasOne(d => d.PlanOption).WithMany(p => p.Subscriptions)
+                .HasForeignKey(d => d.PlanOptionId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("FK_Subscriptions_PlanOptions");
         });
 
         modelBuilder.Entity<SubscriptionPlan>(entity =>
@@ -366,6 +377,25 @@ public partial class FindingJobsDbContext : DbContext
 
             entity.Property(e => e.Name).HasMaxLength(100);
             entity.Property(e => e.Price).HasColumnType("decimal(18, 2)");
+        });
+
+        modelBuilder.Entity<SubscriptionPlanOption>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK_SubscriptionPlanOptions");
+
+            entity.HasIndex(e => new { e.PlanId, e.BillingCycle })
+                .IsUnique()
+                .HasDatabaseName("UX_SubscriptionPlanOptions_Plan_Cycle");
+
+            entity.Property(e => e.BillingCycle).HasMaxLength(20);
+            entity.Property(e => e.Price).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+
+            entity.HasOne(d => d.Plan).WithMany(p => p.PlanOptions)
+                .HasForeignKey(d => d.PlanId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_SubscriptionPlanOptions_SubscriptionPlans");
         });
 
         modelBuilder.Entity<SubscriptionUsage>(entity =>

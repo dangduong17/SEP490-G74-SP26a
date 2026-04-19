@@ -16,6 +16,7 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
         public int? ProvinceCode { get; set; }
         public int? WardCode { get; set; }
         public int EmployeeCount { get; set; }
+        public int JobCount { get; set; }
         public DateTime CreatedAt { get; set; }
     }
 

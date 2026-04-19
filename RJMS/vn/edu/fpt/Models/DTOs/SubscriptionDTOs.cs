@@ -39,6 +39,39 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
         public bool IsActive { get; set; }
         public DateTime? CreatedAt { get; set; }
         public int RecruiterCount { get; set; }
+
+        // Display helpers
+        public string BillingCycleDisplay
+        {
+            get => BillingCycle == "Yearly" ? "Hàng năm" : "Hàng tháng";
+        }
+
+        public string PriceDisplay
+        {
+            get => $"{Price:N0}₫ / {(BillingCycle == "Yearly" ? "năm" : "tháng")}";
+        }
+
+        public decimal? YearlyPrice
+        {
+            get
+            {
+                if (BillingCycle == "Yearly") return Price;
+                if (BillingCycle == "Monthly") return Price * 12;
+                return null;
+            }
+        }
+
+        public int? DiscountPercentage
+        {
+            get
+            {
+                if (BillingCycle != "Yearly") return null;
+                // Calculate saving if compared to monthly*12
+                var monthlyPrice = YearlyPrice.HasValue ? YearlyPrice.Value / 12 : Price;
+                if (monthlyPrice == 0) return 0;
+                return (int)((monthlyPrice * 12 - Price) / (monthlyPrice * 12) * 100);
+            }
+        }
     }
 
     // ── Create / Edit form ──────────────────────────────────────────────────────
@@ -57,6 +90,11 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
         [Range(0, double.MaxValue, ErrorMessage = "Giá phải >= 0")]
         public decimal Price { get; set; }
 
+        [Range(0, double.MaxValue, ErrorMessage = "Giá năm phải >= 0")]
+        public decimal? YearlyPrice { get; set; }
+
+        public bool EnableYearly { get; set; }
+
         public int? JobLimit { get; set; }      // null = không giới hạn
         public int? CvAiLimit { get; set; }
 
@@ -73,8 +111,6 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
         // Used only for single plan edit
         [MaxLength(20)]
         public string? BillingCycle { get; set; } = "Monthly";
-
-        public int Version { get; set; } = 1;
 
         public string? Description { get; set; }
         public bool IsActive { get; set; } = true;
@@ -97,6 +133,17 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
         public DateTime? CreatedAt { get; set; }
         public int RecruiterCount { get; set; }
         public List<ActiveSubscriberDto> RecentSubscribers { get; set; } = new();
+
+        // Display helpers
+        public string BillingCycleDisplay
+        {
+            get => BillingCycle == "Yearly" ? "Hàng năm" : "Hàng tháng";
+        }
+
+        public string PriceDisplay
+        {
+            get => $"{Price:N0}₫ / {(BillingCycle == "Yearly" ? "năm" : "tháng")}";
+        }
     }
 
     public class ActiveSubscriberDto
@@ -135,6 +182,45 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
     {
         public string FeatureCode { get; set; } = string.Empty;
         public int UsedCount { get; set; }
+        public int? FeatureLimit { get; set; }
+    }
+
+    // ── For UI display with grouped plans by billing cycle ──
+    public class SubscriptionPlanGroupDto
+    {
+        public string BaseName { get; set; } = string.Empty;  // Basic | Pro | Enterprise (without cycle suffix)
+        public string PlanType { get; set; } = string.Empty;
+        public SubscriptionPlanDisplayDto? MonthlyPlan { get; set; }
+        public SubscriptionPlanDisplayDto? YearlyPlan { get; set; }
+
+        public bool HasYearly => YearlyPlan != null;
+        public bool HasMonthly => MonthlyPlan != null;
+    }
+
+    public class SubscriptionPlanDisplayDto
+    {
+        public int OptionId { get; set; }
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string PlanType { get; set; } = string.Empty;
+        public decimal Price { get; set; }
+        public int? JobLimit { get; set; }
+        public int? CvAiLimit { get; set; }
+        public int DurationDays { get; set; }
+        public string BillingCycle { get; set; } = "Monthly";
+        public bool IsActive { get; set; }
+        public DateTime? CreatedAt { get; set; }
+        public List<PlanFeatureDto> Features { get; set; } = new();
+
+        public string BillingCycleDisplay => BillingCycle == "Yearly" ? "Hàng năm" : "Hàng tháng";
+
+        public string PriceDisplay => $"{Price:N0}₫ / {(BillingCycle == "Yearly" ? "năm" : "tháng")}";
+        public int DiscountPercentage { get; set; } = 0;
+    }
+
+    public class PlanFeatureDto
+    {
+        public string FeatureCode { get; set; } = string.Empty;
         public int? FeatureLimit { get; set; }
     }
 }
