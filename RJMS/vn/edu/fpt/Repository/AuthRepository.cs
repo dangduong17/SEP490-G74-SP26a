@@ -130,6 +130,7 @@ namespace RJMS.Vn.Edu.Fpt.Repository
 
                 // Find the free plan
                 var freePlan = await _context.SubscriptionPlans
+                    .Include(sp => sp.PlanOptions)
                     .FirstOrDefaultAsync(sp => sp.Name == "Gói Miễn Phí" && sp.IsActive == true);
 
                 if (freePlan == null)
@@ -138,8 +139,13 @@ namespace RJMS.Vn.Edu.Fpt.Repository
                 }
 
                 // Create subscription
+                var freeOption = freePlan.PlanOptions
+                    .Where(o => o.IsActive == true)
+                    .OrderBy(o => o.BillingCycle == "Monthly" ? 0 : 1)
+                    .FirstOrDefault();
+
                 var startDate = DateTime.UtcNow;
-                var endDate = startDate.AddDays(freePlan.DurationDays ?? 30);
+                var endDate = startDate.AddDays(freeOption?.DurationDays ?? freePlan.DurationDays ?? 30);
 
                 var companyId = await _context.Recruiters
                     .Where(r => r.UserId == user.Id && r.CompanyId != null)
@@ -151,11 +157,16 @@ namespace RJMS.Vn.Edu.Fpt.Repository
                     UserId = user.Id,
                     CompanyId = companyId,
                     PlanId = freePlan.Id,
+                    PlanOptionId = freeOption?.Id,
                     StartDate = startDate,
                     EndDate = endDate,
                     Status = "Active",
                     CreatedAt = startDate,
-                    AutoRenew = false
+                    AutoRenew = false,
+                    SubscribedPrice = freeOption?.Price ?? 0,
+                    SubscribedBillingCycle = freeOption?.BillingCycle ?? "Monthly",
+                    SubscribedDurationDays = freeOption?.DurationDays ?? 30,
+                    SubscribedPlanName = freePlan.Name
                 };
 
                 _context.Subscriptions.Add(subscription);

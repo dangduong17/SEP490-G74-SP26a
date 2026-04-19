@@ -18,7 +18,12 @@ namespace RJMS.Vn.Edu.Fpt.Repository
         public async Task<SubscriptionListViewModel> GetPlanListAsync(
             string? keyword, string? status, string? type, int page, int pageSize)
         {
-            var query = _context.SubscriptionPlans.AsQueryable();
+            var query = _context.SubscriptionPlans
+                .Include(p => p.PlanOptions)
+                .AsQueryable();
+
+            // Exclude archived plans
+            query = query.Where(p => p.IsArchived == null || p.IsArchived == false);
 
             // Filter by keyword
             if (!string.IsNullOrWhiteSpace(keyword))
@@ -30,7 +35,7 @@ namespace RJMS.Vn.Edu.Fpt.Repository
             if (!string.IsNullOrEmpty(status))
             {
                 bool isActive = status.ToLower() == "active";
-                query = query.Where(p => p.IsActive == isActive);
+                query = query.Where(p => (p.IsActive ?? false) == isActive);
             }
 
             // Filter by type (based on Name or Description)
@@ -57,12 +62,17 @@ namespace RJMS.Vn.Edu.Fpt.Repository
                 Code = $"SUB-{p.Id:D3}",
                 Name = p.Name ?? "",
                 PlanType = ExtractPlanType(p.Name, p.Description),
-                Price = p.Price ?? 0,
+                Price = p.PlanOptions.FirstOrDefault(o => o.BillingCycle == "Monthly")?.Price ?? p.Price ?? 0,
                 JobLimit = p.PlanFeatures.FirstOrDefault(f => f.FeatureCode == "JOB_POSTING")?.FeatureLimit,
                 CvAiLimit = p.PlanFeatures.FirstOrDefault(f => f.FeatureCode == "CV_AI_FILTER")?.FeatureLimit,
-                DurationDays = p.DurationDays ?? 30,
-                BillingCycle = p.BillingCycle,
-                Version = p.Version,
+                DurationDays = p.PlanOptions.FirstOrDefault(o => o.BillingCycle == "Monthly")?.DurationDays ?? 30,
+                BillingCycle = p.PlanOptions.Count switch
+                {
+                    0 => "Monthly",
+                    1 => p.PlanOptions.First().BillingCycle,
+                    _ => "Flexible"
+                },
+                Version = null,
                 IsActive = p.IsActive ?? false,
                 CreatedAt = p.CreatedAt,
                 RecruiterCount = p.Subscriptions.Count(s => s.Status == "Active")
@@ -71,8 +81,12 @@ namespace RJMS.Vn.Edu.Fpt.Repository
             return new SubscriptionListViewModel
             {
                 Plans = planDtos,
-                TotalPlans = await _context.SubscriptionPlans.CountAsync(),
-                ActivePlans = await _context.SubscriptionPlans.CountAsync(p => p.IsActive == true),
+                TotalPlans = await _context.SubscriptionPlans
+                    .Where(p => p.IsArchived == null || p.IsArchived == false)
+                    .CountAsync(),
+                ActivePlans = await _context.SubscriptionPlans
+                    .Where(p => p.IsActive == true && (p.IsArchived == null || p.IsArchived == false))
+                    .CountAsync(),
                 RecruitersUsing = await _context.Subscriptions
                     .Where(s => s.Status == "Active")
                     .Select(s => s.UserId)
@@ -90,6 +104,7 @@ namespace RJMS.Vn.Edu.Fpt.Repository
         public async Task<SubscriptionPlanDetailDto?> GetPlanDetailAsync(int id)
         {
             var plan = await _context.SubscriptionPlans
+                .Include(p => p.PlanOptions)
                 .Include(p => p.Subscriptions)
                     .ThenInclude(s => s.User)
                         .ThenInclude(u => u.Recruiters)
@@ -116,12 +131,17 @@ namespace RJMS.Vn.Edu.Fpt.Repository
                 Id = plan.Id,
                 Name = plan.Name ?? "",
                 PlanType = ExtractPlanType(plan.Name, plan.Description),
-                Price = plan.Price ?? 0,
+                Price = plan.PlanOptions.FirstOrDefault(o => o.BillingCycle == "Monthly")?.Price ?? plan.Price ?? 0,
                 JobLimit = plan.PlanFeatures.FirstOrDefault(f => f.FeatureCode == "JOB_POSTING")?.FeatureLimit,
                 CvAiLimit = plan.PlanFeatures.FirstOrDefault(f => f.FeatureCode == "CV_AI_FILTER")?.FeatureLimit,
-                DurationDays = plan.DurationDays ?? 30,
-                BillingCycle = plan.BillingCycle,
-                Version = plan.Version,
+                DurationDays = plan.PlanOptions.FirstOrDefault(o => o.BillingCycle == "Monthly")?.DurationDays ?? 30,
+                BillingCycle = plan.PlanOptions.Count switch
+                {
+                    0 => "Monthly",
+                    1 => plan.PlanOptions.First().BillingCycle,
+                    _ => "Flexible"
+                },
+                Version = null,
                 Description = plan.Description,
                 IsActive = plan.IsActive ?? false,
                 CreatedAt = plan.CreatedAt,
@@ -130,25 +150,120 @@ namespace RJMS.Vn.Edu.Fpt.Repository
             };
         }
 
+        public async Task<List<SubscriptionPlanGroupDto>> GetGroupedPlansForDisplayAsync()
+        {
+            var activePlans = await _context.SubscriptionPlans
+                .Where(p => p.IsActive == true && (p.IsArchived == null || p.IsArchived == false))
+                .Include(p => p.PlanOptions)
+                .Include(p => p.PlanFeatures)
+                .OrderBy(p => p.Name)
+                .ToListAsync();
+
+            var groups = new Dictionary<string, SubscriptionPlanGroupDto>();
+
+            foreach (var plan in activePlans)
+            {
+                var baseName = ExtractBasePlanName(plan.Name);
+                if (!groups.ContainsKey(baseName))
+                {
+                    groups[baseName] = new SubscriptionPlanGroupDto
+                    {
+                        BaseName = baseName,
+                        PlanType = ExtractPlanType(plan.Name, plan.Description)
+                    };
+                }
+
+                var monthlyOption = plan.PlanOptions.FirstOrDefault(o => o.BillingCycle == "Monthly" && (o.IsActive ?? true));
+                var yearlyOption = plan.PlanOptions.FirstOrDefault(o => o.BillingCycle == "Yearly" && (o.IsActive ?? true));
+
+                if (monthlyOption != null)
+                {
+                    groups[baseName].MonthlyPlan = new SubscriptionPlanDisplayDto
+                    {
+                        OptionId = monthlyOption.Id,
+                        Id = plan.Id,
+                        Name = plan.Name ?? "",
+                        PlanType = ExtractPlanType(plan.Name, plan.Description),
+                        Price = monthlyOption.Price ?? 0,
+                        JobLimit = plan.PlanFeatures.FirstOrDefault(f => f.FeatureCode == "JOB_POSTING")?.FeatureLimit,
+                        CvAiLimit = plan.PlanFeatures.FirstOrDefault(f => f.FeatureCode == "CV_AI_FILTER")?.FeatureLimit,
+                        DurationDays = monthlyOption.DurationDays ?? 30,
+                        BillingCycle = "Monthly",
+                        IsActive = (plan.IsActive ?? false) && (monthlyOption.IsActive ?? true),
+                        CreatedAt = monthlyOption.CreatedAt ?? plan.CreatedAt,
+                        Features = plan.PlanFeatures.Select(f => new PlanFeatureDto
+                        {
+                            FeatureCode = f.FeatureCode,
+                            FeatureLimit = f.FeatureLimit
+                        }).ToList()
+                    };
+                }
+
+                if (yearlyOption != null)
+                {
+                    var yearlyDto = new SubscriptionPlanDisplayDto
+                    {
+                        OptionId = yearlyOption.Id,
+                        Id = plan.Id,
+                        Name = plan.Name ?? "",
+                        PlanType = ExtractPlanType(plan.Name, plan.Description),
+                        Price = yearlyOption.Price ?? 0,
+                        JobLimit = plan.PlanFeatures.FirstOrDefault(f => f.FeatureCode == "JOB_POSTING")?.FeatureLimit,
+                        CvAiLimit = plan.PlanFeatures.FirstOrDefault(f => f.FeatureCode == "CV_AI_FILTER")?.FeatureLimit,
+                        DurationDays = yearlyOption.DurationDays ?? 365,
+                        BillingCycle = "Yearly",
+                        IsActive = (plan.IsActive ?? false) && (yearlyOption.IsActive ?? true),
+                        CreatedAt = yearlyOption.CreatedAt ?? plan.CreatedAt,
+                        Features = plan.PlanFeatures.Select(f => new PlanFeatureDto
+                        {
+                            FeatureCode = f.FeatureCode,
+                            FeatureLimit = f.FeatureLimit
+                        }).ToList()
+                    };
+
+                    if (groups[baseName].MonthlyPlan != null)
+                    {
+                        var monthlyTotal = groups[baseName].MonthlyPlan.Price * 12;
+                        if (monthlyTotal > 0)
+                        {
+                            var discount = (int)((monthlyTotal - yearlyDto.Price) / monthlyTotal * 100);
+                            yearlyDto.DiscountPercentage = Math.Max(0, discount);
+                        }
+                    }
+
+                    groups[baseName].YearlyPlan = yearlyDto;
+                }
+            }
+
+            return groups.Values.ToList();
+        }
+
         public async Task<SubscriptionPlanFormViewModel?> GetPlanForEditAsync(int id)
         {
             var plan = await _context.SubscriptionPlans
+                .Include(p => p.PlanOptions)
                 .Include(p => p.PlanFeatures)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (plan == null) return null;
 
+            // Strip cycle suffix from plan name for display in edit form
+            var baseName = ExtractBasePlanName(plan.Name ?? "");
+            var monthlyOption = plan.PlanOptions.FirstOrDefault(o => o.BillingCycle == "Monthly");
+            var yearlyOption = plan.PlanOptions.FirstOrDefault(o => o.BillingCycle == "Yearly");
+
             return new SubscriptionPlanFormViewModel
             {
                 Id = plan.Id,
-                Name = plan.Name ?? "",
+                Name = baseName,  // Stripped of "(Hàng tháng)" or "(Hàng năm)"
                 PlanType = ExtractPlanType(plan.Name, plan.Description),
-                Price = plan.Price ?? 0,
+                Price = monthlyOption?.Price ?? plan.Price ?? 0,
+                YearlyPrice = yearlyOption?.Price,
+                EnableYearly = yearlyOption != null && (yearlyOption.IsActive ?? false),
                 JobLimit = plan.PlanFeatures.FirstOrDefault(f => f.FeatureCode == "JOB_POSTING")?.FeatureLimit,
                 CvAiLimit = plan.PlanFeatures.FirstOrDefault(f => f.FeatureCode == "CV_AI_FILTER")?.FeatureLimit,
-                DurationDays = plan.DurationDays ?? 30,
-                BillingCycle = plan.BillingCycle ?? "Monthly",
-                Version = plan.Version ?? 1,
+                DurationDays = monthlyOption?.DurationDays ?? plan.DurationDays ?? 30,
+                BillingCycle = "Monthly",
                 Description = plan.Description,
                 IsActive = plan.IsActive ?? false
             };
@@ -156,62 +271,69 @@ namespace RJMS.Vn.Edu.Fpt.Repository
 
         public async Task<int> CreatePlanAsync(SubscriptionPlanFormViewModel model)
         {
-            var plan = await CreateOnePlanAsync(model, model.BillingCycle ?? "Monthly");
-            return plan.Id;
+            var createdOptions = await CreatePlansForCyclesAsync(model);
+            return createdOptions.FirstOrDefault();
         }
 
         public async Task<List<int>> CreatePlansForCyclesAsync(SubscriptionPlanFormViewModel model)
         {
-            var cycles = model.BillingCycles
-                ?? new List<string> { model.BillingCycle ?? "Monthly" };
+            var cycles = (model.BillingCycles
+                ?? new List<string> { model.BillingCycle ?? "Monthly" })
+                .Where(c => c == "Monthly" || c == "Yearly")
+                .Distinct()
+                .ToList();
+
             if (!cycles.Any()) cycles = new List<string> { "Monthly" };
 
-            var ids = new List<int>();
-            foreach (var cycle in cycles.Distinct())
+            if (cycles.Contains("Yearly") && !model.YearlyPrice.HasValue)
             {
-                var plan = await CreateOnePlanAsync(model, cycle);
-                ids.Add(plan.Id);
-            }
-            return ids;
-        }
-
-        private async Task<SubscriptionPlan> CreateOnePlanAsync(SubscriptionPlanFormViewModel model, string cycle)
-        {
-            var planName = model.Name;
-            var duration = model.DurationDays;
-
-            if (cycle == "Yearly")
-            {
-                planName += " (Hàng năm)";
-                if (duration <= 31) duration = 365; // Auto-adjust if it looks like a monthly duration
-            }
-            else if (cycle == "Monthly")
-            {
-                planName += " (Hàng tháng)";
-                if (duration == 0 || duration > 365) duration = 30; 
+                throw new InvalidOperationException("Thiếu giá năm cho option Hàng năm.");
             }
 
-            var plan = new SubscriptionPlan
+            var basePlan = new SubscriptionPlan
             {
-                Name = planName,
+                Name = model.Name?.Trim(),
                 Price = model.Price,
-                DurationDays = duration,
-                BillingCycle = cycle,
-                Version = model.Version,
                 Description = model.Description ?? BuildDescription(model),
                 IsActive = model.IsActive,
                 CreatedAt = DateTimeHelper.NowVietnam
             };
 
-            _context.SubscriptionPlans.Add(plan);
+            _context.SubscriptionPlans.Add(basePlan);
             await _context.SaveChangesAsync();
+
+            var optionIds = new List<int>();
+            foreach (var cycle in cycles)
+            {
+                var duration = cycle == "Yearly"
+                    ? (model.DurationDays <= 31 ? 365 : model.DurationDays)
+                    : (model.DurationDays == 0 || model.DurationDays > 365 ? 30 : model.DurationDays);
+
+                var optionPrice = cycle == "Yearly"
+                    ? (model.YearlyPrice ?? model.Price)
+                    : model.Price;
+
+                var option = new SubscriptionPlanOption
+                {
+                    PlanId = basePlan.Id,
+                    BillingCycle = cycle,
+                    Price = optionPrice,
+                    DurationDays = duration,
+                    IsActive = model.IsActive,
+                    CreatedAt = DateTimeHelper.NowVietnam
+                };
+
+                _context.SubscriptionPlanOptions.Add(option);
+                await _context.SaveChangesAsync();
+                optionIds.Add(option.Id);
+            }
 
             // Create PlanFeature records
             if (model.JobLimit.HasValue)
             {
                 _context.PlanFeatures.Add(new PlanFeature
                 {
-                    PlanId = plan.Id,
+                    PlanId = basePlan.Id,
                     FeatureCode = "JOB_POSTING",
                     FeatureLimit = model.JobLimit.Value
                 });
@@ -221,32 +343,84 @@ namespace RJMS.Vn.Edu.Fpt.Repository
             {
                 _context.PlanFeatures.Add(new PlanFeature
                 {
-                    PlanId = plan.Id,
+                    PlanId = basePlan.Id,
                     FeatureCode = "CV_AI_FILTER",
                     FeatureLimit = model.CvAiLimit.Value
                 });
             }
 
             await _context.SaveChangesAsync();
-
-            return plan;
+            return optionIds;
         }
 
         public async Task<bool> UpdatePlanAsync(SubscriptionPlanFormViewModel model)
         {
             var plan = await _context.SubscriptionPlans
+                .Include(p => p.PlanOptions)
                 .Include(p => p.PlanFeatures)
                 .FirstOrDefaultAsync(p => p.Id == model.Id);
 
             if (plan == null) return false;
 
-            plan.Name = model.Name;
+            plan.Name = model.Name?.Trim();
             plan.Price = model.Price;
-            plan.DurationDays = model.DurationDays;
-            plan.BillingCycle = model.BillingCycle;
-            plan.Version = model.Version;
-            plan.Description = BuildDescription(model);
+            
+            // Preserve existing description if custom, only use BuildDescription if empty
+            if (string.IsNullOrWhiteSpace(plan.Description))
+                plan.Description = BuildDescription(model);
+            else
+                plan.Description = model.Description ?? plan.Description;
+            
             plan.IsActive = model.IsActive;
+
+            var monthlyOption = plan.PlanOptions.FirstOrDefault(o => o.BillingCycle == "Monthly");
+            if (monthlyOption == null)
+            {
+                monthlyOption = new SubscriptionPlanOption
+                {
+                    PlanId = plan.Id,
+                    BillingCycle = "Monthly",
+                    CreatedAt = DateTimeHelper.NowVietnam
+                };
+                _context.SubscriptionPlanOptions.Add(monthlyOption);
+            }
+
+            monthlyOption.Price = model.Price;
+            monthlyOption.DurationDays = (model.DurationDays == 0 || model.DurationDays > 365) ? 30 : model.DurationDays;
+            monthlyOption.IsActive = model.IsActive;
+
+            var yearlyOption = plan.PlanOptions.FirstOrDefault(o => o.BillingCycle == "Yearly");
+            if (model.EnableYearly)
+            {
+                var yearlyPrice = model.YearlyPrice ?? model.Price;
+                if (yearlyOption == null)
+                {
+                    yearlyOption = new SubscriptionPlanOption
+                    {
+                        PlanId = plan.Id,
+                        BillingCycle = "Yearly",
+                        CreatedAt = DateTimeHelper.NowVietnam
+                    };
+                    _context.SubscriptionPlanOptions.Add(yearlyOption);
+                }
+
+                yearlyOption.Price = yearlyPrice;
+                yearlyOption.DurationDays = model.DurationDays <= 31 ? 365 : model.DurationDays;
+                yearlyOption.IsActive = model.IsActive;
+            }
+            else if (yearlyOption != null)
+            {
+                yearlyOption.IsActive = false;
+            }
+
+            // Only support Monthly and Yearly options for manager flow.
+            var unsupportedOptions = plan.PlanOptions
+                .Where(o => o.BillingCycle != "Monthly" && o.BillingCycle != "Yearly")
+                .ToList();
+            if (unsupportedOptions.Any())
+            {
+                _context.SubscriptionPlanOptions.RemoveRange(unsupportedOptions);
+            }
 
             // Remove existing PlanFeatures
             _context.PlanFeatures.RemoveRange(plan.PlanFeatures);
@@ -336,8 +510,9 @@ namespace RJMS.Vn.Edu.Fpt.Repository
             // Active yearly subscriptions still within their EndDate
             var yearlyActive = await _context.Subscriptions
                 .Where(s => s.Status == "Active" && s.EndDate >= now)
-                .Where(s => s.Plan.BillingCycle == "Yearly")
+                .Where(s => s.PlanOption != null && s.PlanOption.BillingCycle == "Yearly")
                 .Include(s => s.Plan)
+                .Include(s => s.PlanOption)
                 .Include(s => s.SubscriptionPeriods)
                 .ToListAsync();
 
@@ -389,6 +564,7 @@ namespace RJMS.Vn.Edu.Fpt.Repository
 
             var sub = await _context.Subscriptions
                 .Include(s => s.Plan).ThenInclude(p => p.PlanFeatures)
+                .Include(s => s.PlanOption)
                 .Include(s => s.SubscriptionPeriods).ThenInclude(p => p.SubscriptionUsages)
                 .Where(s => s.UserId == userId && (s.Status == "Active" || s.Status == "ACTIVE") && s.EndDate >= now)
                 .OrderByDescending(s => s.StartDate)
@@ -406,7 +582,8 @@ namespace RJMS.Vn.Edu.Fpt.Repository
             var period = sub.SubscriptionPeriods
                 .FirstOrDefault(p => p.PeriodStart <= now && p.PeriodEnd >= now);
 
-            if (period == null && sub.Plan.BillingCycle == "Yearly")
+            var billingCycle = sub.PlanOption?.BillingCycle ?? sub.SubscribedBillingCycle;
+            if (period == null && billingCycle == "Yearly")
             {
                 var firstOfMonth = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
                 var lastOfMonth = firstOfMonth.AddMonths(1).AddSeconds(-1);
@@ -490,8 +667,9 @@ namespace RJMS.Vn.Edu.Fpt.Repository
         private async Task<Subscription?> CreateDefaultFreeSubscriptionAsync(int userId, DateTime now)
         {
             var freePlan = await _context.SubscriptionPlans
+                .Include(sp => sp.PlanOptions)
                 .Include(sp => sp.PlanFeatures)
-                .Where(sp => sp.IsActive == true && ((sp.Price ?? 0) == 0 || sp.Name == "Gói Miễn Phí"))
+                .Where(sp => sp.IsActive == true && (sp.Name == "Gói Miễn Phí" || sp.PlanOptions.Any(o => (o.IsActive ?? false) && (o.Price ?? 0) == 0)))
                 .OrderBy(sp => sp.Id)
                 .FirstOrDefaultAsync();
 
@@ -505,19 +683,29 @@ namespace RJMS.Vn.Edu.Fpt.Repository
                 .Select(r => r.CompanyId)
                 .FirstOrDefaultAsync();
 
+            var freeOption = freePlan.PlanOptions
+                .Where(o => o.IsActive == true)
+                .OrderBy(o => o.BillingCycle == "Monthly" ? 0 : 1)
+                .FirstOrDefault();
+
             var startDate = now;
-            var endDate = now.AddDays(freePlan.DurationDays ?? 30);
+            var endDate = now.AddDays(freeOption?.DurationDays ?? 30);
 
             var subscription = new Subscription
             {
                 UserId = userId,
                 CompanyId = companyId,
                 PlanId = freePlan.Id,
+                PlanOptionId = freeOption?.Id,
                 StartDate = startDate,
                 EndDate = endDate,
                 Status = "Active",
                 CreatedAt = now,
-                AutoRenew = false
+                AutoRenew = false,
+                SubscribedPrice = freeOption?.Price ?? 0,
+                SubscribedBillingCycle = freeOption?.BillingCycle ?? "Monthly",
+                SubscribedDurationDays = freeOption?.DurationDays ?? 30,
+                SubscribedPlanName = freePlan.Name
             };
 
             _context.Subscriptions.Add(subscription);
@@ -551,6 +739,7 @@ namespace RJMS.Vn.Edu.Fpt.Repository
 
             return await _context.Subscriptions
                 .Include(s => s.Plan).ThenInclude(p => p.PlanFeatures)
+                .Include(s => s.PlanOption)
                 .Include(s => s.SubscriptionPeriods).ThenInclude(p => p.SubscriptionUsages)
                 .FirstOrDefaultAsync(s => s.Id == subscription.Id);
         }
@@ -558,11 +747,17 @@ namespace RJMS.Vn.Edu.Fpt.Repository
         public async Task<bool> TogglePlanStatusAsync(int id)
         {
             var plan = await _context.SubscriptionPlans
+                .Include(p => p.PlanOptions)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (plan == null) return false;
 
-            plan.IsActive = !(plan.IsActive ?? false);
+            var nextActive = !(plan.IsActive ?? false);
+            plan.IsActive = nextActive;
+            foreach (var option in plan.PlanOptions)
+            {
+                option.IsActive = nextActive;
+            }
             await _context.SaveChangesAsync();
             return true;
         }
@@ -570,6 +765,7 @@ namespace RJMS.Vn.Edu.Fpt.Repository
         public async Task<bool> DeletePlanAsync(int id)
         {
             var plan = await _context.SubscriptionPlans
+                .Include(p => p.PlanOptions)
                 .Include(p => p.Subscriptions)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
@@ -579,6 +775,11 @@ namespace RJMS.Vn.Edu.Fpt.Repository
             if (plan.Subscriptions.Any(s => s.Status == "Active"))
             {
                 return false; // Cannot delete plan with active subscriptions
+            }
+
+            if (plan.PlanOptions.Any())
+            {
+                _context.SubscriptionPlanOptions.RemoveRange(plan.PlanOptions);
             }
 
             _context.SubscriptionPlans.Remove(plan);
@@ -637,6 +838,21 @@ namespace RJMS.Vn.Edu.Fpt.Repository
                 parts.Add("CV AI analysis: Unlimited");
 
             return string.Join("\n", parts);
+        }
+
+        private string ExtractBasePlanName(string? name)
+        {
+            if (string.IsNullOrEmpty(name)) return "Unknown";
+            
+            // Remove cycle suffixes like " (Hàng tháng)" and " (Hàng năm)"
+            var baseName = name
+                .Replace(" (Hàng tháng)", "")
+                .Replace(" (Hàng năm)", "")
+                .Replace(" (Monthly)", "")
+                .Replace(" (Yearly)", "")
+                .Trim();
+
+            return baseName;
         }
     }
 }

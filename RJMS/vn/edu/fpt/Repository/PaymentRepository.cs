@@ -15,24 +15,56 @@ namespace RJMS.Vn.Edu.Fpt.Repository
 
         public async Task<List<SubscriptionPlan>> GetActiveSubscriptionPlansAsync()
         {
-            return await _context.SubscriptionPlans
-                .Include(p => p.PlanFeatures)
-                .Where(p => p.IsActive == true)
-                .OrderBy(p => p.Price)
+            var options = await _context.SubscriptionPlanOptions
+                .Include(o => o.Plan)
+                    .ThenInclude(p => p.PlanFeatures)
+                .Where(o => o.IsActive == true && o.Plan.IsActive == true)
+                .OrderBy(o => o.Price)
                 .ToListAsync();
+
+            return options.Select(o => new SubscriptionPlan
+            {
+                Id = o.Id,
+                Name = $"{o.Plan.Name} ({(o.BillingCycle == "Yearly" ? "Hàng năm" : "Hàng tháng")})",
+                Price = o.Price,
+                DurationDays = o.DurationDays,
+                Description = o.Plan.Description,
+                IsActive = (o.IsActive ?? false) && (o.Plan.IsActive ?? false),
+                BillingCycle = o.BillingCycle,
+                CreatedAt = o.CreatedAt ?? o.Plan.CreatedAt,
+                PlanFeatures = o.Plan.PlanFeatures
+            }).ToList();
         }
 
         public async Task<SubscriptionPlan?> GetSubscriptionPlanByIdAsync(int planId)
         {
-            return await _context.SubscriptionPlans
-                .Include(p => p.PlanFeatures)
-                .FirstOrDefaultAsync(p => p.Id == planId && p.IsActive == true);
+            var option = await _context.SubscriptionPlanOptions
+                .Include(o => o.Plan)
+                    .ThenInclude(p => p.PlanFeatures)
+                .FirstOrDefaultAsync(o => o.Id == planId && o.IsActive == true && o.Plan.IsActive == true);
+
+            if (option == null) return null;
+
+            return new SubscriptionPlan
+            {
+                Id = option.Id,
+                Name = $"{option.Plan.Name} ({(option.BillingCycle == "Yearly" ? "Hàng năm" : "Hàng tháng")})",
+                Price = option.Price,
+                DurationDays = option.DurationDays,
+                Description = option.Plan.Description,
+                IsActive = (option.IsActive ?? false) && (option.Plan.IsActive ?? false),
+                BillingCycle = option.BillingCycle,
+                CreatedAt = option.CreatedAt ?? option.Plan.CreatedAt,
+                PlanFeatures = option.Plan.PlanFeatures
+            };
         }
 
         public async Task<int> CreateSubscriptionAsync(int userId, int planId)
         {
-            var plan = await _context.SubscriptionPlans.FindAsync(planId);
-            if (plan == null) return 0;
+            var option = await _context.SubscriptionPlanOptions
+                .Include(o => o.Plan)
+                .FirstOrDefaultAsync(o => o.Id == planId && o.IsActive == true && o.Plan.IsActive == true);
+            if (option == null) return 0;
 
             var companyId = await _context.Recruiters
                 .Where(r => r.UserId == userId && r.CompanyId != null)
@@ -43,12 +75,17 @@ namespace RJMS.Vn.Edu.Fpt.Repository
             {
                 UserId = userId,
                 CompanyId = companyId,
-                PlanId = planId,
+                PlanId = option.PlanId,
+                PlanOptionId = option.Id,
                 StartDate = DateTime.UtcNow,
-                EndDate = DateTime.UtcNow.AddDays(plan.DurationDays ?? 30),
+                EndDate = DateTime.UtcNow.AddDays(option.DurationDays ?? 30),
                 Status = "PENDING",
                 CreatedAt = DateTime.UtcNow,
-                AutoRenew = false
+                AutoRenew = false,
+                SubscribedPrice = option.Price,
+                SubscribedBillingCycle = option.BillingCycle,
+                SubscribedDurationDays = option.DurationDays ?? 30,
+                SubscribedPlanName = option.Plan.Name
             };
 
             _context.Subscriptions.Add(subscription);
@@ -143,6 +180,8 @@ namespace RJMS.Vn.Edu.Fpt.Repository
             return await _context.Payments
                 .Include(p => p.Subscription)
                     .ThenInclude(s => s.Plan)
+                .Include(p => p.Subscription)
+                    .ThenInclude(s => s.PlanOption)
                 .FirstOrDefaultAsync(p => p.Id == paymentId);
         }
 
@@ -150,6 +189,7 @@ namespace RJMS.Vn.Edu.Fpt.Repository
         {
             return await _context.Subscriptions
                 .Include(s => s.Plan)
+                .Include(s => s.PlanOption)
                 .Include(s => s.User)
                 .FirstOrDefaultAsync(s => s.Id == subscriptionId);
         }
@@ -164,6 +204,7 @@ namespace RJMS.Vn.Edu.Fpt.Repository
             var now = DateTime.UtcNow;
             return await _context.Subscriptions
                 .Include(s => s.Plan)
+                .Include(s => s.PlanOption)
                 .Where(s => s.UserId == userId && s.Status == "ACTIVE" && s.StartDate <= now && s.EndDate >= now)
                 .OrderByDescending(s => s.EndDate)
                 .FirstOrDefaultAsync();
