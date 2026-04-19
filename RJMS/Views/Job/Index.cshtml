@@ -3,6 +3,7 @@
     ViewData["Title"] = "Tìm việc làm tốt nhất";
     Layout = "~/Views/Shared/_Layout.cshtml";
     var selectedCatIds = new HashSet<int>(new[] { Model.CategoryId ?? 0 }.Where(x => x != 0));
+    var isCandidate = (Context.Request.Cookies["UserRole"] == "Candidate");
 }
 
 @section Styles {
@@ -120,6 +121,7 @@
     .badge-pill.salary { background: #ecfdf5; color: #059669; }
     .btn-heart { width: 32px; height: 32px; border-radius: 50%; border: 1px solid #e5e7eb; background: transparent; display: flex; align-items: center; justify-content: center; color: #9ca3af; cursor: pointer; flex-shrink: 0; transition: all 0.2s; }
     .btn-heart:hover { background: #fff1f2; color: #f43f5e; border-color: #f43f5e; }
+    .btn-heart.saved { background: #fff1f2; color: #f43f5e; border-color: #f43f5e; }
 
     /* Active chip */
     .active-chip { display: inline-flex; align-items: center; gap: 6px; background: #ecfdf5; color: #059669; border: 1px solid #6ee7b7; border-radius: 20px; padding: 4px 12px; font-size: 0.82rem; font-weight: 600; margin-bottom: 14px; }
@@ -280,6 +282,10 @@
     @@media (max-width: 768px) { .cat-modal-body { grid-template-columns: 1fr; } }
 </style>
 }
+
+<form id="saveJobTokenForm" style="display:none;">
+    @Html.AntiForgeryToken()
+</form>
 
 <!-- CATEGORY MODAL -->
 <div class="cat-modal-backdrop" id="catModalBackdrop">
@@ -484,9 +490,14 @@
                                         <span class="badge-pill">@job.LocationName</span>
                                     }
                                 </div>
-                                <button class="btn-heart" onclick="event.preventDefault();return false;" title="Lưu">
-                                    <i class="far fa-heart"></i>
-                                </button>
+                                @if (isCandidate)
+                                {
+                                    <button class="btn-heart @(job.IsSaved ? "saved" : "")"
+                                            onclick="toggleSaveJob(event, @job.Id, this)"
+                                            title="Lưu">
+                                        <i class="@(job.IsSaved ? "fas" : "far") fa-heart"></i>
+                                    </button>
+                                }
                             </div>
                         </a>
                     }
@@ -690,6 +701,53 @@
         // find which group or child matches
         const match = CAT_GROUPS.find(g => g.id === initCatId || g.children.some(c => c.id === initCatId));
         if (match) { activeGroupId = match.id; }
+    }
+
+    async function toggleSaveJob(e, jobId, buttonEl) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const token = document.querySelector('#saveJobTokenForm input[name="__RequestVerificationToken"]')?.value;
+
+        try {
+            const res = await fetch('/Job/ToggleSave', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                    'RequestVerificationToken': token || ''
+                },
+                body: `jobId=${encodeURIComponent(jobId)}&__RequestVerificationToken=${encodeURIComponent(token || '')}`
+            });
+
+            const data = await res.json();
+            if (!data.success) {
+                if (typeof toastr !== 'undefined') {
+                    toastr.warning(data.message || 'Không thể lưu công việc này.');
+                }
+                return;
+            }
+
+            const icon = buttonEl.querySelector('i');
+            if (data.isSaved) {
+                buttonEl.classList.add('saved');
+                icon?.classList.remove('far');
+                icon?.classList.add('fas');
+                if (typeof toastr !== 'undefined') {
+                    toastr.success('Đã lưu công việc.');
+                }
+            } else {
+                buttonEl.classList.remove('saved');
+                icon?.classList.remove('fas');
+                icon?.classList.add('far');
+                if (typeof toastr !== 'undefined') {
+                    toastr.info('Đã bỏ lưu công việc.');
+                }
+            }
+        } catch {
+            if (typeof toastr !== 'undefined') {
+                toastr.error('Có lỗi xảy ra khi lưu công việc.');
+            }
+        }
     }
 </script>
 }
