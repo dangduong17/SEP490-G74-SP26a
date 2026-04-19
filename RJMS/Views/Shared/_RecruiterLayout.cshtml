@@ -144,6 +144,9 @@
                     <p>Nhà tuyển dụng</p>
                 </div>
             </div>
+            @{
+                var _role = Context.Request.Cookies["UserRole"];
+            }
             <nav class="nav flex-column pt-2 pb-4">
                 <span class="nav-section">Tổng quan</span>
                 <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "RecruiterDashboard" ? "active" : "")"

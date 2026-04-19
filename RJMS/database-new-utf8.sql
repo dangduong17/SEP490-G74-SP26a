@@ -1336,3 +1336,23 @@ WHERE cp.Id IS NULL
 GROUP BY tc.ConversationId, tc.EmployeeUserId;
 GO
 
+
+IF OBJECT_ID(N'dbo.SavedJobs', N'U') IS NULL
+BEGIN
+	CREATE TABLE [dbo].[SavedJobs](
+		[Id] [int] IDENTITY(1,1) NOT NULL,
+		[CandidateId] [int] NOT NULL,
+		[JobId] [int] NOT NULL,
+		[CreatedAt] [datetime2](7) NOT NULL CONSTRAINT [DF_SavedJobs_CreatedAt] DEFAULT (sysutcdatetime()),
+		CONSTRAINT [PK_SavedJobs] PRIMARY KEY CLUSTERED ([Id] ASC),
+		CONSTRAINT [UQ_SavedJobs_Candidate_Job] UNIQUE NONCLUSTERED ([CandidateId] ASC, [JobId] ASC)
+	);
+
+	ALTER TABLE [dbo].[SavedJobs]  WITH CHECK ADD CONSTRAINT [FK_SavedJobs_Candidates]
+	FOREIGN KEY([CandidateId]) REFERENCES [dbo].[Candidates]([Id]) ON DELETE CASCADE;
+
+	ALTER TABLE [dbo].[SavedJobs]  WITH CHECK ADD CONSTRAINT [FK_SavedJobs_Jobs]
+	FOREIGN KEY([JobId]) REFERENCES [dbo].[Jobs]([Id]) ON DELETE CASCADE;
+END
+GO
+
