@@ -15,6 +15,7 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
         public DateTime? CreatedAt { get; set; }
         public string? JobType { get; set; }
         public string? CategoryName { get; set; }
+        public bool IsSaved { get; set; }
     }
 
     public class JobFilterCategoryDTO
