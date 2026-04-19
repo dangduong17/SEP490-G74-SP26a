@@ -446,6 +446,7 @@ function addSec(pi, type, x, y){
 function renderCanvas(){
   const cvs = document.getElementById('canvas');
   cvs.innerHTML = '';
+  const sectionCounters = { header: 0, summary: 0, experience: 0, education: 0, skills: 0, awards: 0, certs: 0, activities: 0, refs: 0, hobbies: 0 };
 
   pages.forEach((pg, pi) => {
     const bar = div('pg-bar'); bar.innerHTML = `<span>Trang ${pi+1}</span>`;
@@ -468,6 +469,7 @@ function renderCanvas(){
       } else {
          el.innerHTML = ctrlBar;
          el.appendChild(def.build());
+        hydrateSection(el, s.type, sectionCounters);
       }
       
       a4.appendChild(el);
@@ -479,28 +481,155 @@ function renderCanvas(){
   bindDroppable();
 }
 
+function getSectionText(root, selector) {
+  const el = root.querySelector(selector);
+  return el ? (el.innerText || el.textContent || '').trim() : '';
+}
+
+function setSectionText(root, selector, value) {
+  const el = root.querySelector(selector);
+  if (el) {
+    el.textContent = value || '';
+  }
+}
+
+function hydrateSection(sectionEl, type, counters) {
+  const data = cvDataObj || {};
+  const nextIndex = (key) => {
+    const current = counters[key] || 0;
+    counters[key] = current + 1;
+    return current;
+  };
+
+  if (type === 'header') {
+    setSectionText(sectionEl, '.cv-name', data.FullName || '');
+    setSectionText(sectionEl, '.cv-jobtitle', data.Position || '');
+    const contactValues = ['', data.Phone || '', data.Email || '', data.Address || ''];
+    const contactNodes = sectionEl.querySelectorAll('.cv-contacts [contenteditable="true"]');
+    contactNodes.forEach((node, idx) => {
+      node.textContent = contactValues[idx] || node.textContent || '';
+    });
+    return;
+  }
+
+  if (type === 'summary') {
+    setSectionText(sectionEl, '.cv-simple', data.Summary || '');
+    return;
+  }
+
+  if (type === 'experience') {
+    const item = (data.Experiences || [])[nextIndex('experience')] || {};
+    setSectionText(sectionEl, '.cv-date', item.Period || '');
+    setSectionText(sectionEl, '.cv-company', item.Company || '');
+    setSectionText(sectionEl, '.cv-pos', item.Role || '');
+    setSectionText(sectionEl, '.cv-desc', item.Description || '');
+    return;
+  }
+
+  if (type === 'education') {
+    const item = (data.Educations || [])[nextIndex('education')] || {};
+    setSectionText(sectionEl, '.cv-date', item.Period || '');
+    setSectionText(sectionEl, '.cv-company', item.School || '');
+    setSectionText(sectionEl, '.cv-pos', item.Degree || '');
+    return;
+  }
+
+  if (type === 'skills') {
+    const skills = (data.Skills || '').split(',').map(s => s.trim()).filter(Boolean);
+    const skillsWrap = sectionEl.querySelector('.cv-skills');
+    if (skillsWrap && skills.length > 0) {
+      skillsWrap.innerHTML = skills.map(skill => `<span class="cv-tag" contenteditable="true" spellcheck="false">${skill}</span>`).join('');
+    }
+    return;
+  }
+
+  const extra = (data.AdditionalSections || []).filter(s => s.Type === type)[nextIndex(type)] || null;
+  if (!extra) {
+    return;
+  }
+
+  const content = extra.Content || '';
+  const target = sectionEl.querySelector('.cv-simple, .cv-ph, .cv-desc, .cv-company');
+  if (target) {
+    target.textContent = content;
+  } else {
+    const wrap = sectionEl.querySelector('.cv-content-wrap');
+    if (wrap) {
+      wrap.textContent = content;
+    }
+  }
+}
+
 /* ══ SAVE CV TO backend ════════════════════════════════════ */
 async function saveCv(){
   let newPages = [];
+  let experiences = [];
+  let educations = [];
+  let additionalSections = [];
+
+  const headerSection = document.querySelector('.cv-sec[data-type="header"]');
+  if (headerSection) {
+    cvDataObj.FullName = getSectionText(headerSection, '.cv-name');
+    cvDataObj.Position = getSectionText(headerSection, '.cv-jobtitle');
+    const contactNodes = headerSection.querySelectorAll('.cv-contacts [contenteditable="true"]');
+    cvDataObj.Phone = contactNodes[1] ? contactNodes[1].textContent.trim() : (cvDataObj.Phone || '');
+    cvDataObj.Email = contactNodes[2] ? contactNodes[2].textContent.trim() : (cvDataObj.Email || '');
+    cvDataObj.Address = contactNodes[3] ? contactNodes[3].textContent.trim() : (cvDataObj.Address || '');
+  }
+
   document.querySelectorAll('.a4').forEach((a4) => {
     let secs = [];
     a4.querySelectorAll('.cv-sec').forEach(el => {
-      // Find the inner .cv-content-wrap and scrape its HTML (the edits!)
-      let cw = el.querySelector('.cv-content-wrap');
-      let htmlSnap = cw ? cw.outerHTML : '';
+      const type = el.dataset.type;
+      const top = parseFloat(el.style.top)||0;
+      const left = parseFloat(el.style.left)||0;
+      const width = parseFloat(el.style.width)||300;
+      const height = parseFloat(el.style.height)||100;
+
+      if (type === 'summary') {
+        cvDataObj.Summary = getSectionText(el, '.cv-simple');
+      } else if (type === 'experience') {
+        experiences.push({
+          Company: getSectionText(el, '.cv-company'),
+          Role: getSectionText(el, '.cv-pos'),
+          Period: getSectionText(el, '.cv-date'),
+          Description: getSectionText(el, '.cv-desc')
+        });
+      } else if (type === 'education') {
+        educations.push({
+          School: getSectionText(el, '.cv-company'),
+          Degree: getSectionText(el, '.cv-pos'),
+          Period: getSectionText(el, '.cv-date')
+        });
+      } else if (type === 'skills') {
+        const tags = Array.from(el.querySelectorAll('.cv-tag')).map(t => (t.innerText || t.textContent || '').trim()).filter(Boolean);
+        cvDataObj.Skills = tags.join(', ');
+      } else if (type !== 'header') {
+        const cw = el.querySelector('.cv-content-wrap');
+        additionalSections.push({
+          Type: type,
+          Content: cw ? (cw.innerText || cw.textContent || '').trim() : '',
+          Top: top,
+          Left: left,
+          Width: width,
+          Height: height
+        });
+      }
       
       secs.push({
-        type: el.dataset.type,
-        top: parseFloat(el.style.top)||0,
-        left: parseFloat(el.style.left)||0,
-        width: parseFloat(el.style.width)||300,
-        height: parseFloat(el.style.height)||100,
-        html: htmlSnap // candidate overrides text!
+        type,
+        top,
+        left,
+        width,
+        height
       });
     });
     newPages.push({ columns:0, sections: secs });
   });
 
+  cvDataObj.Experiences = experiences;
+  cvDataObj.Educations = educations;
+  cvDataObj.AdditionalSections = additionalSections;
   cvDataObj.CustomLayout = { pages: newPages, theme: activeTheme };
   document.getElementById('cvDataOutput').value = JSON.stringify(cvDataObj);
   

@@ -1267,8 +1267,6 @@ GO
 ALTER DATABASE [G74-Finding-Jobs2] SET  READ_WRITE 
 GO
 
-<<<<<<< Updated upstream
-=======
 /*
 One-time chat history migration
 Goal:
@@ -1338,7 +1336,7 @@ WHERE cp.Id IS NULL
 GROUP BY tc.ConversationId, tc.EmployeeUserId;
 GO
 
-/* Saved jobs for candidates */
+
 IF OBJECT_ID(N'dbo.SavedJobs', N'U') IS NULL
 BEGIN
 	CREATE TABLE [dbo].[SavedJobs](
@@ -1358,4 +1356,3 @@ BEGIN
 END
 GO
 
->>>>>>> Stashed changes

@@ -79,16 +79,16 @@ namespace RJMS.Vn.Edu.Fpt.Repository
                 })
                 .ToList();
 
-            // Locations from JobRecruiters mapping to active jobs (distinct properly)
+            // Locations from JobRecruiters mapping to active jobs (distinct by Location.Id only)
             var locations = await _context.JobRecruiters
                 .Include(jr => jr.CompanyLocation)
                 .ThenInclude(cl => cl.Location)
                 .Where(jr => jr.Job.Status == "Active")
-                .GroupBy(jr => new { jr.CompanyLocation.Location.Id, jr.CompanyLocation.Location.CityName })
+                .GroupBy(jr => jr.CompanyLocation.Location.Id)
                 .Select(g => new JobFilterLocationDTO
                 {
-                    Id = g.Key.Id,
-                    Name = g.Key.CityName,
+                    Id = g.Key,
+                    Name = g.First().CompanyLocation.Location.CityName,
                     JobCount = g.Select(jr => jr.JobId).Distinct().Count()
                 })
                 .OrderBy(l => l.Name)

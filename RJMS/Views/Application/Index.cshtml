@@ -5,12 +5,139 @@
     ViewData["Title"] = "Việc làm đã ứng tuyển";
 }
 
-<div class="container py-4" style="max-width: 900px;">
-    <h3 class="fw-bold mb-4">Việc làm đã ứng tuyển</h3>
+@section Styles {
+<style>
+    body { background: #f7f8fa; }
+    .applied-wrap { max-width: 1040px; margin: 0 auto; padding: 28px 14px 44px; }
+    .applied-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+    .applied-head h3 { margin: 0; font-weight: 800; color: #111827; }
+    .applied-sub { margin: 4px 0 0; font-size: 0.88rem; color: #6b7280; }
+
+    .app-list { display: grid; gap: 14px; }
+    .app-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        box-shadow: 0 6px 16px rgba(17,24,39,0.04);
+        padding: 18px;
+        transition: all 0.2s ease;
+    }
+    .app-card:hover { border-color: #00b14f; box-shadow: 0 10px 24px rgba(0,177,79,0.12); }
+
+    .app-main { display: grid; grid-template-columns: 96px 1fr auto; gap: 14px; align-items: center; }
+
+    .company-logo-box {
+        width: 96px;
+        height: 96px;
+        border-radius: 12px;
+        border: 1px solid #edf0f2;
+        background: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        padding: 8px;
+    }
+    .company-logo-box img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+    .app-title {
+        margin: 0 0 4px;
+        font-size: 1.02rem;
+        line-height: 1.35;
+        font-weight: 800;
+    }
+    .app-title a { text-decoration: none; color: #111827; }
+    .app-title a:hover { color: #00b14f; }
+    .app-company { font-size: 0.9rem; color: #4b5563; margin-bottom: 10px; }
+
+    .meta-row { display: flex; flex-wrap: wrap; gap: 8px 14px; color: #6b7280; font-size: 0.84rem; }
+    .meta-item { display: inline-flex; align-items: center; gap: 6px; }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.76rem;
+        font-weight: 700;
+        border-radius: 999px;
+        padding: 6px 12px;
+        border: 1px solid transparent;
+    }
+    .status-review { background: #fff7ed; color: #c2410c; border-color: #fed7aa; }
+    .status-reject { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
+    .status-accept { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
+    .status-interview { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+    .status-default { background: #f3f4f6; color: #374151; border-color: #e5e7eb; }
+
+    .cv-strip {
+        margin-top: 14px;
+        border-top: 1px dashed #e5e7eb;
+        padding-top: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .cv-info { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .cv-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: #ecfdf5;
+        color: #059669;
+        flex-shrink: 0;
+    }
+    .cv-text { min-width: 0; }
+    .cv-label { font-size: 0.76rem; color: #6b7280; margin-bottom: 2px; }
+    .cv-name {
+        font-size: 0.86rem;
+        font-weight: 700;
+        color: #111827;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 460px;
+    }
+    .cv-type-tag {
+        margin-left: 8px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        border-radius: 999px;
+        padding: 3px 8px;
+        background: #eef2ff;
+        color: #4338ca;
+    }
+
+    .card-actions { display: inline-flex; gap: 8px; }
+
+    @@media (max-width: 768px) {
+        .app-main { grid-template-columns: 74px 1fr; }
+        .company-logo-box { width: 74px; height: 74px; border-radius: 10px; }
+        .card-actions { grid-column: 1 / -1; }
+        .cv-name { max-width: 100%; }
+    }
+</style>
+}
+
+<div class="applied-wrap">
+    <div class="applied-head">
+        <div>
+            <h3>Việc làm đã ứng tuyển</h3>
+            <p class="applied-sub">Theo dõi trạng thái và CV đã dùng cho từng lần ứng tuyển.</p>
+        </div>
+    </div>
 
     @if (Model == null || !Model.Any())
     {
-        <div class="alert alert-light text-center p-5 border rounded-3">
+        <div class="alert alert-light text-center p-5 border rounded-3 bg-white">
             <i class="fas fa-file-invoice mb-3" style="font-size: 3rem; color: #ccc;"></i>
             <h5 class="text-muted">Bạn chưa ứng tuyển công việc nào.</h5>
             <a href="/Job/Index" class="btn btn-primary mt-3">Tìm việc ngay</a>
@@ -18,55 +145,94 @@
     }
     else
     {
-        <div class="row gy-3">
+        <div class="app-list">
             @foreach (var app in Model)
             {
-                <div class="col-12">
-                    <div class="card border border-light shadow-sm">
-                        <div class="card-body d-flex flex-column flex-md-row align-items-md-center gap-3">
-                            <div class="flex-shrink-0">
+                <div class="app-card">
+                    <div class="app-main">
+                        <div>
+                            <div class="company-logo-box">
                                 @if (!string.IsNullOrEmpty(app.CompanyLogo))
                                 {
-                                    <img src="@app.CompanyLogo" alt="@app.CompanyName" class="rounded object-fit-cover border" style="width: 80px; height: 80px;" onerror="this.src='/images/default-company.png';"/>
+                                    <img src="@app.CompanyLogo" alt="@app.CompanyName" onerror="this.src='/images/logo_default.png';" />
                                 }
                                 else
                                 {
-                                    <div class="rounded border d-flex align-items-center justify-content-center bg-light" style="width: 80px; height: 80px;">
+                                    <div class="rounded border d-flex align-items-center justify-content-center bg-light w-100 h-100">
                                         <i class="fas fa-building text-secondary fs-3"></i>
                                     </div>
                                 }
                             </div>
-                            
-                            <div class="flex-grow-1">
-                                <h5 class="fw-bold mb-1">
-                                    <a href="/Job/Detail/@app.JobId" class="text-decoration-none text-dark">
-                                        @app.PositionTitle
-                                    </a>
-                                </h5>
-                                <div class="text-muted mb-2">@app.CompanyName</div>
-                                <div class="d-flex gap-3 text-secondary" style="font-size: 0.9rem;">
-                                    <span>
-                                        <i class="far fa-clock"></i> Đã ứng tuyển: @app.AppliedAt.ToString("dd/MM/yyyy HH:mm")
-                                    </span>
-                                    <span>
-                                        @{
-                                            string badgeClass = app.Status switch {
-                                                "Đang xem xét" => "bg-warning text-dark",
-                                                "Từ chối" => "bg-danger",
-                                                "Chấp nhận" => "bg-success",
-                                                _ => "bg-secondary"
-                                            };
-                                        }
-                                        <span class="badge @badgeClass">@app.Status</span>
-                                    </span>
+                        </div>
+
+                        <div>
+                            <h5 class="app-title">
+                                <a href="/Job/Detail/@app.JobId">@app.PositionTitle</a>
+                            </h5>
+                            <div class="app-company">@app.CompanyName</div>
+
+                            @{
+                                var rawStatus = (app.Status ?? string.Empty).Trim();
+                                var statusClass = rawStatus.ToLower() switch
+                                {
+                                    "đang xem xét" => "status-review",
+                                    "pending" => "status-review",
+                                    "reviewing" => "status-review",
+                                    "từ chối" => "status-reject",
+                                    "rejected" => "status-reject",
+                                    "chấp nhận" => "status-accept",
+                                    "accepted" => "status-accept",
+                                    "hired" => "status-accept",
+                                    "phỏng vấn" => "status-interview",
+                                    "interview" => "status-interview",
+                                    _ => "status-default"
+                                };
+                            }
+
+                            <div class="meta-row">
+                                <span class="meta-item">
+                                    <i class="far fa-calendar-alt"></i>
+                                    Ứng tuyển lúc: @app.AppliedAt.ToString("dd/MM/yyyy HH:mm")
+                                </span>
+                                <span class="status-badge @statusClass">
+                                    <i class="fas fa-circle" style="font-size: 0.45rem;"></i>
+                                    @(string.IsNullOrWhiteSpace(rawStatus) ? "Chưa cập nhật" : rawStatus)
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="card-actions">
+                            <a href="/Chat/Start?jobId=@app.JobId&applicationId=@app.Id" class="btn btn-outline-primary">
+                                <i class="fas fa-comment-dots me-1"></i> Nhắn tin
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="cv-strip">
+                        <div class="cv-info">
+                            <span class="cv-icon"><i class="far fa-file-alt"></i></span>
+                            <div class="cv-text">
+                                <div class="cv-label">CV đã dùng khi ứng tuyển</div>
+                                <div class="cv-name">
+                                    @(string.IsNullOrWhiteSpace(app.CvTitle) ? (string.IsNullOrWhiteSpace(app.CvFileName) ? "CV không tên" : app.CvFileName) : app.CvTitle)
+                                    @if (!string.IsNullOrWhiteSpace(app.CvType))
+                                    {
+                                        <span class="cv-type-tag">@app.CvType</span>
+                                    }
                                 </div>
                             </div>
-                            
-                            <div class="mt-3 mt-md-0 ms-md-auto text-end">
-                                <a href="/Chat/Start?jobId=@app.JobId&applicationId=@app.Id" class="btn btn-outline-primary w-100 w-md-auto">
-                                    <i class="fas fa-comment-dots me-1"></i> Nhắn tin
+                        </div>
+
+                        <div class="card-actions">
+                            @if (!string.IsNullOrWhiteSpace(app.CvFileUrl))
+                            {
+                                <a href="@app.CvFileUrl" target="_blank" class="btn btn-outline-secondary btn-sm">
+                                    <i class="fas fa-eye me-1"></i> Xem CV
                                 </a>
-                            </div>
+                            }
+                            <a href="/CV/Index" class="btn btn-outline-success btn-sm">
+                                <i class="fas fa-folder-open me-1"></i> Chi tiết CV
+                            </a>
                         </div>
                     </div>
                 </div>
