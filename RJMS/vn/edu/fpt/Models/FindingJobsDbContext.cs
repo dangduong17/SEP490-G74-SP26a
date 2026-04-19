@@ -62,7 +62,6 @@ public partial class FindingJobsDbContext : DbContext
 
     public virtual DbSet<UserRole> UserRoles { get; set; }
     public virtual DbSet<CompanyFollower> CompanyFollowers { get; set; }
-    public virtual DbSet<SavedJob> SavedJobs { get; set; }
     public virtual DbSet<AppNotification> Notifications { get; set; }
     public virtual DbSet<NotificationReference> NotificationReferences { get; set; }
     
