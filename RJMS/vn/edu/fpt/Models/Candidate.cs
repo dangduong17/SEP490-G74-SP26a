@@ -41,5 +41,7 @@ public partial class Candidate
 
     public virtual ICollection<Cv> Cvs { get; set; } = new List<Cv>();
 
+    public virtual ICollection<SavedJob> SavedJobs { get; set; } = new List<SavedJob>();
+
     public virtual User User { get; set; } = null!;
 }
