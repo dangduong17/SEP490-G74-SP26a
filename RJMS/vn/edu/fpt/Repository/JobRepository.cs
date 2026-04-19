@@ -111,5 +111,93 @@ namespace RJMS.Vn.Edu.Fpt.Repository
                     .ThenInclude(js => js.Skill)
                 .FirstOrDefaultAsync(j => j.Id == id);
         }
+
+        public async Task<int?> GetCandidateIdByUserIdAsync(int userId)
+        {
+            return await _context.Candidates
+                .Where(c => c.UserId == userId)
+                .Select(c => (int?)c.Id)
+                .FirstOrDefaultAsync();
+        }
+
+        public async Task<HashSet<int>> GetSavedJobIdsAsync(int candidateId, IEnumerable<int> jobIds)
+        {
+            var ids = jobIds?.Distinct().ToList() ?? new List<int>();
+            if (!ids.Any()) return new HashSet<int>();
+
+            var saved = await _context.SavedJobs
+                .Where(s => s.CandidateId == candidateId && ids.Contains(s.JobId))
+                .Select(s => s.JobId)
+                .ToListAsync();
+
+            return saved.ToHashSet();
+        }
+
+        public async Task<bool> ToggleSavedJobAsync(int candidateId, int jobId)
+        {
+            var existing = await _context.SavedJobs
+                .FirstOrDefaultAsync(s => s.CandidateId == candidateId && s.JobId == jobId);
+
+            if (existing != null)
+            {
+                _context.SavedJobs.Remove(existing);
+                await _context.SaveChangesAsync();
+                return false;
+            }
+
+            var job = await _context.Jobs
+                .Where(j => j.Id == jobId)
+                .Select(j => new { j.Status, j.ApplicationDeadline, j.ExpiryDate })
+                .FirstOrDefaultAsync();
+
+            var isExpired = job == null
+                || job.Status != "Active"
+                || (job.ApplicationDeadline.HasValue && job.ApplicationDeadline.Value.Date < DateTime.Today)
+                || (job.ExpiryDate.HasValue && job.ExpiryDate.Value.Date < DateTime.Today);
+
+            if (isExpired)
+            {
+                return false;
+            }
+
+            _context.SavedJobs.Add(new SavedJob
+            {
+                CandidateId = candidateId,
+                JobId = jobId
+            });
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> IsJobSavedAsync(int candidateId, int jobId)
+        {
+            return await _context.SavedJobs
+                .AnyAsync(s => s.CandidateId == candidateId && s.JobId == jobId);
+        }
+
+        public async Task<(IEnumerable<Job> Jobs, int TotalCount)> GetSavedJobListAsync(int candidateId, int page, int pageSize)
+        {
+            var query = _context.SavedJobs
+                .Where(s => s.CandidateId == candidateId)
+                .Include(s => s.Job)
+                    .ThenInclude(j => j.Company)
+                        .ThenInclude(c => c.CompanyLocations)
+                            .ThenInclude(cl => cl.Location)
+                .Include(s => s.Job)
+                    .ThenInclude(j => j.JobCategory)
+                .Where(s => s.Job.Status == "Active")
+                .OrderByDescending(s => s.CreatedAt)
+                .AsQueryable();
+
+            var totalCount = await query.CountAsync();
+            var jobs = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(s => s.Job)
+                .ToListAsync();
+
+            return (jobs, totalCount);
+        }
     }
 }
