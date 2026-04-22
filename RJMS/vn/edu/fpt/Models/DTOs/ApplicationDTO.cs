@@ -16,5 +16,6 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
         public string Status { get; set; } = string.Empty;
         public string? CoverLetter { get; set; }
         public int CvId { get; set; }
+        public int? AiScore { get; set; }
     }
 }
