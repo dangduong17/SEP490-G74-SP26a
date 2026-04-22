@@ -1,0 +1,570 @@
+@model AdminEmployeeListViewModel
+@{
+    ViewData["Title"] = "Danh sách nhân viên theo công ty";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["HidePageTitle"] = true;
+}
+
+@section Styles {
+<style>
+    .emp-admin-shell {
+        display: grid;
+        gap: 18px;
+    }
+
+    .emp-topbar {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+
+    .emp-topbar h1 {
+        margin: 0 0 4px;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #111827;
+    }
+
+    .emp-topbar p {
+        margin: 0;
+        color: #6b7280;
+        font-size: 0.84rem;
+    }
+
+    .emp-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: flex-end;
+    }
+
+    .btn-back, .btn-apply {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border-radius: 8px;
+        padding: 10px 14px;
+        text-decoration: none;
+        font-size: 0.875rem;
+        font-weight: 600;
+        transition: all 0.15s ease;
+        white-space: nowrap;
+    }
+
+    .btn-back {
+        background: #fff;
+        border: 1px solid #d1d5db;
+        color: #374151;
+    }
+
+    .btn-back:hover {
+        border-color: #00b14f;
+        color: #00b14f;
+        background: #f0fdf4;
+    }
+
+    .btn-apply {
+        background: #00b14f;
+        color: #fff;
+        border: 1px solid #00b14f;
+    }
+
+    .btn-apply:hover {
+        background: #009744;
+        color: #fff;
+    }
+
+    .emp-summary {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+    }
+
+    .emp-summary-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        padding: 18px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .emp-summary-card h3 {
+        margin: 0 0 4px;
+        font-size: 0.92rem;
+        color: #111827;
+    }
+
+    .emp-summary-card p {
+        margin: 0;
+        color: #6b7280;
+        font-size: 0.8rem;
+    }
+
+    .emp-summary-card strong {
+        font-size: 1.55rem;
+        color: #111827;
+    }
+
+    .emp-summary-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+    }
+
+    .emp-filterbar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .emp-search {
+        position: relative;
+        flex: 1;
+        min-width: 220px;
+        max-width: 360px;
+    }
+
+    .emp-search input,
+    .emp-filterbar .form-select {
+        width: 100%;
+        border-radius: 8px;
+        border: 1px solid #d1d5db;
+        font-size: 0.875rem;
+        padding: 9px 12px;
+        background: #fff;
+    }
+
+    .emp-search input:focus,
+    .emp-filterbar .form-select:focus {
+        outline: none;
+        border-color: #00b14f;
+        box-shadow: 0 0 0 3px rgba(0,177,79,0.1);
+    }
+
+    .btn-search {
+        background: #00b14f;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        padding: 9px 16px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    .btn-search:hover {
+        background: #009744;
+    }
+
+    .emp-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        overflow: hidden;
+    }
+
+    .emp-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.875rem;
+    }
+
+    .emp-table th {
+        padding: 12px 16px;
+        text-align: left;
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        background: #f9fafb;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .emp-table td {
+        padding: 14px 16px;
+        border-bottom: 1px solid #f3f4f6;
+        vertical-align: top;
+        color: #111827;
+    }
+
+    .emp-table tbody tr:hover td {
+        background: #fafafa;
+    }
+
+    .emp-cell {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .emp-avatar {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #00b14f, #009744);
+        color: #fff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        flex-shrink: 0;
+        overflow: hidden;
+    }
+
+    .emp-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .emp-name {
+        font-weight: 700;
+        color: #111827;
+    }
+
+    .emp-email,
+    .emp-meta {
+        color: #6b7280;
+        font-size: 0.78rem;
+        margin-top: 2px;
+    }
+
+    .branch-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .branch-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: #f3f4f6;
+        color: #374151;
+        border-radius: 999px;
+        padding: 3px 8px;
+        font-size: 0.72rem;
+    }
+
+    .status-active,
+    .status-inactive {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: 4px 10px;
+        font-size: 0.72rem;
+        font-weight: 700;
+    }
+
+    .status-active {
+        background: #dcfce7;
+        color: #15803d;
+    }
+
+    .status-inactive {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
+
+    .emp-row-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        justify-content: flex-end;
+    }
+
+    .emp-row-btn {
+        border: 1px solid #e5e7eb;
+        border-radius: 7px;
+        background: #f9fafb;
+        color: #374151;
+        font-size: 0.78rem;
+        font-weight: 600;
+        padding: 6px 10px;
+        cursor: pointer;
+    }
+
+    .emp-row-btn:hover {
+        background: #f3f4f6;
+    }
+
+    .emp-row-btn.danger {
+        color: #b91c1c;
+        border-color: #fecaca;
+        background: #fff5f5;
+    }
+
+    .emp-row-btn.success {
+        color: #15803d;
+        border-color: #bbf7d0;
+        background: #f0fdf4;
+    }
+
+    .empty-state {
+        padding: 56px 20px;
+        text-align: center;
+        color: #9ca3af;
+    }
+
+    .empty-state i {
+        font-size: 2.8rem;
+        margin-bottom: 12px;
+        color: #d1d5db;
+    }
+
+    .emp-pagination {
+        padding: 16px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        border-top: 1px solid #e5e7eb;
+        flex-wrap: wrap;
+    }
+
+    .emp-pagination .pg-btn,
+    .emp-pagination .pg-btn-text {
+        border-radius: 6px;
+        padding: 6px 12px;
+        text-decoration: none;
+        font-size: 0.85rem;
+        font-weight: 600;
+        border: 1px solid #d1d5db;
+    }
+
+    .emp-pagination .pg-btn {
+        color: #374151;
+        background: #fff;
+    }
+
+    .emp-pagination .pg-btn.active {
+        background: #00b14f;
+        border-color: #00b14f;
+        color: #fff;
+    }
+
+    .emp-pagination .pg-btn-text {
+        color: #00b14f;
+        border-color: transparent;
+        background: transparent;
+    }
+
+    .emp-pagination .pg-btn-text:hover {
+        background: #f0fdf4;
+    }
+
+    @@media (max-width: 992px) {
+        .emp-summary {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+}
+
+<div class="emp-admin-shell">
+    <div class="emp-topbar">
+        <div>
+            <h1>Danh sách nhân viên theo công ty</h1>
+            <p>Hiển thị nhân viên theo từng công ty và các chi nhánh mà họ được gán vào.</p>
+        </div>
+        <div class="emp-actions">
+            <a asp-action="UserList" class="btn-back">Quay lại người dùng</a>
+            <a asp-action="CreateRecruiter" class="btn-apply">Tạo Recruiter</a>
+        </div>
+    </div>
+
+    <div class="emp-summary">
+        <div class="emp-summary-card">
+            <div>
+                <h3>Tổng nhân viên</h3>
+                <p>Trong bộ lọc hiện tại</p>
+            </div>
+            <div class="emp-summary-icon" style="background:#ecfdf5;color:#00b14f;"><strong>@Model.TotalItems</strong></div>
+        </div>
+        <div class="emp-summary-card">
+            <div>
+                <h3>Công ty đang lọc</h3>
+                <p>Hỗ trợ xem từng nhóm công ty</p>
+            </div>
+            <div class="emp-summary-icon" style="background:#eff6ff;color:#2563eb;"><strong>@(Model.CompanyId.HasValue ? "1" : "All")</strong></div>
+        </div>
+        <div class="emp-summary-card">
+            <div>
+                <h3>Chi nhánh</h3>
+                <p>Số nhãn chi nhánh hiển thị trên trang</p>
+            </div>
+            <div class="emp-summary-icon" style="background:#fef3c7;color:#b45309;"><strong>@Model.Employees.Sum(e => e.LocationLabels.Count)</strong></div>
+        </div>
+    </div>
+
+    <form method="get" asp-action="EmployeeList">
+        <div class="emp-filterbar">
+            <div class="emp-search">
+                <input name="keyword" value="@Model.Keyword" placeholder="Tìm theo tên, email, vị trí..." />
+            </div>
+            <select name="companyId" class="form-select" style="min-width:240px;max-width:320px;">
+                <option value="">Tất cả công ty</option>
+                @foreach (var company in Model.Companies)
+                {
+                    <option value="@company.Value" selected="@company.Selected">@company.Text</option>
+                }
+            </select>
+            <button type="submit" class="btn-search">Tìm kiếm</button>
+            @if (!string.IsNullOrWhiteSpace(Model.Keyword) || Model.CompanyId.HasValue)
+            {
+                <a asp-action="EmployeeList" class="btn-back">Xóa bộ lọc</a>
+            }
+        </div>
+    </form>
+
+    <div class="emp-card">
+        @if (!Model.Employees.Any())
+        {
+            <div class="empty-state">
+                <p>Chưa có nhân viên phù hợp với bộ lọc hiện tại.</p>
+            </div>
+        }
+        else
+        {
+            <table class="emp-table">
+                <thead>
+                    <tr>
+                        <th>Nhân viên</th>
+                        <th>Công ty</th>
+                        <th>Chi nhánh</th>
+                        <th>Vị trí</th>
+                        <th>Trạng thái</th>
+                        <th>Ngày tạo</th>
+                        <th style="text-align:right;">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var emp in Model.Employees)
+                    {
+                        <tr>
+                            <td>
+                                <div class="emp-cell">
+                                    <div class="emp-avatar">
+                                        @(string.IsNullOrWhiteSpace(emp.FullName) ? "E" : emp.FullName.Substring(0, 1).ToUpper())
+                                    </div>
+                                    <div>
+                                        <div class="emp-name">@emp.FullName</div>
+                                        <div class="emp-email">@emp.Email</div>
+                                        @if (!string.IsNullOrWhiteSpace(emp.Phone))
+                                        {
+                                            <div class="emp-meta">@emp.Phone</div>
+                                        }
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="emp-name">@(string.IsNullOrWhiteSpace(emp.CompanyName) ? "—" : emp.CompanyName)</div>
+                            </td>
+                            <td>
+                                <div class="branch-tags">
+                                    @foreach (var lbl in emp.LocationLabels.Take(4))
+                                    {
+                                        <span class="branch-tag">@lbl</span>
+                                    }
+                                    @if (!emp.LocationLabels.Any())
+                                    {
+                                        <span class="emp-meta">Chưa gán chi nhánh</span>
+                                    }
+                                    else if (emp.LocationLabels.Count > 4)
+                                    {
+                                        <span class="emp-meta">+@(emp.LocationLabels.Count - 4) chi nhánh</span>
+                                    }
+                                </div>
+                            </td>
+                            <td>@(string.IsNullOrWhiteSpace(emp.Position) ? "—" : emp.Position)</td>
+                            <td>
+                                @if (emp.IsActive)
+                                {
+                                    <span class="status-active">Hoạt động</span>
+                                }
+                                else
+                                {
+                                    <span class="status-inactive">Ngưng hoạt động</span>
+                                }
+                            </td>
+                            <td style="color:#6b7280;font-size:0.8rem;">@(emp.CreatedAt?.ToString("dd/MM/yyyy") ?? "—")</td>
+                            <td style="text-align:right;white-space:nowrap;">
+                                <div class="emp-row-actions">
+                                    @if (emp.IsActive)
+                                    {
+                                        <form asp-action="SetEmployeeStatus" method="post" onsubmit="return confirm('Xác nhận ngưng tài khoản employee này?')">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="userId" value="@emp.UserId" />
+                                            <input type="hidden" name="isActive" value="false" />
+                                            <input type="hidden" name="keyword" value="@Model.Keyword" />
+                                            <input type="hidden" name="companyId" value="@Model.CompanyId" />
+                                            <input type="hidden" name="page" value="@Model.Page" />
+                                            <input type="hidden" name="pageSize" value="@Model.PageSize" />
+                                            <button type="submit" class="emp-row-btn danger">Ngưng</button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <form asp-action="SetEmployeeStatus" method="post">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="userId" value="@emp.UserId" />
+                                            <input type="hidden" name="isActive" value="true" />
+                                            <input type="hidden" name="keyword" value="@Model.Keyword" />
+                                            <input type="hidden" name="companyId" value="@Model.CompanyId" />
+                                            <input type="hidden" name="page" value="@Model.Page" />
+                                            <input type="hidden" name="pageSize" value="@Model.PageSize" />
+                                            <button type="submit" class="emp-row-btn success">Mở lại</button>
+                                        </form>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            @if (Model.TotalPages > 1)
+            {
+                <div class="emp-pagination">
+                    <span>Hiển thị <strong>@((Model.Page - 1) * Model.PageSize + 1)–@Math.Min(Model.Page * Model.PageSize, Model.TotalItems)</strong> trong tổng số <strong>@Model.TotalItems</strong> nhân viên</span>
+                    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+                        @if (Model.Page > 1)
+                        {
+                            <a class="pg-btn-text" asp-action="EmployeeList" asp-route-keyword="@Model.Keyword" asp-route-companyId="@Model.CompanyId" asp-route-page="@(Model.Page - 1)" asp-route-pageSize="@Model.PageSize">Trước</a>
+                        }
+                        else
+                        {
+                            <span class="pg-btn-text" style="opacity:.4;cursor:not-allowed;">Trước</span>
+                        }
+
+                        @for (int pg = 1; pg <= Math.Min(Model.TotalPages, 5); pg++)
+                        {
+                            <a class="pg-btn @(pg == Model.Page ? "active" : "")" asp-action="EmployeeList" asp-route-keyword="@Model.Keyword" asp-route-companyId="@Model.CompanyId" asp-route-page="@pg" asp-route-pageSize="@Model.PageSize">@pg</a>
+                        }
+
+                        @if (Model.Page < Model.TotalPages)
+                        {
+                            <a class="pg-btn-text" asp-action="EmployeeList" asp-route-keyword="@Model.Keyword" asp-route-companyId="@Model.CompanyId" asp-route-page="@(Model.Page + 1)" asp-route-pageSize="@Model.PageSize">Sau</a>
+                        }
+                        else
+                        {
+                            <span class="pg-btn-text" style="opacity:.4;cursor:not-allowed;">Sau</span>
+                        }
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
