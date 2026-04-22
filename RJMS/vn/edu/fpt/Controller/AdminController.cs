@@ -44,6 +44,36 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         }
 
         [HttpGet]
+        public async Task<IActionResult> EmployeeList(string? keyword, int? companyId, int page = 1, int pageSize = 10)
+        {
+            if (RequireAdminRole() is { } redirect) return redirect;
+            var model = await _adminService.GetEmployeeListAsync(keyword, companyId, page, pageSize);
+            ViewData["Title"] = "Danh sách nhân viên theo công ty";
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SetEmployeeStatus(int userId, bool isActive, string? keyword, int? companyId, int page = 1, int pageSize = 10)
+        {
+            if (RequireAdminRole() is { } redirect) return redirect;
+
+            var result = await _adminService.SetUserActiveStatusAsync(userId, isActive);
+            if (!result.Succeeded)
+            {
+                TempData["ErrorToast"] = result.Errors.FirstOrDefault()?.Message ?? "Cập nhật trạng thái tài khoản thất bại.";
+            }
+            else
+            {
+                TempData["SuccessToast"] = isActive
+                    ? "Đã mở lại tài khoản employee."
+                    : "Đã ngưng tài khoản employee.";
+            }
+
+            return RedirectToAction(nameof(EmployeeList), new { keyword, companyId, page, pageSize });
+        }
+
+        [HttpGet]
         public IActionResult CreateAdmin()
         {
             if (RequireAdminRole() is { } redirect) return redirect;
