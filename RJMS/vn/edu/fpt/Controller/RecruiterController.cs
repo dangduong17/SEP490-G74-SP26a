@@ -13,15 +13,18 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         private readonly FindingJobsDbContext _context;
         private readonly ISubscriptionService _subscriptionService;
         private readonly ICloudinaryService _cloudinaryService;
+        private readonly ICVService _cvService;
 
         public RecruiterController(
             FindingJobsDbContext context,
             ISubscriptionService subscriptionService,
-            ICloudinaryService cloudinaryService)
+            ICloudinaryService cloudinaryService,
+            ICVService cvService)
         {
             _context = context;
             _subscriptionService = subscriptionService;
             _cloudinaryService = cloudinaryService;
+            _cvService = cvService;
         }
 
         // ── Auth guard ────────────────────────────────────────────────────────────
@@ -1017,25 +1020,41 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             return Json(new { success = true, id = category.Id, name = category.Name });
         }
 
-        // ── Applications ──────────────────────────────────────────────────────
-        public async Task<IActionResult> Applications(int? jobId, string? status, string? keyword)
+        // ── Applications (by job) ─────────────────────────────────────────────
+        public async Task<IActionResult> JobApplications(int jobId, string? status, string? keyword)
         {
             if (RequireRecruiter() is { } redirect) return redirect;
 
             var userIdStr = Request.Cookies["UserId"];
             if (!int.TryParse(userIdStr, out int userId)) return RedirectToAction("Login", "Auth");
 
-            var recruiter = await _context.Recruiters.FirstOrDefaultAsync(r => r.UserId == userId);
+            var recruiter = await _context.Recruiters
+                .Include(r => r.RecruiterLocations)
+                .FirstOrDefaultAsync(r => r.UserId == userId);
             if (recruiter == null) return RedirectToAction("Login", "Auth");
+
+            // Ensure recruiter/employee has permission on this job.
+            var assignedLocationIds = recruiter.RecruiterLocations
+                .Select(rl => rl.CompanyLocationId)
+                .ToList();
+
+            var hasJobAccess = IsEmployee()
+                ? await _context.Jobs.AnyAsync(j => j.Id == jobId && j.JobRecruiters.Any(jr => assignedLocationIds.Contains(jr.CompanyLocationId)))
+                : await _context.Jobs.AnyAsync(j => j.Id == jobId && j.JobRecruiters.Any(jr => jr.RecruiterId == recruiter.Id));
+
+            if (!hasJobAccess)
+            {
+                TempData["ErrorToast"] = "Bạn không có quyền xem danh sách ứng tuyển của tin này.";
+                return RedirectToAction(nameof(JobPostingList));
+            }
 
             var query = _context.Applications
                 .Include(a => a.Job)
                 .Include(a => a.Candidate)
                 .ThenInclude(c => c.User)
-                .Where(a => a.Job.JobRecruiters.Any(jr => jr.RecruiterId == recruiter.Id));
+                .Where(a => a.JobId == jobId);
 
             // Filter
-            if (jobId.HasValue) query = query.Where(a => a.JobId == jobId.Value);
             if (!string.IsNullOrEmpty(status) && status != "All") query = query.Where(a => a.Status == status);
             if (!string.IsNullOrEmpty(keyword))
             {
@@ -1059,25 +1078,37 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                     AppliedDate = a.CreatedAt,
                     Status = a.Status ?? "Mới",
                     CoverLetter = a.CoverLetter,
-                    CvId = a.Cvid
+                    CvId = a.Cvid,
+                    AiScore = a.AiScore
                 })
                 .ToListAsync();
 
-            ViewBag.Jobs = await _context.Jobs.Where(j => j.JobRecruiters.Any(jr => jr.RecruiterId == recruiter.Id)).Select(j => new { j.Id, j.Title }).ToListAsync();
-            ViewBag.CurrentJobId = jobId;
+            ViewBag.JobId = jobId;
+            ViewBag.JobTitle = await _context.Jobs
+                .Where(j => j.Id == jobId)
+                .Select(j => j.Title)
+                .FirstOrDefaultAsync() ?? "Tin tuyển dụng";
             ViewBag.CurrentStatus = status;
             ViewBag.Keyword = keyword;
 
             ViewData["Title"] = "Danh sách ứng tuyển";
-            return View(applications);
+            return View("Applications", applications);
+        }
+
+        // Keep old route for compatibility, but direct users to job list.
+        public IActionResult Applications()
+        {
+            if (RequireRecruiter() is { } redirect) return redirect;
+            TempData["InfoToast"] = "Vui lòng chọn một tin tuyển dụng để xem danh sách ứng tuyển.";
+            return RedirectToAction(nameof(JobPostingList));
         }
 
         // ── Candidates ────────────────────────────────────────────────────────
         public IActionResult Candidates()
         {
             if (RequireRecruiter() is { } redirect) return redirect;
-            ViewData["Title"] = "Tìm ứng viên";
-            return View();
+            TempData["InfoToast"] = "Tính năng tìm hồ sơ AI đã được tắt.";
+            return RedirectToAction(nameof(JobPostingList));
         }
 
         // ── Messages ──────────────────────────────────────────────────────────
@@ -1092,15 +1123,61 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         {
             if (RequireRecruiter() is { } redirect) return redirect;
 
+            var userIdStr = Request.Cookies["UserId"];
+            if (!int.TryParse(userIdStr, out int userId)) return RedirectToAction("Login", "Auth");
+
+            var recruiter = await _context.Recruiters
+                .Include(r => r.RecruiterLocations)
+                .FirstOrDefaultAsync(r => r.UserId == userId);
+            if (recruiter == null) return RedirectToAction("Login", "Auth");
+
             var application = await _context.Applications.FindAsync(id);
-            if (application != null)
+            if (application == null)
             {
-                application.Status = status;
-                await _context.SaveChangesAsync();
-                TempData["SuccessToast"] = $"Đã cập nhật trạng thái ứng viên thành '{status}'";
+                TempData["ErrorToast"] = "Không tìm thấy hồ sơ ứng tuyển.";
+                return RedirectToAction(nameof(JobPostingList));
             }
 
-            return RedirectToAction("Applications");
+            var assignedLocationIds = recruiter.RecruiterLocations
+                .Select(rl => rl.CompanyLocationId)
+                .ToList();
+
+            var hasAccess = IsEmployee()
+                ? await _context.Jobs.AnyAsync(j => j.Id == application.JobId && j.JobRecruiters.Any(jr => assignedLocationIds.Contains(jr.CompanyLocationId)))
+                : await _context.Jobs.AnyAsync(j => j.Id == application.JobId && j.JobRecruiters.Any(jr => jr.RecruiterId == recruiter.Id));
+
+            if (!hasAccess)
+            {
+                TempData["ErrorToast"] = "Bạn không có quyền cập nhật hồ sơ ứng tuyển này.";
+                return RedirectToAction(nameof(JobPostingList));
+            }
+
+            // Allowed transitions depending on current status
+            var current = application.Status ?? "Mới";
+            var allowed = new List<string>();
+            if (current == "Đang xem xét")
+            {
+                allowed = new List<string> { "Đặt lịch hẹn", "Từ chối" };
+            }
+            else if (current == "Đặt lịch hẹn")
+            {
+                allowed = new List<string> { "Đã tuyển", "Từ chối" };
+            }
+            else
+            {
+                allowed = new List<string> { "Đang xem xét", "Đặt lịch hẹn", "Đã tuyển", "Từ chối" };
+            }
+
+            if (!allowed.Contains(status))
+            {
+                TempData["ErrorToast"] = "Chuyển trạng thái không hợp lệ.";
+                return RedirectToAction(nameof(JobApplications), new { jobId = application.JobId });
+            }
+
+            application.Status = status;
+            await _context.SaveChangesAsync();
+            TempData["SuccessToast"] = $"Đã cập nhật trạng thái ứng viên thành '{status}'";
+            return RedirectToAction(nameof(JobApplications), new { jobId = application.JobId });
         }
 
         public async Task<IActionResult> ViewCV(int id)
@@ -1108,11 +1185,23 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             if (RequireRecruiter() is { } redirect) return redirect;
 
             var cv = await _context.Cvs.FindAsync(id);
-            var fileUrl = cv?.FileUrl ?? cv?.LegacyFilePath;
-            if (cv == null || string.IsNullOrEmpty(fileUrl))
+            if (cv == null)
             {
                 TempData["ErrorToast"] = "Không tìm thấy file CV.";
-                return RedirectToAction("Applications");
+                return RedirectToAction(nameof(JobPostingList));
+            }
+
+            if (cv.CvType == "BUILDER")
+            {
+                var html = await _cvService.RenderCvHtmlAsync(cv.Id);
+                return Content(html, "text/html");
+            }
+
+            var fileUrl = cv.FileUrl ?? cv.LegacyFilePath;
+            if (string.IsNullOrEmpty(fileUrl))
+            {
+                TempData["ErrorToast"] = "Không tìm thấy file CV.";
+                return RedirectToAction(nameof(JobPostingList));
             }
 
             if (fileUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
@@ -1161,7 +1250,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                             }
 
                             TempData["ErrorToast"] = "Cloudinary đang chặn public delivery file PDF (customer untrusted). Hãy bật 'Allow delivery of PDF and ZIP files' trong Cloudinary Security settings.";
-                            return RedirectToAction("Applications");
+                            return RedirectToAction(nameof(JobPostingList));
                         }
                     }
 
@@ -1177,7 +1266,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                         }
 
                         TempData["ErrorToast"] = "Cloudinary đang chặn public delivery file PDF (customer untrusted). Hãy bật 'Allow delivery of PDF and ZIP files' trong Cloudinary Security settings.";
-                        return RedirectToAction("Applications");
+                        return RedirectToAction(nameof(JobPostingList));
                     }
                 }
                 catch
@@ -1186,7 +1275,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                 }
 
                 TempData["ErrorToast"] = "Không thể tải CV từ kho lưu trữ. Vui lòng thử lại sau.";
-                return RedirectToAction("Applications");
+                return RedirectToAction(nameof(JobPostingList));
             }
 
             return File(fileUrl, "application/pdf");
