@@ -43,12 +43,14 @@
     .admin-page-wrapper {
         display: flex;
         flex-direction: column;
+        margin: 10px 12px 14px;
         min-height: calc(100vh - 70px); /* subtract header height */
     }
 
     /* ===== Inner flex: sidebar + content side by side ===== */
     .admin-body-wrapper {
         display: flex;
+        gap: 12px;
         flex: 1 0 auto; /* grow to push footer down */
     }
 
@@ -57,7 +59,8 @@
         width: 220px;
         min-width: 220px;
         flex-shrink: 0;
-        border-right: 1px solid #dee2e6;
+        border: 1px solid #dee2e6;
+        border-radius: 10px;
         /* Match header background exactly so no seam */
         background: #fff;
         overflow-y: auto;
@@ -87,6 +90,76 @@
         font-weight: 600;
     }
 
+    .admin-sidebar .nav-details {
+        margin: 0;
+    }
+
+    .admin-sidebar .nav-summary {
+        list-style: none;
+        cursor: pointer;
+        user-select: none;
+        color: #343a40;
+        padding: 9px 18px;
+        border-left: 3px solid transparent;
+        border-radius: 0;
+        font-weight: 500;
+        font-size: 0.88rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .admin-sidebar .nav-summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .admin-sidebar .nav-summary:hover {
+        background: #f8f9fa;
+        color: #212529;
+    }
+
+    .admin-sidebar .nav-details[open] > .nav-summary {
+        background: #f0fdf4;
+        color: #00b14f;
+        border-left-color: #00b14f;
+        font-weight: 600;
+    }
+
+    .admin-sidebar .nav-subgroup {
+        padding: 4px 0 10px;
+    }
+
+    .admin-sidebar .nav-subsection {
+        padding: 10px 18px 4px;
+        font-size: 0.66rem;
+        text-transform: uppercase;
+        color: #adb5bd;
+        letter-spacing: 0.07em;
+    }
+
+    .admin-sidebar .nav-sublink {
+        color: #495057;
+        padding: 7px 18px 7px 34px;
+        font-size: 0.84rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border-left: 3px solid transparent;
+        text-decoration: none;
+    }
+
+    .admin-sidebar .nav-sublink:hover {
+        background: #f8f9fa;
+        color: #212529;
+    }
+
+    .admin-sidebar .nav-sublink.active {
+        background: #f0fdf4;
+        color: #00b14f;
+        border-left-color: #00b14f;
+        font-weight: 600;
+    }
+
     .admin-sidebar .nav-section {
         padding: 12px 18px 4px;
         font-size: 0.68rem;
@@ -105,6 +178,7 @@
         position: sticky;
         top: 0;
         z-index: 1000;
+        border-bottom: 1px solid #e5e7eb;
     }
 
     /* ===== Footer: also full width ===== */
@@ -112,6 +186,8 @@
         margin-left: 0 !important;
         width: 100% !important;
         flex-shrink: 0;
+        margin-top: 10px;
+        border-top: 1px solid #e5e7eb;
     }
 
     /* ===== Main content area ===== */
@@ -121,6 +197,8 @@
         padding: 24px;
         min-width: 0;
         overflow: auto;
+        border: 1px solid #dee2e6;
+        border-radius: 10px;
     }
     /* Builder pages need zero padding + no scroll at this level */
     .admin-content--builder {
@@ -196,10 +274,45 @@
                 <span class="nav-section">Quản lý</span>
                 @if (role == "Admin")
                 {
-                    <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() is "UserList" or "EditUser" or "CreateAdmin" or "CreateCandidate" or "CreateRecruiter" or "CreateManager" ? "active" : "")"
-                       asp-controller="Admin" asp-action="UserList">
-                        Người dùng
-                    </a>
+                    var actionName = ViewContext.RouteData.Values["Action"]?.ToString();
+                    var userGroupOpen = actionName is "UserList" or "EditUser" or "CreateAdmin" or "CreateCandidate" or "CreateRecruiter" or "CreateManager" or "EmployeeList";
+                    var userGroupOpenAttr = userGroupOpen ? "open" : null;
+                    <details class="nav-details" @userGroupOpenAttr>
+                        <summary class="nav-summary">
+                            <span>Người dùng</span>
+                        </summary>
+                        <div class="nav-subgroup">
+                            <div class="nav-subsection">Phía quản lí</div>
+                            <a class="nav-sublink @(actionName is "UserList" or "EditUser" or "CreateAdmin" or "CreateManager" ? "active" : "")"
+                               asp-controller="Admin" asp-action="UserList"
+                               asp-route-role="Admin">
+                                Admin
+                            </a>
+                            <a class="nav-sublink @(actionName == "UserList" && ViewContext.HttpContext.Request.Query["role"] == "Manager" ? "active" : "")"
+                               asp-controller="Admin" asp-action="UserList"
+                               asp-route-role="Manager">
+                                Manager
+                            </a>
+
+                            <div class="nav-subsection">Phía người dùng</div>
+                            <a class="nav-sublink @(actionName is "UserList" or "EditUser" or "CreateRecruiter" or "EmployeeList" ? "active" : "")"
+                               asp-controller="Admin" asp-action="UserList"
+                               asp-route-role="Recruiter">
+                                Recruiter
+                            </a>
+                            <a class="nav-sublink @(actionName == "UserList" && ViewContext.HttpContext.Request.Query["role"] == "Candidate" ? "active" : "")"
+                               asp-controller="Admin" asp-action="UserList"
+                               asp-route-role="Candidate">
+                                Candidate
+                            </a>
+
+                            <div class="nav-subsection">Thao tác</div>
+                            <a class="nav-sublink @(actionName == "EmployeeList" ? "active" : "")"
+                               asp-controller="Admin" asp-action="EmployeeList">
+                                Danh sách nhân viên
+                            </a>
+                        </div>
+                    </details>
                     <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() is "CvTemplates" or "CvTemplateCreate" or "CvTemplateEdit" ? "active" : "")"
                        asp-controller="Admin" asp-action="CvTemplates">
                         Quản lý CV Template
