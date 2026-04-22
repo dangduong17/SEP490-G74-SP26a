@@ -187,10 +187,10 @@
                             }
                         </div>
                         <div class="cv-card-actions">
-                            <a asp-action="Edit" asp-route-id="@cv.Id" class="btn-sm-action btn-primary-action">Sửa</a>
-                            <form asp-action="Delete" method="post" style="display:inline; flex:1;" onsubmit="return confirm('Xoá CV này?')">
+                            <a asp-action="Edit" asp-route-id="@cv.Id" class="btn-sm-action btn-primary-action" style="background:#e0f2fe; color:#2563eb; flex: 1; text-align: center; box-sizing:border-box;">Chỉnh sửa / Xem</a>
+                            <form asp-action="Delete" method="post" style="display:flex; flex:1; margin:0; box-sizing:border-box;" onsubmit="return confirm('Xoá CV này?')">
                                 <input type="hidden" name="id" value="@cv.Id" />
-                                <button type="submit" class="btn-sm-action btn-danger-action" style="width: 100%;">Xoá</button>
+                                <button type="submit" class="btn-sm-action btn-danger-action" style="flex:1; box-sizing:border-box;">Xoá</button>
                             </form>
                         </div>
                     </div>
@@ -239,11 +239,12 @@
                         <div class="cv-card-actions">
                             @if (!string.IsNullOrEmpty(cv.FileUrl))
                             {
-                                <a href="@cv.FileUrl" target="_blank" class="btn-sm-action btn-primary-action">Tải xuống</a>
+                                <button type="button" class="btn-sm-action btn-primary-action" style="flex:1; background:#e0f2fe; color:#2563eb;" onclick="previewCv('@cv.Id', '@cv.CvType', '@cv.FileUrl')">Xem</button>
+                                <a href="@cv.FileUrl" target="_blank" class="btn-sm-action btn-primary-action" style="flex:1; text-align:center; box-sizing:border-box;">Tải xuống</a>
                             }
-                            <form asp-action="Delete" method="post" style="display:inline; flex:1;" onsubmit="return confirm('Xoá CV này?')">
+                            <form asp-action="Delete" method="post" style="display:flex; flex:1; margin:0; box-sizing:border-box;" onsubmit="return confirm('Xoá CV này?')">
                                 <input type="hidden" name="id" value="@cv.Id" />
-                                <button type="submit" class="btn-sm-action btn-danger-action" style="width: 100%;">Xoá</button>
+                                <button type="submit" class="btn-sm-action btn-danger-action" style="flex:1; box-sizing:border-box;">Xoá</button>
                             </form>
                         </div>
                     </div>
@@ -252,3 +253,17 @@
         }
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        function previewCv(id, type, fileUrl) {
+            if (type === 'UPLOAD' && fileUrl) {
+                window.open(fileUrl, '_blank');
+            } else if (type === 'BUILDER') {
+                window.open('/CV/PreviewHtml?id=' + id, '_blank');
+            } else {
+                alert('Không thể xem trước CV này.');
+            }
+        }
+    </script>
+}
