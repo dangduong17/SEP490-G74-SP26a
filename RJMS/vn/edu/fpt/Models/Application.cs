@@ -17,6 +17,16 @@ public partial class Application
 
     public string? Status { get; set; }
 
+    public int? AiScore { get; set; }
+
+    public string? MatchedSkills { get; set; }
+
+    public string? MissingSkills { get; set; }
+
+    public string? Summary { get; set; }
+
+    public string? AiProcessStatus { get; set; }
+
     public DateTime? CreatedAt { get; set; }
 
     public virtual Candidate Candidate { get; set; } = null!;
