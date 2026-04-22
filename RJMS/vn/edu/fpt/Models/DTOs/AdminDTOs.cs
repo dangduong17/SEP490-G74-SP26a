@@ -59,6 +59,9 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
         public string FullName { get; set; } = string.Empty;
         public string? PhoneNumber { get; set; }
         public string Role { get; set; } = string.Empty;
+        public int? CompanyId { get; set; }
+        public string? CompanyName { get; set; }
+        public List<string> BranchLabels { get; set; } = new();
         public DateTime? CreatedAt { get; set; }
         public bool IsActive { get; set; }
     }
@@ -565,7 +568,7 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
         public string? Position { get; set; }
         public string CompanyName { get; set; } = string.Empty;
         public List<string> LocationLabels { get; set; } = new();
-        public bool IsVerified { get; set; }
+        public bool IsActive { get; set; }
         public DateTime? CreatedAt { get; set; }
     }
 
