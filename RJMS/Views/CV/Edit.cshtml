@@ -144,6 +144,7 @@ body { overflow: hidden !important; background: #f0f2f5; }
 
 <form id="cvForm" method="post" action="@Url.Action("Save","CV")">
   <input type="hidden" name="cvId" value="@Model.CvId"/>
+  <input type="hidden" name="templateId" value="@Model.TemplateId"/>
   <input type="hidden" name="jsonData" id="cvDataOutput"/>
 
 <div class="shell">
@@ -291,6 +292,21 @@ let activeTheme = { primaryColor: '#2563eb', font: 'Inter' };
 
 // Initialize pages from CustomLayout if candidate has saved, otherwise hydrate from baseConfig
 let pages = [];
+let isCvDirty = false;
+
+document.addEventListener('input', (e) => {
+  if (e.target.hasAttribute('contenteditable') || e.target.tagName.toLowerCase() === 'input') {
+    isCvDirty = true;
+  }
+});
+
+window.addEventListener('beforeunload', function (e) {
+  if (isCvDirty) {
+    e.preventDefault();
+    e.returnValue = '';
+  }
+});
+
 if (cvDataObj.CustomLayout && cvDataObj.CustomLayout.pages && cvDataObj.CustomLayout.pages.length > 0) {
   pages = cvDataObj.CustomLayout.pages;
   if(cvDataObj.CustomLayout.theme) activeTheme = cvDataObj.CustomLayout.theme;
@@ -408,6 +424,7 @@ interact('.resize-drag').draggable({
       e.target.classList.remove('is-dragging');
       delete e.target.dataset.rx; delete e.target.dataset.ry;
       document.querySelectorAll('.snap-guide').forEach(g=>g.remove()); 
+      isCvDirty = true;
     }
   }
 }).resizable({
@@ -422,10 +439,10 @@ interact('.resize-drag').draggable({
       let r=e.rect; e.target.style.width=r.width+'px'; e.target.style.height=r.height+'px';
       let l=(parseFloat(e.target.style.left)||0)+e.deltaRect.left, t=(parseFloat(e.target.style.top)||0)+e.deltaRect.top;
       e.target.style.left=l+'px'; e.target.style.top=t+'px';
-  } }
+  }, end(e){ isCvDirty = true; } }
 });
 
-function removeSec(el){ el.remove(); }
+function removeSec(el){ el.remove(); isCvDirty = true; }
 
 function addSec(pi, type, x, y){
   const tpl = SEC[type];
@@ -441,6 +458,7 @@ function addSec(pi, type, x, y){
   el.appendChild(tpl.build());
   a4.appendChild(el);
   applyTheme();
+  isCvDirty = true;
 }
 
 function renderCanvas(){
@@ -649,8 +667,13 @@ async function saveCv(){
     });
     
     if (res.ok) {
+      isCvDirty = false;
       btn.innerHTML = '✓ Đã lưu thành công';
       btn.style.background = '#059669'; // darker success green
+      // Chuyển hướng lên đúng route (nếu đây là lần tạo mới, sv sẽ redirect về id mới)
+      if (res.redirected) {
+          window.location.href = res.url;
+      }
     } else {
       alert("Lỗi khi lưu CV!");
     }
