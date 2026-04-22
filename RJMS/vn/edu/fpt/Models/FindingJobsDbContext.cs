@@ -95,6 +95,13 @@ public partial class FindingJobsDbContext : DbContext
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.Cvid).HasColumnName("CVId");
             entity.Property(e => e.Status).HasMaxLength(50);
+            entity.Property(e => e.AiScore).HasColumnName("AIScore");
+            entity.Property(e => e.AiProcessStatus)
+                .HasMaxLength(50)
+                .HasColumnName("AIProcessStatus");
+            entity.Property(e => e.MatchedSkills).HasColumnType("text");
+            entity.Property(e => e.MissingSkills).HasColumnType("text");
+            entity.Property(e => e.Summary).HasColumnType("text");
 
             entity.HasOne(d => d.Candidate).WithMany(p => p.Applications)
                 .HasForeignKey(d => d.CandidateId)
