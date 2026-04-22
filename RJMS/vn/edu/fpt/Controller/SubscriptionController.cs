@@ -34,7 +34,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             if (int.TryParse(userIdStr, out int userId))
             {
                 var activeSubscription = await _paymentService.GetActiveSubscriptionByUserIdAsync(userId);
-                ViewBag.CurrentPlanId = activeSubscription?.PlanOptionId ?? activeSubscription?.PlanId;
+                ViewBag.CurrentPlanId = activeSubscription?.PlanId;
             }
 
             // Get active subscription plans grouped by base name (Monthly + Yearly variants)
