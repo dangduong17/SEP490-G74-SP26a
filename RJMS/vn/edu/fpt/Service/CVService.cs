@@ -176,63 +176,110 @@ namespace RJMS.Vn.Edu.Fpt.Service
         // ──────────────────────────────────────────────────────────────────
         // BUILDER: EDITOR
         // ──────────────────────────────────────────────────────────────────
-        public async Task<CvEditorViewModel?> GetEditorViewModelAsync(int cvId, int userId)
+        public async Task<CvEditorViewModel?> GetEditorViewModelAsync(int? cvId, int? templateId, int userId)
         {
             var candidate = await _cvRepository.GetCandidateByUserIdAsync(userId);
             if (candidate == null) return null;
 
-            var cv = await _cvRepository.GetCvByIdAsync(cvId);
-            if (cv == null || cv.CandidateId != candidate.Id || cv.CvType != "BUILDER")
-                return null;
-
-            var template = cv.Template;
-            if (template == null) return null;
-
-            var cvData = cv.CvData ?? await _cvRepository.GetCvDataByCvIdAsync(cvId);
-
-            return new CvEditorViewModel
+            if (cvId.HasValue && cvId.Value > 0)
             {
-                CvId = cv.Id,
-                Title = cv.Title ?? "CV chưa đặt tên",
-                TemplateId = template.Id,
-                HtmlContent = template.HtmlContent,
-                CssContent = template.CssContent,
-                ConfigJson = template.ConfigJson,
-                JsonData = cvData?.JsonData ?? JsonSerializer.Serialize(new CvDataModel(), JsonOptions)
-            };
+                var cv = await _cvRepository.GetCvByIdAsync(cvId.Value);
+                if (cv == null || cv.CandidateId != candidate.Id || cv.CvType != "BUILDER")
+                    return null;
+
+                var template = cv.Template;
+                if (template == null) return null;
+
+                var cvData = cv.CvData ?? await _cvRepository.GetCvDataByCvIdAsync(cvId.Value);
+
+                return new CvEditorViewModel
+                {
+                    CvId = cv.Id,
+                    Title = cv.Title ?? "CV chưa đặt tên",
+                    TemplateId = template.Id,
+                    HtmlContent = template.HtmlContent,
+                    CssContent = template.CssContent,
+                    ConfigJson = template.ConfigJson,
+                    JsonData = cvData?.JsonData ?? JsonSerializer.Serialize(new CvDataModel(), JsonOptions)
+                };
+            }
+            else if (templateId.HasValue && templateId.Value > 0)
+            {
+                var template = await _cvRepository.GetTemplateByIdAsync(templateId.Value);
+                if (template == null || !template.IsActive) return null;
+
+                return new CvEditorViewModel
+                {
+                    CvId = 0,
+                    Title = "CV mới từ template",
+                    TemplateId = template.Id,
+                    HtmlContent = template.HtmlContent,
+                    CssContent = template.CssContent,
+                    ConfigJson = template.ConfigJson,
+                    JsonData = JsonSerializer.Serialize(new CvDataModel(), JsonOptions)
+                };
+            }
+            
+            return null;
         }
 
-        public async Task<(bool Success, string Message)> SaveCvDataAsync(int cvId, int userId, string jsonData, string title)
+        public async Task<(bool Success, string Message, int CvId)> SaveCvDataAsync(int? cvId, int? templateId, int userId, string jsonData, string title)
         {
             var candidate = await _cvRepository.GetCandidateByUserIdAsync(userId);
-            if (candidate == null) return (false, "Không tìm thấy ứng viên.");
-
-            var cv = await _cvRepository.GetCvByIdAsync(cvId);
-            if (cv == null || cv.CandidateId != candidate.Id)
-                return (false, "Không tìm thấy CV hoặc bạn không có quyền.");
-
-            // Update title
-            cv.Title = string.IsNullOrWhiteSpace(title) ? cv.Title : title;
-            cv.UpdatedAt = DateTime.Now;
-            await _cvRepository.UpdateCvAsync(cv);
+            if (candidate == null) return (false, "Không tìm thấy ứng viên.", 0);
 
             var normalized = NormalizeCvDataJson(jsonData);
             var serialized = JsonSerializer.Serialize(normalized, JsonOptions);
 
-            // Update or create CvData
-            var cvData = await _cvRepository.GetCvDataByCvIdAsync(cvId);
-            if (cvData == null)
+            if (cvId.HasValue && cvId.Value > 0)
             {
-                await _cvRepository.CreateCvDataAsync(new CvData { CvId = cvId, JsonData = serialized, CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now });
+                var cv = await _cvRepository.GetCvByIdAsync(cvId.Value);
+                if (cv == null || cv.CandidateId != candidate.Id)
+                    return (false, "Không tìm thấy CV hoặc bạn không có quyền.", 0);
+
+                cv.Title = string.IsNullOrWhiteSpace(title) ? "CV chưa đặt tên" : title;
+                cv.UpdatedAt = DateTime.Now;
+                await _cvRepository.UpdateCvAsync(cv);
+
+                var cvData = await _cvRepository.GetCvDataByCvIdAsync(cvId.Value);
+                if (cvData == null)
+                {
+                    await _cvRepository.CreateCvDataAsync(new CvData { CvId = cv.Id, JsonData = serialized, CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now });
+                }
+                else
+                {
+                    cvData.JsonData = serialized;
+                    cvData.UpdatedAt = DateTime.Now;
+                    await _cvRepository.UpdateCvDataAsync(cvData);
+                }
+
+                return (true, "Lưu CV thành công!", cv.Id);
             }
             else
             {
-                cvData.JsonData = serialized;
-                cvData.UpdatedAt = DateTime.Now;
-                await _cvRepository.UpdateCvDataAsync(cvData);
-            }
+                if (!templateId.HasValue || templateId.Value <= 0)
+                    return (false, "Thiếu thông tin Template để tạo CV mới.", 0);
 
-            return (true, "Lưu CV thành công!");
+                var template = await _cvRepository.GetTemplateByIdAsync(templateId.Value);
+                if (template == null || !template.IsActive)
+                    return (false, "Template không tồn tại hoặc đã bị vô hiệu hoá.", 0);
+
+                var cv = new Cv
+                {
+                    CandidateId = candidate.Id,
+                    TemplateId = templateId.Value,
+                    CvType = "BUILDER",
+                    Title = string.IsNullOrWhiteSpace(title) ? "CV mới" : title,
+                    CreatedAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now
+                };
+                await _cvRepository.CreateCvAsync(cv);
+
+                var cvData = new CvData { CvId = cv.Id, JsonData = serialized, CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now };
+                await _cvRepository.CreateCvDataAsync(cvData);
+
+                return (true, "Lưu CV thành công!", cv.Id);
+            }
         }
 
         // ──────────────────────────────────────────────────────────────────
