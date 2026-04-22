@@ -238,16 +238,57 @@ namespace RJMS.Vn.Edu.Fpt.Service
         private static string WrapDocument(string body, ThemeConfig theme)
         {
             var font = theme.Font ?? "Inter";
-            return $@"
+            var primary = theme.PrimaryColor ?? "#2563eb";
+            return $@"<!DOCTYPE html>
+<html>
+<head>
+<meta charset=""utf-8"">
+<title>CV Preview</title>
 <style>
-  .cv-document {{ font-family:'{font}',sans-serif; background:#fff; box-shadow:0 4px 30px rgba(0,0,0,.12); max-width:794px; margin:0 auto; color:#222; }}
-  .cv-page {{ width:100%; page-break-after:always; }}
+  body {{ margin: 0; padding: 20px; background: #e5e7eb; display:flex; flex-direction:column; align-items:center; gap: 20px; font-family:'{font}',sans-serif; }}
+  .cv-document {{ width: 794px; min-width: 794px; margin: 0 auto; color:#111827; }}
+  .cv-page {{ width: 794px; height: 1123px; position:relative; overflow:hidden; page-break-after:always; background:#fff; margin-bottom: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-radius: 2px; }}
+  
+  /* Builder Freeform CSS */
+  .cv-content-wrap {{ width:100%; height:100%; box-sizing:border-box; }}
+  .cv-header{{display:flex;gap:12px;padding:16px;background:#f8fafc;border-bottom:3px solid {primary};height:100%;width:100%;box-sizing:border-box;}}
+  .cv-avatar{{width:80px;height:80px;flex-shrink:0;border-radius:8px;background:#dde3ed;display:flex;align-items:center;justify-content:center;overflow:hidden;}}
+  .cv-avatar svg{{width:42px;height:42px;color:#9aa5be}}
+  .cv-name{{font-size:1.4rem;font-weight:800;color:#111827;line-height:1.15;margin-bottom:4px}}
+  .cv-jobtitle{{font-size:.9rem;color:#64748b;margin-bottom:8px}}
+  .cv-contacts{{display:grid;grid-template-columns:1fr 1fr;gap:2px 10px}}
+  .cv-citem{{font-size:.72rem;color:#475569;display:flex;align-items:center;gap:4px}}
+  .cv-dot{{display:inline-block;width:4px;height:4px;border-radius:50%;background:#94a3b8;flex-shrink:0}}
+
+  .cv-std{{padding:16px; height:100%; width:100%; box-sizing:border-box; background:transparent;}}
+  .cv-sec-head{{
+    font-size:.82rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;
+    color:#111827;border-bottom:2px solid {primary};
+    padding-bottom:6px;margin-bottom:12px;margin-top:0px;
+  }}
+  .cv-row{{display:grid;grid-template-columns:80px 1fr;gap:8px;margin-bottom:8px}}
+  .cv-date{{font-size:.72rem;color:#64748b;line-height:1.6}}
+  .cv-company{{font-size:.82rem;font-weight:700;color:#111827;display:block;margin-bottom:2px}}
+  .cv-pos{{font-size:.75rem;font-style:italic;color:{primary};font-weight:600;display:block;margin-bottom:4px}}
+  .cv-desc{{font-size:.72rem;color:#6b7280;line-height:1.6;white-space:pre-line;}}
+  .cv-skills{{display:flex;flex-wrap:wrap;gap:6px}}
+  .cv-tag{{background:{primary}15;color:{primary};border:1px solid {primary}40;border-radius:14px;padding:3px 10px;font-size:.7rem;font-weight:600}}
+  .cv-simple{{font-size:.75rem;color:#475569;line-height:1.6;white-space:pre-line;}}
+  
+  [data-ph]:empty::before {{ display: none !important; }}
+  .sec-bar {{ display: none !important; }}
+  
+  /* Fallback template elements */
   .cv-two-col {{ display:grid; grid-template-columns:1fr 1fr; }}
   .cv-col {{ padding:0; }}
   .cv-section {{ padding:20px 28px; }}
-  .cv-section-title {{ font-size:1rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; padding-bottom:6px; margin-bottom:14px; }}
+  .cv-section-title {{ font-size:1rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; padding-bottom:6px; margin-bottom:14px; border-bottom:2px solid {primary}; }}
 </style>
-<div class='cv-document'>{body}</div>";
+</head>
+<body>
+<div class='cv-document'>{body}</div>
+</body>
+</html>";
         }
 
         // ─────────────────────────────────────────────────────────────────────
