@@ -253,7 +253,7 @@
 
                             @if (canSubscribe)
                             {
-                                @if (ViewBag.CurrentPlanId != null && group.MonthlyPlan?.OptionId == (int)ViewBag.CurrentPlanId)
+                                @if (ViewBag.CurrentPlanId != null && group.MonthlyPlan?.Id == (int)ViewBag.CurrentPlanId)
                                 {
                                     <button class="btn btn-pricing btn-pricing-outline" disabled style="background-color: #f8f9fa; border-color: #6c757d; color: #6c757d;">Đang sử dụng</button>
                                 }
@@ -312,7 +312,7 @@
 
                                 @if (canSubscribe)
                                 {
-                                    @if (ViewBag.CurrentPlanId != null && group.YearlyPlan?.OptionId == (int)ViewBag.CurrentPlanId)
+                                    @if (ViewBag.CurrentPlanId != null && group.YearlyPlan?.Id == (int)ViewBag.CurrentPlanId)
                                     {
                                         <button class="btn btn-pricing btn-pricing-outline" disabled style="background-color: #f8f9fa; border-color: #6c757d; color: #6c757d;">Đang sử dụng</button>
                                     }
