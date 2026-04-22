@@ -1441,3 +1441,25 @@ GO
 IF COL_LENGTH('SubscriptionUsage', 'UpdatedAt') IS NULL
     ALTER TABLE SubscriptionUsage ADD UpdatedAt DATETIME2 NULL;
 GO
+
+
+
+IF COL_LENGTH('Applications', 'AIScore') IS NULL
+    ALTER TABLE Applications ADD AIScore INT NULL;
+GO
+
+IF COL_LENGTH('Applications', 'MatchedSkills') IS NULL
+    ALTER TABLE Applications ADD MatchedSkills NVARCHAR(MAX) NULL;
+GO
+
+IF COL_LENGTH('Applications', 'MissingSkills') IS NULL
+    ALTER TABLE Applications ADD MissingSkills NVARCHAR(MAX) NULL;
+GO
+
+IF COL_LENGTH('Applications', 'Summary') IS NULL
+    ALTER TABLE Applications ADD Summary NVARCHAR(MAX) NULL;
+GO
+
+IF COL_LENGTH('Applications', 'AIProcessStatus') IS NULL
+    ALTER TABLE Applications ADD AIProcessStatus NVARCHAR(50) NULL;
+GO
