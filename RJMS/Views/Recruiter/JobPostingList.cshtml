@@ -233,6 +233,9 @@
                                 </td>
                                 <td>
                                     <div class="action-btns">
+                                        <a asp-action="JobApplications" asp-route-jobId="@job.Id" class="btn-action" title="Xem danh sách ứng tuyển">
+                                            <i class="fas fa-users"></i>
+                                        </a>
                                         @if (job.Status == "Inactive")
                                         {
                                             var isExpired = job.ExpiryDate < DateTime.Now;
