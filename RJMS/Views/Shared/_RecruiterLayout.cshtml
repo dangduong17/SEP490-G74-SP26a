@@ -19,11 +19,13 @@
         .recruiter-page-wrapper {
             display: flex;
             flex-direction: column;
+            margin: 10px 12px 14px;
             min-height: calc(100vh - 70px);
         }
 
         .recruiter-body-wrapper {
             display: flex;
+            gap: 12px;
             flex: 1 0 auto;
         }
 
@@ -32,7 +34,8 @@
             width: 250px;
             min-width: 250px;
             flex-shrink: 0;
-            border-right: 1px solid #e5e7eb;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
             background: #fff;
             overflow-y: auto;
         }
@@ -49,19 +52,8 @@
             transition: all 0.2s;
         }
 
-        .recruiter-sidebar .nav-link i {
-            width: 24px;
-            text-align: center;
-            color: #9ca3af;
-            font-size: 1.1rem;
-        }
-
         .recruiter-sidebar .nav-link:hover {
             background: #f9fafb;
-            color: #111827;
-        }
-
-        .recruiter-sidebar .nav-link:hover i {
             color: #111827;
         }
 
@@ -70,10 +62,6 @@
             color: #00b14f;
             border-left-color: #00b14f;
             font-weight: 600;
-        }
-
-        .recruiter-sidebar .nav-link.active i {
-            color: #00b14f;
         }
 
         .recruiter-sidebar .nav-section {
@@ -86,37 +74,21 @@
         }
 
         .recruiter-sidebar-logo {
-            padding: 20px;
-            border-bottom: 1px solid #e5e7eb;
+            padding: 18px 20px;
+            border-bottom: 1px solid #dee2e6;
             background: #fff;
-            display: flex;
-            align-items: center;
-            gap: 12px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: #6c757d;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
         }
 
-        .recruiter-sidebar-logo i {
-            font-size: 1.5rem;
+        .recruiter-sidebar-logo .logo-title {
             color: #00b14f;
-            background: #f0fdf4;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 8px;
-        }
-
-        .recruiter-sidebar-logo > div h6 {
-            color: #111827;
+            font-size: 1rem;
             font-weight: 700;
             margin: 0 0 2px;
-            font-size: 0.95rem;
-        }
-
-        .recruiter-sidebar-logo > div p {
-            color: #6b7280;
-            font-size: 0.75rem;
-            margin: 0;
         }
 
         /* Content area */
@@ -127,6 +99,26 @@
             min-width: 0;
             display: flex;
             flex-direction: column;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+        }
+
+        .site-header {
+            margin-left: 0 !important;
+            width: 100% !important;
+            background: #fff !important;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .site-footer {
+            margin-left: 0 !important;
+            width: 100% !important;
+            flex-shrink: 0;
+            margin-top: 10px;
+            border-top: 1px solid #e5e7eb;
         }
     </style>
 }
@@ -138,11 +130,8 @@
             @{
                 var _role = Context.Request.Cookies["UserRole"];
             }
-            <div class="recruiter-sidebar-logo" style="justify-content: center; text-align: center;">
-                <div>
-                    <h6 style="color: #00b14f; font-size: 1.1rem;">Finding Jobs</h6>
-                    <p>Nhà tuyển dụng</p>
-                </div>
+            <div class="recruiter-sidebar-logo" style="text-align: center;">
+                <div class="logo-title">Finding Jobs</div>
             </div>
             <nav class="nav flex-column pt-2 pb-4">
                 <span class="nav-section">Tổng quan</span>
@@ -160,10 +149,6 @@
                    asp-controller="Recruiter" asp-action="CreateJob" style="font-size: 0.85rem">
                     Đăng tin mới
                 </a>
-                <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Applications" ? "active" : "")"
-                   asp-controller="Recruiter" asp-action="Applications">
-                    Hồ sơ ứng tuyển
-                </a>
                 
                 <span class="nav-section">Tương tác</span>
                 @if (_role == "Employee")
@@ -173,10 +158,6 @@
                         Tin nhắn
                     </a>
                 }
-                <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Candidates" ? "active" : "")"
-                   asp-controller="Recruiter" asp-action="Candidates">
-                    Tìm hồ sơ AI
-                </a>
 
                 <span class="nav-section">Quản lý công ty</span>
                 @if (_role != "Employee")
