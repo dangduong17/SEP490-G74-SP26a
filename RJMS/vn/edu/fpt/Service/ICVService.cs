@@ -16,8 +16,8 @@ namespace RJMS.Vn.Edu.Fpt.Service
         // Builder
         Task<List<CvTemplateViewModel>> GetActiveTemplatesAsync();
         Task<(bool Success, string Message, int CvId)> CreateBuilderCvAsync(int userId, int templateId, string title);
-        Task<CvEditorViewModel?> GetEditorViewModelAsync(int cvId, int userId);
-        Task<(bool Success, string Message)> SaveCvDataAsync(int cvId, int userId, string jsonData, string title);
+        Task<CvEditorViewModel?> GetEditorViewModelAsync(int? cvId, int? templateId, int userId);
+        Task<(bool Success, string Message, int CvId)> SaveCvDataAsync(int? cvId, int? templateId, int userId, string jsonData, string title);
         Task<string> RenderCvHtmlAsync(int cvId);
         Task<string> RenderCvHtmlAsync(int cvId, string dataJsonOverride);
 
