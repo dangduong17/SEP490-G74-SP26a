@@ -2,6 +2,7 @@
 @{
     ViewData["Title"] = "Quản lý người dùng";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["HidePageTitle"] = true;
 }
 
 @section Styles {
@@ -273,64 +274,118 @@
         background: #f0fdf4;
         color: #00b14f;
     }
+
+    .user-mainpanel {
+        min-width: 0;
+    }
+
+    .user-company-block {
+        font-size: 0.84rem;
+        color: #374151;
+        display: grid;
+        gap: 4px;
+    }
+
+    .user-company-name {
+        font-weight: 700;
+        color: #111827;
+    }
+
+    .branch-tags {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+
+    .branch-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.72rem;
+        color: #374151;
+        background: #f3f4f6;
+        border-radius: 999px;
+        padding: 3px 8px;
+    }
+
+    .branch-more {
+        color: #6b7280;
+        font-size: 0.72rem;
+    }
+
+    .act-btn-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-decoration: none;
+        background: #eff6ff;
+        color: #2563eb;
+        margin-right: 4px;
+    }
+
+    .act-btn-link:hover {
+        background: #dbeafe;
+        color: #1d4ed8;
+    }
+
+    .user-toolbar-main {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 6px;
+    }
+
+    .user-toolbar-main h1 {
+        margin: 0 0 4px;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #111827;
+    }
+
+    .user-toolbar-main p {
+        margin: 0;
+        font-size: 0.84rem;
+        color: #6b7280;
+    }
+
+    .user-toolbar-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: flex-end;
+    }
+
+    @@media (max-width: 768px) {
+        .user-toolbar-main {
+            flex-direction: column;
+        }
+
+        .user-toolbar-actions {
+            justify-content: flex-start;
+        }
+    }
 </style>
 }
 
-<!-- Toolbar -->
-<div class="user-toolbar">
+<div class="user-toolbar-main">
     <div>
         <h1>Quản lý người dùng</h1>
-        <p>Quản lý tài khoản Admin, Ứng viên và Nhà tuyển dụng trên hệ thống Finding Jobs.</p>
+        <p>Chọn nhóm vai trò ở sidebar bên trái để xem đúng danh sách cần quản lý.</p>
     </div>
-    <div class="btn-group-create">
-        <a asp-action="CreateAdmin" class="btn-create">
-            Tạo Admin
-        </a>
-        <a asp-action="CreateManager" class="btn-create btn-create-outline">
-            Tạo Manager
-        </a>
-        <a asp-action="CreateCandidate" class="btn-create btn-create-outline">
-            Tạo Ứng viên
-        </a>
-        <a asp-action="CreateRecruiter" class="btn-create btn-create-outline">
-            Tạo NTD
-        </a>
+    <div class="user-toolbar-actions">
+        <a asp-action="CreateAdmin" class="btn-create">Tạo Admin</a>
+        <a asp-action="CreateManager" class="btn-create btn-create-outline">Tạo Manager</a>
+        <a asp-action="CreateCandidate" class="btn-create btn-create-outline">Tạo Candidate</a>
+        <a asp-action="CreateRecruiter" class="btn-create btn-create-outline">Tạo Recruiter</a>
     </div>
 </div>
 
-<!-- Summary cards -->
-<div class="user-summary">
-    <div class="sum-card">
-        <div class="sum-card-left">
-            <small>Tổng người dùng</small>
-            <strong>@Model.TotalItems</strong>
-        </div>
-        <div class="sum-icon" style="background:#ecfdf5;color:#00b14f;"><i class="fas fa-users"></i></div>
-    </div>
-    <div class="sum-card">
-        <div class="sum-card-left">
-            <small>Admin</small>
-            <strong>@Model.Users.Count(u => u.Role == "Admin")</strong>
-        </div>
-        <div class="sum-icon" style="background:#fee2e2;color:#dc2626;"><i class="fas fa-user-shield"></i></div>
-    </div>
-    <div class="sum-card">
-        <div class="sum-card-left">
-            <small>Ứng viên</small>
-            <strong>@Model.Users.Count(u => u.Role == "Candidate")</strong>
-        </div>
-        <div class="sum-icon" style="background:#dbeafe;color:#2563eb;"><i class="fas fa-user"></i></div>
-    </div>
-    <div class="sum-card">
-        <div class="sum-card-left">
-            <small>Nhà tuyển dụng</small>
-            <strong>@Model.Users.Count(u => u.Role == "Recruiter")</strong>
-        </div>
-        <div class="sum-icon" style="background:#d1fae5;color:#059669;"><i class="fas fa-user-tie"></i></div>
-    </div>
-</div>
-
-<!-- Filter bar -->
 <form method="get" asp-action="UserList">
     <div class="user-filterbar">
         <div class="user-search">
@@ -342,8 +397,8 @@
             <option value="" selected="@(string.IsNullOrEmpty(Model.Role))">Tất cả</option>
             <option value="Admin" selected="@(Model.Role == "Admin")">Admin</option>
             <option value="Manager" selected="@(Model.Role == "Manager")">Manager</option>
-            <option value="Candidate" selected="@(Model.Role == "Candidate")">Ứng viên</option>
-            <option value="Recruiter" selected="@(Model.Role == "Recruiter")">Nhà tuyển dụng</option>
+            <option value="Candidate" selected="@(Model.Role == "Candidate")">Candidate</option>
+            <option value="Recruiter" selected="@(Model.Role == "Recruiter")">Recruiter</option>
         </select>
 
         <span style="font-size:0.83rem;color:#374151;font-weight:500;white-space:nowrap;">Trạng thái:</span>
@@ -360,13 +415,10 @@
             <option value="50" selected="@(Model.PageSize == 50)">50</option>
         </select>
 
-        <button type="submit" class="btn-filter-icon" title="Lọc">
-            Lọc
-        </button>
+        <button type="submit" class="btn-filter-icon" title="Lọc">Lọc</button>
     </div>
 </form>
 
-<!-- Table -->
 <div class="user-table-card">
     <table class="user-table">
         <thead>
@@ -375,6 +427,7 @@
                 <th>Họ tên</th>
                 <th>Số điện thoại</th>
                 <th>Vai trò</th>
+                <th>Công ty / chi nhánh</th>
                 <th>Ngày tạo</th>
                 <th>Trạng thái</th>
                 <th style="text-align:right;">Thao tác</th>
@@ -383,20 +436,14 @@
         <tbody>
             @if (!Model.Users.Any())
             {
-                <tr><td colspan="7" class="text-center text-muted py-5">Không có dữ liệu</td></tr>
+                <tr><td colspan="8" class="text-center text-muted py-5">Không có dữ liệu</td></tr>
             }
             @foreach (var u in Model.Users)
             {
                 <tr>
-                    <td>
-                        <div class="user-email">@u.Email</div>
-                    </td>
-                    <td>
-                        <div class="user-name">@u.FullName</div>
-                    </td>
-                    <td>
-                        <span class="user-phone">@(u.PhoneNumber ?? "—")</span>
-                    </td>
+                    <td><div class="user-email">@u.Email</div></td>
+                    <td><div class="user-name">@u.FullName</div></td>
+                    <td><span class="user-phone">@(u.PhoneNumber ?? "—")</span></td>
                     <td>
                         @{
                             var roleClass = u.Role switch
@@ -410,31 +457,43 @@
                         }
                         <span class="role-badge @roleClass">@u.Role</span>
                     </td>
-                    <td style="font-size:0.8rem;color:#6b7280;">
-                        @(u.CreatedAt?.ToString("dd/MM/yyyy") ?? "—")
-                    </td>
                     <td>
-                        @if (u.IsActive)
+                        @if (u.Role == "Recruiter")
                         {
-                            <span class="st-active">Hoạt động</span>
+                            <div class="user-company-block">
+                                <div class="user-company-name">@(string.IsNullOrWhiteSpace(u.CompanyName) ? "Chưa có công ty" : u.CompanyName)</div>
+                                <div class="branch-tags">
+                                    @foreach (var branch in u.BranchLabels.Take(3))
+                                    {
+                                                <span class="branch-tag">@branch</span>
+                                    }
+                                    @if (u.BranchLabels.Count > 3)
+                                    {
+                                        <span class="branch-more">+@(u.BranchLabels.Count - 3) chi nhánh</span>
+                                    }
+                                </div>
+                            </div>
                         }
                         else
                         {
-                            <span class="st-inactive">Ngưng</span>
+                            <span style="color:#9ca3af;">—</span>
                         }
                     </td>
+                    <td style="font-size:0.8rem;color:#6b7280;">@(u.CreatedAt?.ToString("dd/MM/yyyy") ?? "—")</td>
+                    <td>@(u.IsActive ? Html.Raw("<span class=\"st-active\">Hoạt động</span>") : Html.Raw("<span class=\"st-inactive\">Ngưng</span>"))</td>
                     <td style="text-align:right;white-space:nowrap;">
-                        <a asp-action="EditUser" asp-route-id="@u.Id" class="act-btn act-btn-edit" title="Sửa">
-                            Sửa
-                        </a>
+                        <a asp-action="EditUser" asp-route-id="@u.Id" class="act-btn act-btn-edit" title="Sửa">Sửa</a>
+                        @if (u.Role == "Recruiter" && u.CompanyId.HasValue)
+                        {
+                            <a asp-action="EmployeeList" asp-route-companyId="@u.CompanyId" class="act-btn-link" title="Xem nhân viên">
+                                Employee
+                            </a>
+                        }
                         @if (u.IsActive)
                         {
-                            <form asp-action="DeleteUser" asp-route-id="@u.Id" method="post" class="d-inline"
-                                  onsubmit="return confirm('Xác nhận ngưng hoạt động tài khoản này?')">
+                            <form asp-action="DeleteUser" asp-route-id="@u.Id" method="post" class="d-inline" onsubmit="return confirm('Xác nhận ngưng hoạt động tài khoản này?')">
                                 @Html.AntiForgeryToken()
-                                <button type="submit" class="act-btn act-btn-delete" title="Ngưng">
-                                    Ngưng
-                                </button>
+                                <button type="submit" class="act-btn act-btn-delete" title="Ngưng">Ngưng</button>
                             </form>
                         }
                     </td>
@@ -443,20 +502,14 @@
         </tbody>
     </table>
 
-    <!-- Pagination -->
     @if (Model.TotalPages > 1)
     {
         <div class="user-pagination">
-            <span>Hiển thị <strong>@((Model.Page-1)*Model.PageSize+1)–@Math.Min(Model.Page*Model.PageSize,Model.TotalItems)</strong> trong tổng số <strong>@Model.TotalItems</strong> người dùng</span>
+            <span>Hiển thị <strong>@((Model.Page - 1) * Model.PageSize + 1)–@Math.Min(Model.Page * Model.PageSize, Model.TotalItems)</strong> trong tổng số <strong>@Model.TotalItems</strong> người dùng</span>
             <div style="display:flex;gap:6px;align-items:center;">
                 @if (Model.Page > 1)
                 {
-                    <a class="pg-btn-text" asp-action="UserList"
-                       asp-route-keyword="@Model.Keyword"
-                       asp-route-role="@Model.Role"
-                       asp-route-status="@Model.Status"
-                       asp-route-page="@(Model.Page-1)"
-                       asp-route-pageSize="@Model.PageSize">Trước</a>
+                    <a class="pg-btn-text" asp-action="UserList" asp-route-keyword="@Model.Keyword" asp-route-role="@Model.Role" asp-route-status="@Model.Status" asp-route-page="@(Model.Page - 1)" asp-route-pageSize="@Model.PageSize">Trước</a>
                 }
                 else
                 {
@@ -465,23 +518,12 @@
 
                 @for (int pg = 1; pg <= Math.Min(Model.TotalPages, 5); pg++)
                 {
-                    <a class="pg-btn @(pg == Model.Page ? "active" : "")"
-                       asp-action="UserList"
-                       asp-route-keyword="@Model.Keyword"
-                       asp-route-role="@Model.Role"
-                       asp-route-status="@Model.Status"
-                       asp-route-page="@pg"
-                       asp-route-pageSize="@Model.PageSize">@pg</a>
+                    <a class="pg-btn @(pg == Model.Page ? "active" : "")" asp-action="UserList" asp-route-keyword="@Model.Keyword" asp-route-role="@Model.Role" asp-route-status="@Model.Status" asp-route-page="@pg" asp-route-pageSize="@Model.PageSize">@pg</a>
                 }
 
                 @if (Model.Page < Model.TotalPages)
                 {
-                    <a class="pg-btn-text" asp-action="UserList"
-                       asp-route-keyword="@Model.Keyword"
-                       asp-route-role="@Model.Role"
-                       asp-route-status="@Model.Status"
-                       asp-route-page="@(Model.Page+1)"
-                       asp-route-pageSize="@Model.PageSize">Sau</a>
+                    <a class="pg-btn-text" asp-action="UserList" asp-route-keyword="@Model.Keyword" asp-route-role="@Model.Role" asp-route-status="@Model.Status" asp-route-page="@(Model.Page + 1)" asp-route-pageSize="@Model.PageSize">Sau</a>
                 }
                 else
                 {
