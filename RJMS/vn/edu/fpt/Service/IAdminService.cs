@@ -14,6 +14,7 @@ namespace RJMS.Vn.Edu.Fpt.Service
         Task<ServiceResult> CreateRecruiterAsync(AdminCreateRecruiterViewModel model);
         Task<ServiceResult> UpdateUserAsync(AdminUpdateUserViewModel model);
         Task<ServiceResult> SoftDeleteUserAsync(int id);
+        Task<ServiceResult> SetUserActiveStatusAsync(int id, bool isActive);
 
         // Skills management
         Task<AdminSkillListViewModel> GetSkillListAsync(string? keyword, string? category, int page, int pageSize);
