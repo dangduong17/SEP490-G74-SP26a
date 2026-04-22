@@ -47,6 +47,7 @@ namespace RJMS.Vn.Edu.Fpt.Service
                 var phone = u.Phone
                     ?? u.Candidates.FirstOrDefault()?.Phone
                     ?? u.Recruiters.FirstOrDefault()?.Phone;
+                var recruiter = u.Recruiters.FirstOrDefault();
                 return new AdminUserListItemViewModel
                 {
                     Id = u.Id,
@@ -54,6 +55,13 @@ namespace RJMS.Vn.Edu.Fpt.Service
                     FullName = $"{u.FirstName} {u.LastName}".Trim(),
                     PhoneNumber = phone,
                     Role = userRole,
+                    CompanyId = recruiter?.CompanyId,
+                    CompanyName = recruiter?.Company?.Name,
+                    BranchLabels = recruiter?.RecruiterLocations
+                        .Select(rl => rl.CompanyLocation?.AddressLabel ?? rl.CompanyLocation?.Location?.CityName ?? string.Empty)
+                        .Where(s => !string.IsNullOrWhiteSpace(s))
+                        .Distinct()
+                        .ToList() ?? new List<string>(),
                     CreatedAt = u.CreatedAt,
                     IsActive = u.IsActive == true
                 };
@@ -392,6 +400,17 @@ namespace RJMS.Vn.Edu.Fpt.Service
             user.IsActive = false;
             user.UpdatedAt = DateTimeHelper.NowVietnam;
             await _repo.SoftDeleteUserAsync(user);
+            return ServiceResult.Success();
+        }
+
+        public async Task<ServiceResult> SetUserActiveStatusAsync(int id, bool isActive)
+        {
+            var user = await _repo.GetUserByIdWithDetailsAsync(id);
+            if (user == null) return ServiceResult.NotFoundResult();
+
+            user.IsActive = isActive;
+            user.UpdatedAt = DateTimeHelper.NowVietnam;
+            await _repo.UpdateUserAsync(user);
             return ServiceResult.Success();
         }
 
@@ -838,7 +857,7 @@ namespace RJMS.Vn.Edu.Fpt.Service
                     .Select(rl => rl.CompanyLocation?.AddressLabel ?? rl.CompanyLocation?.Location?.CityName ?? "")
                     .Where(s => !string.IsNullOrEmpty(s))
                     .ToList(),
-                IsVerified = r.IsVerified ?? false,
+                IsActive = r.User?.IsActive == true,
                 CreatedAt = r.CreatedAt
             }).ToList();
 
