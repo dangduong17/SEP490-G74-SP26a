@@ -449,7 +449,7 @@
                                         <div class="profile-menu-section">
                                             <a asp-controller="Recruiter" asp-action="RecruiterDashboard" class="profile-menu-item">
                                                 <i class="fas fa-chart-bar"></i>
-                                                <span class="label">Dashboard</span>
+                                                <span class="label">Bảng điều khiển</span>
                                             </a>
                                             <a asp-controller="Recruiter" asp-action="JobPostingList" class="profile-menu-item">
                                                 <i class="fas fa-file-alt"></i>
@@ -459,9 +459,9 @@
                                                 <i class="fas fa-crown"></i>
                                                 <span class="label">Gói dịch vụ</span>
                                             </a>
-                                            <a asp-controller="Recruiter" asp-action="Applications" class="profile-menu-item">
+                                            <a asp-controller="Recruiter" asp-action="JobPostingList" class="profile-menu-item">
                                                 <i class="fas fa-inbox"></i>
-                                                <span class="label">Hồ sơ ứng tuyển</span>
+                                                <span class="label">Danh sách ứng tuyển theo tin</span>
                                             </a>
                                         </div>
 
@@ -706,7 +706,7 @@
             let href = 'javascript:void(0)';
             if (n.type === 'APPLICATION') {
                 const role = document.getElementById('notifDropdown')?.getAttribute('data-role');
-                if (role === 'Recruiter') href = '/Recruiter/Applications';
+                if (role === 'Recruiter') href = '/Recruiter/JobPostingList';
                 else if (role === 'Candidate') href = '/Application/Index';
             }
 
