@@ -3,7 +3,8 @@
 @{
     ViewData["Title"] = "Quản lý hồ sơ ứng tuyển";
     Layout = "~/Views/Shared/_RecruiterLayout.cshtml";
-    int? currentJobId = ViewBag.CurrentJobId;
+    int jobId = ViewBag.JobId ?? 0;
+    string jobTitle = ViewBag.JobTitle ?? "Tin tuyển dụng";
     string currentStatus = ViewBag.CurrentStatus ?? "All";
     string keyword = ViewBag.Keyword ?? "";
 }
@@ -43,7 +44,6 @@
             background: #fff;
             border-radius: 12px;
             border: 1px solid #e5e7eb;
-            overflow: hidden;
         }
         .app-table { width: 100%; border-collapse: collapse; }
         .app-table th { background: #f9fafb; padding: 16px; font-size: 0.75rem; text-transform: uppercase; color: #6b7280; border-bottom: 2px solid #f3f4f6; text-align: left; }
@@ -70,20 +70,28 @@
         .bg-hired { background: #f0fdf4; color: #166534; }
         .bg-rejected { background: #fef2f2; color: #991b1b; }
 
-        .action-btns { display: flex; gap: 8px; justify-content: flex-end; }
-        .btn-cv {
-            background: #fff; border: 1.5px solid #00b14f; color: #00b14f;
-            padding: 6px 14px; border-radius: 6px; font-size: 0.82rem; font-weight: 600;
-            text-decoration: none; transition: all 0.2s;
-        }
-        .btn-cv:hover { background: #00b14f; color: #fff; }
+        .action-btns { display: flex; gap: 8px; justify-content: flex-end; align-items: center; flex-wrap: wrap; }
         
-        .dropdown-toggle::after { display: none; }
-        .btn-more {
-            width: 32px; height: 32px; border-radius: 6px; border: 1px solid #e5e7eb;
-            display: flex; align-items: center; justify-content: center; color: #6b7280;
+        .action-btn {
+            display: inline-flex; align-items: center; justify-content: center;
+            height: 38px; border-radius: 6px; font-size: 0.85rem; font-weight: 600;
+            padding: 0 16px; transition: all 0.2s; cursor: pointer; text-decoration: none;
+            box-sizing: border-box; border: 1.5px solid transparent; background: none; white-space: nowrap;
+            margin: 0;
         }
-        .btn-more:hover { background: #f9fafb; color: #111827; }
+        .action-btn-cv { background: #fff; border-color: #00b14f; color: #00b14f; }
+        .action-btn-cv:hover { background: #00b14f; color: #fff; }
+        
+        .action-btn-chat { background: #fff; border-color: #0d6efd; color: #0d6efd; }
+        .action-btn-chat:hover { background: #0d6efd; color: #fff; }
+        
+        .action-btn-more { width: 38px; padding: 0; background: #fff; border-color: #e5e7eb; color: #6b7280; }
+        .action-btn-more:hover { background: #f9fafb; color: #111827; }
+        .dropdown-toggle::after { display: none; }
+        
+        /* Fix dropdown clip */
+        .app-table-card { background: #fff; border-radius: 12px; border: 1px solid #e5e7eb; }
+        .table-responsive { overflow: visible; }
 
         /* Empty state */
         .empty-box { text-align: center; padding: 60px 20px; }
@@ -94,26 +102,18 @@
 <div class="container-fluid py-4">
     <div class="page-header mb-4">
         <h1>Quản lý hồ sơ ứng tuyển</h1>
-        <p>Theo dõi và cập nhật trạng thái của các ứng viên nộp hồ sơ.</p>
+        <p>Danh sách ứng viên ứng tuyển cho tin: <strong>@jobTitle</strong></p>
     </div>
 
     <!-- Filter Card -->
     <div class="filter-card">
         <form method="get" class="filter-grid">
+            <input type="hidden" name="jobId" value="@jobId" />
             <div>
                 <label class="filter-label">Tìm kiếm</label>
                 <input type="text" name="keyword" value="@keyword" class="form-control-custom" placeholder="Tên ứng viên, vị trí tuyển dụng...">
             </div>
-            <div>
-                <label class="filter-label">Tin tuyển dụng</label>
-                <select name="jobId" class="form-control-custom">
-                    <option value="">Tất cả tin đăng</option>
-                    @foreach (var job in ViewBag.Jobs)
-                    {
-                        <option value="@job.Id" selected="@(currentJobId == job.Id)">@job.Title</option>
-                    }
-                </select>
-            </div>
+            <div></div>
             <div>
                 <label class="filter-label">Trạng thái</label>
                 <select name="status" class="form-control-custom">
@@ -127,7 +127,7 @@
             </div>
             <div class="d-flex gap-2">
                 <button type="submit" class="btn-filter">Lọc hồ sơ</button>
-                <a asp-action="Applications" class="btn btn-light" style="border-radius:8px; padding: 8px 16px;">Xóa lọc</a>
+                <a asp-action="JobApplications" asp-route-jobId="@jobId" class="btn btn-light" style="border-radius:8px; padding: 8px 16px;">Xóa lọc</a>
             </div>
         </form>
     </div>
@@ -141,6 +141,7 @@
                         <th style="width: 30%">Ứng viên</th>
                         <th>Vị trí ứng tuyển</th>
                         <th>Ngày nộp</th>
+                        <th>AI Score</th>
                         <th>Trạng thái</th>
                         <th class="text-end">Hành động</th>
                     </tr>
@@ -174,6 +175,16 @@
                                     <div class="cand-sub"><i class="far fa-calendar-alt me-1"></i> @app.AppliedDate?.ToString("dd/MM/yyyy HH:mm")</div>
                                 </td>
                                 <td>
+                                    @if(app.AiScore.HasValue)
+                                    {
+                                        <div class="job-tag" style="background:#fef3c7; color:#059669; font-weight:bold;">@app.AiScore.Value/100</div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted" style="font-size:0.85rem;">Chưa chấm</span>
+                                    }
+                                </td>
+                                <td>
                                     @{
                                         var statusClass = app.Status switch
                                         {
@@ -189,22 +200,58 @@
                                 </td>
                                 <td>
                                     <div class="action-btns">
-                                        <a href="/Recruiter/ViewCV/@app.CvId" target="_blank" class="btn-cv"><i class="fas fa-file-pdf me-1"></i> Xem CV</a>
+                                        <a href="/Recruiter/ViewCV/@app.CvId" target="_blank" class="action-btn action-btn-cv"><i class="fas fa-file-pdf me-1"></i> Xem CV</a>
                                         
-                                        <div class="dropdown">
-                                            <button class="btn-more dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                                <i class="fas fa-ellipsis-v"></i>
-                                            </button>
-                                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
-                                                <li><h6 class="dropdown-header">Cập nhật trạng thái</h6></li>
-                                                <li><form asp-action="UpdateApplicationStatus" method="post"><input type="hidden" name="id" value="@app.Id"/><input type="hidden" name="status" value="Đang xem xét"/><button type="submit" class="dropdown-item">Đang xem xét</button></form></li>
-                                                <li><form asp-action="UpdateApplicationStatus" method="post"><input type="hidden" name="id" value="@app.Id"/><input type="hidden" name="status" value="Đặt lịch hẹn"/><button type="submit" class="dropdown-item">Đặt lịch hẹn</button></form></li>
-                                                <li><form asp-action="UpdateApplicationStatus" method="post"><input type="hidden" name="id" value="@app.Id"/><input type="hidden" name="status" value="Đã tuyển"/><button type="submit" class="dropdown-item text-success">Đã tuyển</button></form></li>
-                                                <li><form asp-action="UpdateApplicationStatus" method="post"><input type="hidden" name="id" value="@app.Id"/><input type="hidden" name="status" value="Từ chối"/><button type="submit" class="dropdown-item text-danger">Từ chối</button></form></li>
-                                                <li><hr class="dropdown-divider"></li>
-                                                <li><a class="dropdown-item" href="#"><i class="fas fa-comment shadow-sm me-2 text-muted"></i> Gửi tin nhắn</a></li>
-                                            </ul>
-                                        </div>
+                                        @if (Context.Request.Cookies["UserRole"] == "Employee")
+                                        {
+                                            <a asp-controller="Chat" asp-action="Index" class="action-btn action-btn-chat"><i class="fas fa-comment-dots me-1"></i> Chat</a>
+                                        }
+
+                                        @{
+                                            var status = app.Status ?? "Mới";
+                                            var actions = new List<(string label, string value)>();
+                                            if (status == "Đang xem xét")
+                                            {
+                                                actions.Add(("Đặt lịch hẹn", "Đặt lịch hẹn"));
+                                                actions.Add(("Từ chối", "Từ chối"));
+                                            }
+                                            else if (status == "Đặt lịch hẹn")
+                                            {
+                                                actions.Add(("Đã tuyển", "Đã tuyển"));
+                                                actions.Add(("Từ chối", "Từ chối"));
+                                            }
+                                            else if (status != "Từ chối" && status != "Đã tuyển")
+                                            {
+                                                actions.Add(("Đang xem xét", "Đang xem xét"));
+                                                actions.Add(("Đặt lịch hẹn", "Đặt lịch hẹn"));
+                                                actions.Add(("Đã tuyển", "Đã tuyển"));
+                                                actions.Add(("Từ chối", "Từ chối"));
+                                            }
+                                        }
+                                        
+                                        @if (actions.Any())
+                                        {
+                                            <div class="dropdown">
+                                                <button class="action-btn action-btn-more dropdown-toggle" type="button" id="dropdownApp_@app.Id" data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false">
+                                                    <i class="fas fa-ellipsis-v"></i>
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="dropdownApp_@app.Id">
+                                                    <li><h6 class="dropdown-header">Cập nhật trạng thái</h6></li>
+                                                    @foreach (var act in actions)
+                                                    {
+                                                        <li>
+                                                            <form asp-action="UpdateApplicationStatus" method="post" style="margin:0;">
+                                                                <input type="hidden" name="id" value="@app.Id" />
+                                                                <input type="hidden" name="status" value="@act.value" />
+                                                                <button type="submit" class="dropdown-item py-2" style="font-size:0.9rem; text-align: left;">
+                                                                    @act.label
+                                                                </button>
+                                                            </form>
+                                                        </li>
+                                                    }
+                                                </ul>
+                                            </div>
+                                        }
                                     </div>
                                 </td>
                             </tr>
