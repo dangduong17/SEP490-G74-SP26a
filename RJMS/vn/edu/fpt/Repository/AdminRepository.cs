@@ -43,7 +43,9 @@ namespace RJMS.Vn.Edu.Fpt.Repository
             var query = _db.Users
                 .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
                 .Include(u => u.Candidates)
-                .Include(u => u.Recruiters)
+                .Include(u => u.Recruiters).ThenInclude(r => r.Company)
+                .Include(u => u.Recruiters).ThenInclude(r => r.RecruiterLocations)
+                    .ThenInclude(rl => rl.CompanyLocation).ThenInclude(cl => cl.Location)
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(keyword))
