@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace RJMS.vn.edu.fpt.Models;
@@ -17,7 +17,7 @@ public partial class Application
 
     public string? Status { get; set; }
 
-    public int? AiScore { get; set; }
+    public decimal? AiScore { get; set; }
 
     public string? MatchedSkills { get; set; }
 
