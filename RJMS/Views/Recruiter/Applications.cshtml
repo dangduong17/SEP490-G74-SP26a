@@ -40,15 +40,62 @@
         .btn-filter { background: #111827; color: #fff; border: none; padding: 8px 24px; border-radius: 8px; font-weight: 600; }
         .btn-filter:hover { background: #000; }
 
+        /* AI Scoring Button */
+        .btn-ai-score {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: linear-gradient(135deg, #7c3aed, #4f46e5);
+            color: #fff; border: none; padding: 10px 20px;
+            border-radius: 10px; font-weight: 700; font-size: 0.9rem;
+            cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 14px rgba(124,58,237,0.35);
+            white-space: nowrap;
+        }
+        .btn-ai-score:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(124,58,237,0.5); }
+        .btn-ai-score:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .btn-ai-score .ai-spinner { display: none; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        .btn-ai-score.loading .ai-spinner { display: inline-block; }
+        .btn-ai-score.loading .ai-icon { display: none; }
+        @@keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Progress Bar */
+        #ai-progress-container {
+            display: none;
+            background: linear-gradient(135deg, #f5f3ff, #ede9fe);
+            border: 1px solid #c4b5fd;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 16px;
+        }
+        #ai-progress-container.active { display: block; animation: slideDown 0.3s ease; }
+        @@keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .ai-progress-label { font-size: 0.85rem; font-weight: 600; color: #5b21b6; margin-bottom: 8px; display: flex; justify-content: space-between; }
+        .ai-progress-bar-bg { background: #ddd6fe; border-radius: 8px; height: 10px; overflow: hidden; }
+        .ai-progress-bar-fill {
+            height: 100%; width: 0%; border-radius: 8px;
+            background: linear-gradient(90deg, #7c3aed, #4f46e5);
+            transition: width 0.6s ease;
+        }
+        .ai-progress-status { font-size: 0.8rem; color: #6d28d9; margin-top: 6px; }
+
         .app-table-card {
             background: #fff;
             border-radius: 12px;
             border: 1px solid #e5e7eb;
         }
         .app-table { width: 100%; border-collapse: collapse; }
-        .app-table th { background: #f9fafb; padding: 16px; font-size: 0.75rem; text-transform: uppercase; color: #6b7280; border-bottom: 2px solid #f3f4f6; text-align: left; }
-        .app-table td { padding: 16px; border-bottom: 1px solid #f3f4f6; vertical-align: middle; }
+        .app-table th { background: #f9fafb; padding: 12px; font-size: 0.75rem; text-transform: uppercase; color: #6b7280; border-bottom: 2px solid #f3f4f6; text-align: left; white-space: nowrap; }
+        .app-table td { padding: 12px; border-bottom: 1px solid #f3f4f6; vertical-align: middle; }
         
+        /* Row glow animation when score is received */
+        @@keyframes aiScoreGlow {
+            0%   { background: #fff; }
+            30%  { background: #f0fdf4; box-shadow: inset 0 0 0 2px #22c55e; }
+            70%  { background: #f0fdf4; }
+            100% { background: transparent; box-shadow: none; }
+        }
+        .ai-score-animating {
+            animation: aiScoreGlow 1.8s ease-out forwards;
+        }
+
         .cand-info { display: flex; align-items: center; gap: 12px; }
         .cand-avatar {
             width: 42px; height: 42px; border-radius: 50%;
@@ -62,7 +109,7 @@
         .job-tag { font-weight: 600; color: #374151; font-size: 0.9rem; }
         
         .badge-status {
-            padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;
+            padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; white-space: nowrap;
         }
         .bg-new { background: #eff6ff; color: #1d4ed8; }
         .bg-review { background: #fefce8; color: #854d0e; }
@@ -93,17 +140,44 @@
         .app-table-card { background: #fff; border-radius: 12px; border: 1px solid #e5e7eb; }
         .table-responsive { overflow: visible; }
 
+        /* AI Score badges */
+        .ai-score-badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 700;
+        }
+        .ai-score-high  { background: #dcfce7; color: #15803d; }
+        .ai-score-mid   { background: #fef9c3; color: #a16207; }
+        .ai-score-low   { background: #fee2e2; color: #b91c1c; }
+        .ai-score-pending { background: #f3f4f6; color: #6b7280; font-size: 0.8rem; }
+        .ai-score-processing {
+            background: #ede9fe; color: #6d28d9;
+            animation: pulse 1.4s ease-in-out infinite;
+        }
+        @@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .ai-score-failed { background: #fff1f2; color: #e11d48; }
+
         /* Empty state */
         .empty-box { text-align: center; padding: 60px 20px; }
         .empty-icon { font-size: 3rem; color: #d1d5db; margin-bottom: 16px; }
+
+        /* Tooltip for matched/missing skills */
+        .skill-tip { cursor: help; text-decoration: underline dotted; }
     </style>
 }
 
 <div class="container-fluid py-4">
-    <div class="page-header mb-4">
-        <h1>Quản lý hồ sơ ứng tuyển</h1>
-        <p>Danh sách ứng viên ứng tuyển cho tin: <strong>@jobTitle</strong></p>
+    <div class="page-header mb-4 d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <div>
+            <h1>Quản lý hồ sơ ứng tuyển</h1>
+            <p>Danh sách ứng viên ứng tuyển cho tin: <strong>@jobTitle</strong></p>
+        </div>
+        <button id="btn-ai-score" class="btn-ai-score" onclick="openAiScoringModal(@jobId)">
+            <span class="ai-icon"><i class="fas fa-robot"></i></span>
+            <span class="ai-spinner"></span>
+            Chấm điểm CV bằng AI
+        </button>
     </div>
+
 
     <!-- Filter Card -->
     <div class="filter-card">
@@ -113,8 +187,14 @@
                 <label class="filter-label">Tìm kiếm</label>
                 <input type="text" name="keyword" value="@keyword" class="form-control-custom" placeholder="Tên ứng viên, vị trí tuyển dụng...">
             </div>
-            <div></div>
             <div>
+                <label class="filter-label">Sắp xếp theo Điểm AI</label>
+                <select name="aiScoreSort" class="form-control-custom">
+                    <option value="" selected="@(ViewBag.AiScoreSort == null || ViewBag.AiScoreSort == "")">Không sắp xếp</option>
+                    <option value="desc" selected="@(ViewBag.AiScoreSort == "desc")">Từ cao đến thấp</option>
+                    <option value="asc" selected="@(ViewBag.AiScoreSort == "asc")">Từ thấp đến cao</option>
+                </select>
+            </div>
                 <label class="filter-label">Trạng thái</label>
                 <select name="status" class="form-control-custom">
                     <option value="All" selected="@(currentStatus == "All")">Tất cả trạng thái</option>
@@ -138,7 +218,7 @@
             <table class="app-table">
                 <thead>
                     <tr>
-                        <th style="width: 30%">Ứng viên</th>
+                        <th style="width: 25%">Ứng viên</th>
                         <th>Vị trí ứng tuyển</th>
                         <th>Ngày nộp</th>
                         <th>AI Score</th>
@@ -151,7 +231,7 @@
                     {
                         foreach (var app in Model)
                         {
-                            <tr>
+                            <tr id="app-row-@app.Id" data-app-id="@app.Id">
                                 <td>
                                     <div class="cand-info">
                                         @if (!string.IsNullOrEmpty(app.CandidateAvatar))
@@ -175,14 +255,52 @@
                                     <div class="cand-sub"><i class="far fa-calendar-alt me-1"></i> @app.AppliedDate?.ToString("dd/MM/yyyy HH:mm")</div>
                                 </td>
                                 <td>
-                                    @if(app.AiScore.HasValue)
-                                    {
-                                        <div class="job-tag" style="background:#fef3c7; color:#059669; font-weight:bold;">@app.AiScore.Value/100</div>
+                                    @{
+                                        var aiStatus = app.AiProcessStatus;
+                                        var matchedSkillsList = new List<string>();
+                                        var missingSkillsList = new List<string>();
+                                        try
+                                        {
+                                            if (!string.IsNullOrEmpty(app.MatchedSkills))
+                                                matchedSkillsList = System.Text.Json.JsonSerializer.Deserialize<List<string>>(app.MatchedSkills) ?? new();
+                                            if (!string.IsNullOrEmpty(app.MissingSkills))
+                                                missingSkillsList = System.Text.Json.JsonSerializer.Deserialize<List<string>>(app.MissingSkills) ?? new();
+                                        }
+                                        catch { }
                                     }
-                                    else
-                                    {
-                                        <span class="text-muted" style="font-size:0.85rem;">Chưa chấm</span>
-                                    }
+                                    <div id="ai-score-cell-@app.Id">
+                                        @if (app.AiScore.HasValue)
+                                        {
+                                            var scoreClass = app.AiScore >= 7 ? "ai-score-high" : (app.AiScore >= 5 ? "ai-score-mid" : "ai-score-low");
+                                            var tooltipText = "";
+                                            if (matchedSkillsList.Any()) tooltipText += "✅ " + string.Join(", ", matchedSkillsList);
+                                            if (missingSkillsList.Any()) tooltipText += (tooltipText.Length > 0 ? " | " : "") + "❌ " + string.Join(", ", missingSkillsList);
+                                            <span class="ai-score-badge @scoreClass" 
+                                                  title="@tooltipText"
+                                                  data-bs-toggle="tooltip" data-bs-placement="top">
+                                                <i class="fas fa-star" style="font-size:0.7rem;"></i>
+                                                @app.AiScore.Value.ToString("0.0")/10
+                                            </span>
+                                        }
+                                        else if (aiStatus == "Processing" || aiStatus == "Pending")
+                                        {
+                                            <span class="ai-score-badge ai-score-processing">
+                                                <i class="fas fa-circle-notch fa-spin me-1" style="font-size:0.7rem;"></i>
+                                                Đang chấm...
+                                            </span>
+                                        }
+                                        else if (aiStatus == "Failed")
+                                        {
+                                            <span class="ai-score-badge ai-score-failed">
+                                                <i class="fas fa-times-circle me-1" style="font-size:0.7rem;"></i>
+                                                Lỗi
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="ai-score-badge ai-score-pending">Chưa chấm</span>
+                                        }
+                                    </div>
                                 </td>
                                 <td>
                                     @{
@@ -229,38 +347,40 @@
                                             }
                                         }
                                         
-                                        @if (actions.Any())
-                                        {
                                             <div class="dropdown">
                                                 <button class="action-btn action-btn-more dropdown-toggle" type="button" id="dropdownApp_@app.Id" data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false">
                                                     <i class="fas fa-ellipsis-v"></i>
                                                 </button>
                                                 <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="dropdownApp_@app.Id">
-                                                    <li><h6 class="dropdown-header">Cập nhật trạng thái</h6></li>
-                                                    @foreach (var act in actions)
+                                                    <li><a class="dropdown-item" href="/Recruiter/ApplicationDetail/@app.Id"><i class="fas fa-info-circle text-info me-2"></i>Chi tiết hồ sơ</a></li>
+                                                    @if (actions.Any())
                                                     {
-                                                        <li>
-                                                            <form asp-action="UpdateApplicationStatus" method="post" style="margin:0;">
-                                                                <input type="hidden" name="id" value="@app.Id" />
-                                                                <input type="hidden" name="status" value="@act.value" />
-                                                                <button type="submit" class="dropdown-item py-2" style="font-size:0.9rem; text-align: left;">
-                                                                    @act.label
-                                                                </button>
-                                                            </form>
-                                                        </li>
+                                                        <li><hr class="dropdown-divider"></li>
+                                                        <li><h6 class="dropdown-header">Cập nhật trạng thái</h6></li>
+                                                        foreach (var act in actions)
+                                                        {
+                                                            <li>
+                                                                <form asp-action="UpdateApplicationStatus" method="post" style="margin:0;">
+                                                                    <input type="hidden" name="id" value="@app.Id" />
+                                                                    <input type="hidden" name="status" value="@act.value" />
+                                                                    <button type="submit" class="dropdown-item py-2" style="font-size:0.9rem; text-align: left;">
+                                                                        @act.label
+                                                                    </button>
+                                                                </form>
+                                                            </li>
+                                                        }
                                                     }
                                                 </ul>
                                             </div>
-                                        }
-                                    </div>
-                                </td>
+                                        </div>
+                                    </td>
                             </tr>
                         }
                     }
                     else
                     {
                         <tr>
-                            <td colspan="5">
+                            <td colspan="6">
                                 <div class="empty-box">
                                     <div class="empty-icon"><i class="fas fa-inbox"></i></div>
                                     <h5 class="text-muted">Không có hồ sơ nào</h5>
@@ -274,3 +394,217 @@
         </div>
     </div>
 </div>
+
+<!-- AI Scoring Confirm Modal -->
+<div class="modal fade" id="aiScoringModal" tabindex="-1" aria-labelledby="aiScoringModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:16px; border:none; overflow:hidden;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #7c3aed, #4f46e5); color:#fff; border:none; padding: 20px 24px;">
+                <h5 class="modal-title" id="aiScoringModalLabel" style="font-weight:700;">
+                    <i class="fas fa-robot me-2"></i>Chấm điểm CV bằng AI
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="padding: 24px;">
+                <div id="quota-loading" class="text-center py-3">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-2 text-muted">Đang kiểm tra gói dịch vụ...</p>
+                </div>
+                <div id="quota-info" style="display:none;">
+                    <div class="d-flex align-items-center gap-3 mb-4" style="background:#f5f3ff; border-radius:12px; padding:16px;">
+                        <div style="width:48px; height:48px; border-radius:12px; background:linear-gradient(135deg,#7c3aed,#4f46e5); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                            <i class="fas fa-robot" style="color:#fff; font-size:1.2rem;"></i>
+                        </div>
+                        <div>
+                            <div style="font-weight:700; color:#111827;" id="modal-app-count">Đang tải...</div>
+                            <div style="font-size:0.85rem; color:#6b7280;" id="modal-quota-remaining">Quota còn lại: --</div>
+                        </div>
+                    </div>
+                    <ul style="list-style:none; padding:0; margin:0 0 16px;">
+                        <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Hệ thống sẽ chấm điểm tất cả CV chưa được chấm</li>
+                        <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Kết quả cập nhật <strong>thời gian thực</strong> ngay trên trang</li>
+                        <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Mỗi CV tốn <strong>1 lượt</strong> trong quota của gói</li>
+
+                    </ul>
+                    <div id="quota-warning" class="alert alert-warning d-none" style="border-radius:10px; font-size:0.9rem;">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <span id="quota-warning-text"></span>
+                    </div>
+                    <div id="quota-error" class="alert alert-danger d-none" style="border-radius:10px; font-size:0.9rem;">
+                        <i class="fas fa-times-circle me-2"></i>
+                        <span id="quota-error-text"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="border:none; padding: 16px 24px; background:#f9fafb;">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border-radius:8px; font-weight:600;">Hủy</button>
+                <button type="button" id="btn-confirm-ai" class="btn" style="background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;border:none;border-radius:8px;font-weight:700;padding:10px 24px;"
+                        onclick="confirmAiScoring(@jobId)" disabled>
+                    <i class="fas fa-play me-2"></i>Bắt đầu chấm điểm
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/lib/microsoft/signalr/dist/browser/signalr.min.js"></script>
+    <script>
+        // ─── SignalR Connection ───────────────────────────────────────────────
+        const userId = '@(Context.Request.Cookies["UserId"] ?? "0")';
+        const jobId  = @jobId;
+        let totalToScore = 0;
+        let scoredCount  = 0;
+
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/notificationHub")
+            .withAutomaticReconnect()
+            .build();
+
+        connection.start().then(() => {
+            connection.invoke("JoinUserGroup", userId).catch(console.error);
+            connection.invoke("JoinJobGroup", String(jobId)).catch(console.error);
+        }).catch(console.error);
+
+        // ─── Event: Single CV Scored ──────────────────────────────────────────
+        connection.on("AiScoreUpdated", (data) => {
+            scoredCount = data.processedCount;
+
+            const row = document.getElementById(`app-row-${data.applicationId}`);
+            const cell = document.getElementById(`ai-score-cell-${data.applicationId}`);
+            if (!row || !cell) return;
+
+            // Determine badge class
+            const score = parseFloat(data.aiScore);
+            const badgeClass = score >= 7 ? 'ai-score-high' : (score >= 5 ? 'ai-score-mid' : 'ai-score-low');
+            const matched  = (data.matchedSkills  || []).join(', ');
+            const missing  = (data.missingSkills || []).join(', ');
+            const tooltip  = (matched  ? '✅ ' + matched  : '') + (missing ? ' | ❌ ' + missing : '');
+
+            cell.innerHTML = `
+                <span class="ai-score-badge ${badgeClass}" title="${tooltip}" data-bs-toggle="tooltip" data-bs-placement="top">
+                    <i class="fas fa-star" style="font-size:0.7rem;"></i>
+                    ${score.toFixed(1)}/10
+                </span>
+            `;
+
+            // Initialize tooltip
+            const badgeEl = cell.querySelector('[data-bs-toggle="tooltip"]');
+            if (badgeEl && typeof bootstrap !== 'undefined') {
+                new bootstrap.Tooltip(badgeEl);
+            }
+
+            // Glow animation
+            row.classList.add('ai-score-animating');
+            row.addEventListener('animationend', () => row.classList.remove('ai-score-animating'), { once: true });
+
+            if (scoredCount >= data.totalCount) {
+                document.getElementById('btn-ai-score').disabled = false;
+                document.getElementById('btn-ai-score').classList.remove('loading');
+            }
+        });
+
+        // ─── Event: AI Scoring Completed ──────────────────────────────────────
+        connection.on("AiScoringCompleted", (data) => {
+            if (data.jobId !== jobId) return;
+            document.getElementById('btn-ai-score').disabled = false;
+            document.getElementById('btn-ai-score').classList.remove('loading');
+        });
+
+        // ─── Modal: Open & Check Quota ────────────────────────────────────────
+        async function openAiScoringModal(jId) {
+            document.getElementById('quota-loading').style.display = 'block';
+            document.getElementById('quota-info').style.display = 'none';
+            document.getElementById('btn-confirm-ai').disabled = true;
+            document.getElementById('quota-warning').classList.add('d-none');
+            document.getElementById('quota-error').classList.add('d-none');
+
+            const modal = new bootstrap.Modal(document.getElementById('aiScoringModal'));
+            modal.show();
+
+            try {
+                const resp = await fetch(`/Recruiter/CheckAiQuota?jobId=${jId}`);
+                const data = await resp.json();
+
+                document.getElementById('quota-loading').style.display = 'none';
+                document.getElementById('quota-info').style.display = 'block';
+
+                document.getElementById('modal-app-count').textContent =
+                    `${data.applicationCount} CV sẽ được chấm điểm`;
+                document.getElementById('modal-quota-remaining').textContent =
+                    `Quota còn lại: ${data.remaining === 2147483647 ? 'Không giới hạn' : data.remaining + ' lượt'}`;
+
+                if (!data.allowed) {
+                    document.getElementById('quota-error').classList.remove('d-none');
+                    document.getElementById('quota-error-text').textContent = data.message;
+                    document.getElementById('btn-confirm-ai').disabled = true;
+                } else if (data.applicationCount === 0) {
+                    document.getElementById('quota-warning').classList.remove('d-none');
+                    document.getElementById('quota-warning-text').textContent = 'Không có CV nào cần chấm điểm.';
+                    document.getElementById('btn-confirm-ai').disabled = true;
+                } else if (data.remaining !== 2147483647 && data.remaining < data.applicationCount) {
+                    document.getElementById('quota-error').classList.remove('d-none');
+                    document.getElementById('quota-error-text').textContent =
+                        `Quota không đủ. Bạn còn ${data.remaining} lượt nhưng cần ${data.applicationCount} lượt. Vui lòng nâng cấp gói.`;
+                    document.getElementById('btn-confirm-ai').disabled = true;
+                } else {
+                    document.getElementById('btn-confirm-ai').disabled = false;
+                }
+            } catch (err) {
+                document.getElementById('quota-loading').style.display = 'none';
+                document.getElementById('quota-info').style.display = 'block';
+                document.getElementById('quota-error').classList.remove('d-none');
+                document.getElementById('quota-error-text').textContent = 'Không thể kiểm tra quota. Vui lòng thử lại.';
+            }
+        }
+
+        // ─── Confirm: Start Scoring ───────────────────────────────────────────
+        async function confirmAiScoring(jId) {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('aiScoringModal'));
+            modal.hide();
+
+            const btn = document.getElementById('btn-ai-score');
+            btn.disabled = true;
+            btn.classList.add('loading');
+
+            // Mark all pending rows as "Processing" immediately
+            document.querySelectorAll('[id^="ai-score-cell-"]').forEach(cell => {
+                // Only update cells that show "Chưa chấm"
+                if (cell.querySelector('.ai-score-pending')) {
+                    cell.innerHTML = `<span class="ai-score-badge ai-score-processing"><i class="fas fa-circle-notch fa-spin me-1" style="font-size:0.7rem;"></i>Đang chấm...</span>`;
+                }
+            });
+
+            try {
+                const antiforgeryToken = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+                const resp = await fetch(`/Recruiter/StartAiScoring?jobId=${jId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': antiforgeryToken || ''
+                    }
+                });
+                const data = await resp.json();
+
+                if (data.success) {
+                    // Start logic handled via SignalR
+                } else {
+                    alert('❌ ' + data.message);
+                    btn.disabled = false;
+                    btn.classList.remove('loading');
+                }
+            } catch (err) {
+                alert('❌ Lỗi kết nối. Vui lòng thử lại.');
+                btn.disabled = false;
+                btn.classList.remove('loading');
+            }
+        }
+
+        // ─── Init Tooltips ────────────────────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+                new bootstrap.Tooltip(el);
+            });
+        });
+    </script>
+}
