@@ -5,6 +5,8 @@ using RJMS.vn.edu.fpt.Models.DTOs;
 using System.Text.Json;
 using RJMS.Vn.Edu.Fpt.Service;
 using System.Net.Http;
+using Hangfire;
+using RJMS.vn.edu.fpt.Jobs;
 
 namespace RJMS.Vn.Edu.Fpt.Controllers
 {
@@ -14,17 +16,20 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         private readonly ISubscriptionService _subscriptionService;
         private readonly ICloudinaryService _cloudinaryService;
         private readonly ICVService _cvService;
+        private readonly IBackgroundJobClient _backgroundJobs;
 
         public RecruiterController(
             FindingJobsDbContext context,
             ISubscriptionService subscriptionService,
             ICloudinaryService cloudinaryService,
-            ICVService cvService)
+            ICVService cvService,
+            IBackgroundJobClient backgroundJobs)
         {
             _context = context;
             _subscriptionService = subscriptionService;
             _cloudinaryService = cloudinaryService;
             _cvService = cvService;
+            _backgroundJobs = backgroundJobs;
         }
 
         // ── Auth guard ────────────────────────────────────────────────────────────
@@ -1021,7 +1026,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         }
 
         // ── Applications (by job) ─────────────────────────────────────────────
-        public async Task<IActionResult> JobApplications(int jobId, string? status, string? keyword)
+        public async Task<IActionResult> JobApplications(int jobId, string? status, string? keyword, string? aiScoreSort)
         {
             if (RequireRecruiter() is { } redirect) return redirect;
 
@@ -1040,7 +1045,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
 
             var hasJobAccess = IsEmployee()
                 ? await _context.Jobs.AnyAsync(j => j.Id == jobId && j.JobRecruiters.Any(jr => assignedLocationIds.Contains(jr.CompanyLocationId)))
-                : await _context.Jobs.AnyAsync(j => j.Id == jobId && j.JobRecruiters.Any(jr => jr.RecruiterId == recruiter.Id));
+                : await _context.Jobs.AnyAsync(j => j.Id == jobId && j.CompanyId == recruiter.CompanyId);
 
             if (!hasJobAccess)
             {
@@ -1063,8 +1068,20 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                                        (a.Job.Title ?? "").Contains(keyword));
             }
 
+            if (aiScoreSort == "desc")
+            {
+                query = query.OrderByDescending(a => a.AiScore).ThenByDescending(a => a.CreatedAt);
+            }
+            else if (aiScoreSort == "asc")
+            {
+                query = query.OrderBy(a => a.AiScore).ThenByDescending(a => a.CreatedAt);
+            }
+            else
+            {
+                query = query.OrderByDescending(a => a.CreatedAt);
+            }
+
             var applications = await query
-                .OrderByDescending(a => a.CreatedAt)
                 .Select(a => new ApplicationListItemDTO
                 {
                     Id = a.Id,
@@ -1090,6 +1107,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                 .FirstOrDefaultAsync() ?? "Tin tuyển dụng";
             ViewBag.CurrentStatus = status;
             ViewBag.Keyword = keyword;
+            ViewBag.AiScoreSort = aiScoreSort;
 
             ViewData["Title"] = "Danh sách ứng tuyển";
             return View("Applications", applications);
@@ -1144,7 +1162,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
 
             var hasAccess = IsEmployee()
                 ? await _context.Jobs.AnyAsync(j => j.Id == application.JobId && j.JobRecruiters.Any(jr => assignedLocationIds.Contains(jr.CompanyLocationId)))
-                : await _context.Jobs.AnyAsync(j => j.Id == application.JobId && j.JobRecruiters.Any(jr => jr.RecruiterId == recruiter.Id));
+                : await _context.Jobs.AnyAsync(j => j.Id == application.JobId && j.CompanyId == recruiter.CompanyId);
 
             if (!hasAccess)
             {
@@ -1178,6 +1196,322 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             await _context.SaveChangesAsync();
             TempData["SuccessToast"] = $"Đã cập nhật trạng thái ứng viên thành '{status}'";
             return RedirectToAction(nameof(JobApplications), new { jobId = application.JobId });
+        }
+
+        // ── Application Detail ────────────────────────────────────────────────────────
+        public async Task<IActionResult> ApplicationDetail(int id)
+        {
+            if (RequireRecruiter() is { } redirect) return redirect;
+
+            var userIdStr = Request.Cookies["UserId"];
+            int.TryParse(userIdStr, out int userId);
+
+            var recruiter = await _context.Recruiters
+                .Include(r => r.RecruiterLocations)
+                .FirstOrDefaultAsync(r => r.UserId == userId);
+
+            if (recruiter == null) return NotFound();
+
+            var application = await _context.Applications
+                .Include(a => a.Candidate)
+                    .ThenInclude(c => c.User)
+                .Include(a => a.Job)
+                .FirstOrDefaultAsync(a => a.Id == id);
+
+            if (application == null) return NotFound();
+
+            // Authorization check
+            bool hasAccess = false;
+            if (IsEmployee())
+            {
+                var assignedLocationIds = recruiter.RecruiterLocations.Select(rl => rl.CompanyLocationId).ToList();
+                hasAccess = await _context.Jobs.AnyAsync(j => j.Id == application.JobId && j.JobRecruiters.Any(jr => assignedLocationIds.Contains(jr.CompanyLocationId)));
+            }
+            else
+            {
+                hasAccess = await _context.Jobs.AnyAsync(j => j.Id == application.JobId && j.CompanyId == recruiter.CompanyId);
+            }
+
+            if (!hasAccess)
+            {
+                TempData["ErrorToast"] = "Bạn không có quyền xem hồ sơ ứng tuyển này.";
+                return RedirectToAction(nameof(JobPostingList));
+            }
+
+            return View(application);
+        }
+
+        // ── AI CV Scoring ─────────────────────────────────────────────────────
+
+        /// <summary>
+        /// AJAX: Kiểm tra quota CV_AI_FILTER của recruiter trước khi bắt đầu chấm điểm.
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> CheckAiQuota(int jobId)
+        {
+            if (RequireRecruiter() != null)
+                return Json(new { allowed = false, message = "Vui lòng đăng nhập." });
+
+            var userIdStr = Request.Cookies["UserId"];
+            if (!int.TryParse(userIdStr, out int userId))
+                return Json(new { allowed = false, message = "Phiên đăng nhập hết hạn." });
+
+            // Resolve subscription owner (Employee dùng quota của Recruiter chính)
+            var recruiter = await _context.Recruiters
+                .Include(r => r.RecruiterLocations)
+                .FirstOrDefaultAsync(r => r.UserId == userId);
+            if (recruiter == null)
+                return Json(new { allowed = false, message = "Không tìm thấy tài khoản recruiter." });
+
+            int subscriptionUserId = await ResolveSubscriptionOwnerUserIdAsync(recruiter, userId);
+
+            int? subscriptionCompanyId = recruiter.CompanyId;
+
+            // Số lượng applications sẽ chấm
+            int applicationCount = await _context.Applications
+                .CountAsync(a => a.JobId == jobId
+                    && (a.AiProcessStatus == null || a.AiProcessStatus == "Pending" || a.AiProcessStatus == "Failed"));
+
+            var activeSubscription = await _context.Subscriptions
+                .Include(s => s.Plan)
+                .Where(s => (s.Status == "Active" || s.Status == "ACTIVE")
+                    && (s.EndDate == null || s.EndDate >= DateTime.UtcNow)
+                    && ((subscriptionCompanyId != null && s.CompanyId == subscriptionCompanyId) || s.UserId == subscriptionUserId))
+                .OrderByDescending(s => s.EndDate)
+                .FirstOrDefaultAsync();
+
+            int? limit = null;
+            int used = 0;
+            bool allowed = false;
+            string message = "OK";
+
+            if (activeSubscription != null && activeSubscription.Plan != null)
+            {
+                var activePeriod = await _context.SubscriptionPeriods
+                    .Include(p => p.SubscriptionUsages)
+                    .Where(p => p.SubscriptionId == activeSubscription.Id)
+                    .OrderByDescending(p => p.PeriodEnd)
+                    .FirstOrDefaultAsync();
+
+                var planFeatures = await _context.PlanFeatures.Where(pf => pf.PlanId == activeSubscription.PlanId).ToListAsync();
+
+                if (activePeriod != null && activePeriod.SubscriptionUsages != null)
+                {
+                    var detailFeature = planFeatures.FirstOrDefault(f => f.FeatureCode == "CV_AI_FILTER");
+                    var detailUsage = activePeriod.SubscriptionUsages.FirstOrDefault(u => u.FeatureCode == "CV_AI_FILTER");
+
+                    limit = detailFeature?.FeatureLimit;
+                    used = detailUsage?.UsedCount ?? 0;
+                    allowed = true;
+                }
+                else
+                {
+                    message = "Không tìm thấy kỳ dịch vụ hiện tại.";
+                }
+            }
+            else
+            {
+                var freePlan = await _context.SubscriptionPlans
+                    .Include(sp => sp.PlanFeatures)
+                    .Where(sp => sp.IsActive == true && ((sp.Price ?? 0) == 0 || sp.Name == "Gói Miễn Phí"))
+                    .OrderBy(sp => sp.Id)
+                    .FirstOrDefaultAsync();
+
+                if (freePlan != null)
+                {
+                    limit = freePlan.PlanFeatures.FirstOrDefault(f => f.FeatureCode == "CV_AI_FILTER")?.FeatureLimit;
+                    used = 0;
+                    allowed = true;
+                }
+                else
+                {
+                    message = "Không tìm thấy gói dịch vụ khả dụng.";
+                }
+            }
+
+            if (allowed && limit.HasValue && used >= limit.Value)
+            {
+                allowed = false;
+                message = $"Bạn đã sử dụng hết {limit} lượt chấm CV trong kỳ này.";
+            }
+
+            int remaining = limit.HasValue ? Math.Max(0, limit.Value - used) : int.MaxValue;
+
+            return Json(new
+            {
+                allowed = allowed,
+                message = message,
+                applicationCount,
+                remaining = remaining
+            });
+        }
+
+        /// <summary>
+        /// POST: Bắt đầu chấm điểm CV bằng AI. Validate quota, set Pending, enqueue Hangfire job.
+        /// </summary>
+        [HttpPost]
+        public async Task<IActionResult> StartAiScoring(int jobId)
+        {
+            if (RequireRecruiter() != null)
+                return Json(new { success = false, message = "Vui lòng đăng nhập." });
+
+            var userIdStr = Request.Cookies["UserId"];
+            if (!int.TryParse(userIdStr, out int userId))
+                return Json(new { success = false, message = "Phiên đăng nhập hết hạn." });
+
+            var recruiter = await _context.Recruiters
+                .Include(r => r.RecruiterLocations)
+                .FirstOrDefaultAsync(r => r.UserId == userId);
+            if (recruiter == null)
+                return Json(new { success = false, message = "Không tìm thấy tài khoản recruiter." });
+
+            // Kiểm tra quyền truy cập job
+            var assignedLocationIds = recruiter.RecruiterLocations.Select(rl => rl.CompanyLocationId).ToList();
+            var hasJobAccess = IsEmployee()
+                ? await _context.Jobs.AnyAsync(j => j.Id == jobId && j.JobRecruiters.Any(jr => assignedLocationIds.Contains(jr.CompanyLocationId)))
+                : await _context.Jobs.AnyAsync(j => j.Id == jobId && j.CompanyId == recruiter.CompanyId);
+
+            if (!hasJobAccess)
+                return Json(new { success = false, message = "Bạn không có quyền chấm điểm CV cho tin tuyển dụng này." });
+
+            int subscriptionUserId = await ResolveSubscriptionOwnerUserIdAsync(recruiter, userId);
+
+            int? subscriptionCompanyId = recruiter.CompanyId;
+
+            // Lấy danh sách applications cần chấm
+            var applications = await _context.Applications
+                .Where(a => a.JobId == jobId
+                    && (a.AiProcessStatus == null || a.AiProcessStatus == "Pending" || a.AiProcessStatus == "Failed"))
+                .ToListAsync();
+
+            if (applications.Count == 0)
+                return Json(new { success = false, message = "Không có CV nào cần chấm điểm." });
+
+            // Validate quota bằng logic của Dashboard
+            var activeSubscription = await _context.Subscriptions
+                .Include(s => s.Plan)
+                .Where(s => (s.Status == "Active" || s.Status == "ACTIVE")
+                    && (s.EndDate == null || s.EndDate >= DateTime.UtcNow)
+                    && ((subscriptionCompanyId != null && s.CompanyId == subscriptionCompanyId) || s.UserId == subscriptionUserId))
+                .OrderByDescending(s => s.EndDate)
+                .FirstOrDefaultAsync();
+
+            int? limit = null;
+            int used = 0;
+            bool allowed = false;
+            string message = "OK";
+            SubscriptionPeriod? activePeriodForConsume = null;
+
+            if (activeSubscription != null && activeSubscription.Plan != null)
+            {
+                activePeriodForConsume = await _context.SubscriptionPeriods
+                    .Include(p => p.SubscriptionUsages)
+                    .Where(p => p.SubscriptionId == activeSubscription.Id)
+                    .OrderByDescending(p => p.PeriodEnd)
+                    .FirstOrDefaultAsync();
+
+                var planFeatures = await _context.PlanFeatures.Where(pf => pf.PlanId == activeSubscription.PlanId).ToListAsync();
+
+                if (activePeriodForConsume != null && activePeriodForConsume.SubscriptionUsages != null)
+                {
+                    var detailFeature = planFeatures.FirstOrDefault(f => f.FeatureCode == "CV_AI_FILTER");
+                    var detailUsage = activePeriodForConsume.SubscriptionUsages.FirstOrDefault(u => u.FeatureCode == "CV_AI_FILTER");
+
+                    limit = detailFeature?.FeatureLimit;
+                    used = detailUsage?.UsedCount ?? 0;
+                    allowed = true;
+                }
+                else
+                {
+                    message = "Không tìm thấy kỳ dịch vụ hiện tại.";
+                }
+            }
+            else
+            {
+                var freePlan = await _context.SubscriptionPlans
+                    .Include(sp => sp.PlanFeatures)
+                    .Where(sp => sp.IsActive == true && ((sp.Price ?? 0) == 0 || sp.Name == "Gói Miễn Phí"))
+                    .OrderBy(sp => sp.Id)
+                    .FirstOrDefaultAsync();
+
+                if (freePlan != null)
+                {
+                    limit = freePlan.PlanFeatures.FirstOrDefault(f => f.FeatureCode == "CV_AI_FILTER")?.FeatureLimit;
+                    used = 0;
+                    allowed = true;
+                }
+                else
+                {
+                    message = "Không tìm thấy gói dịch vụ khả dụng.";
+                }
+            }
+
+            if (allowed && limit.HasValue && used >= limit.Value)
+            {
+                allowed = false;
+                message = $"Bạn đã sử dụng hết {limit} lượt chấm CV trong kỳ này.";
+            }
+
+            int remaining = limit.HasValue ? Math.Max(0, limit.Value - used) : int.MaxValue;
+
+            if (!allowed)
+                return Json(new { success = false, message = message });
+
+            if (remaining < applications.Count)
+                return Json(new
+                {
+                    success = false,
+                    message = $"Quota không đủ. Bạn còn {remaining} lượt nhưng cần {applications.Count} lượt. Vui lòng nâng cấp gói."
+                });
+
+            // Consume quota (1 lượt per CV) - Cập nhật trực tiếp vào activePeriod
+            if (activePeriodForConsume != null)
+            {
+                var usage = activePeriodForConsume.SubscriptionUsages.FirstOrDefault(u => u.FeatureCode == "CV_AI_FILTER");
+                if (usage == null)
+                {
+                    _context.SubscriptionUsages.Add(new SubscriptionUsage
+                    {
+                        PeriodId = activePeriodForConsume.Id,
+                        FeatureCode = "CV_AI_FILTER",
+                        UsedCount = applications.Count
+                    });
+                }
+                else
+                {
+                    usage.UsedCount += applications.Count;
+                }
+                await _context.SaveChangesAsync();
+            }
+            else if (activeSubscription == null)
+            {
+                // Nếu chưa có Subscription nào (tức là đang dùng logic Fallback Gói Miễn Phí), 
+                // thì ta cần tạo DefaultFreeSubscription để ghi nhận Usage.
+                // Để đơn giản, ta có thể bỏ qua không track usage nếu chưa có Subscription, 
+                // nhưng đúng ra nên gọi _subscriptionService.ConsumeQuotaAsync(subscriptionUserId, "CV_AI_FILTER")
+                // Tuy nhiên do lỗi NRE có thể xảy ra, ta tạo code thủ công hoặc cứ gọi nó:
+                for (int i = 0; i < applications.Count; i++)
+                {
+                    await _subscriptionService.ConsumeQuotaAsync(subscriptionUserId, "CV_AI_FILTER");
+                }
+            }
+
+            // Set trạng thái Pending cho tất cả
+            foreach (var app in applications)
+            {
+                app.AiProcessStatus = "Pending";
+            }
+            await _context.SaveChangesAsync();
+
+            // Enqueue Hangfire job
+            _backgroundJobs.Enqueue<AiCvScoringJob>(job => job.ProcessJobAsync(jobId, userId));
+
+            return Json(new
+            {
+                success = true,
+                message = $"Đã đưa {applications.Count} CV vào hàng đợi chấm điểm. Kết quả sẽ cập nhật thời gian thực.",
+                applicationCount = applications.Count
+            });
         }
 
         public async Task<IActionResult> ViewCV(int id)
