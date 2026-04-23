@@ -1463,3 +1463,5 @@ GO
 IF COL_LENGTH('Applications', 'AIProcessStatus') IS NULL
     ALTER TABLE Applications ADD AIProcessStatus NVARCHAR(50) NULL;
 GO
+ALTER TABLE Applications
+ALTER COLUMN AIScore DECIMAL(5,2) NULL;
