@@ -61,6 +61,15 @@ builder.Services.AddScoped<IApplicationService, ApplicationService>();
 builder.Services.AddScoped<IRecruiterManagementRepository, RecruiterManagementRepository>();
 builder.Services.AddScoped<IRecruiterManagementService, RecruiterManagementService>();
 
+// ── Gemini AI Service ──
+builder.Services.AddHttpClient<IGeminiService, GeminiService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(120); // Gemini có thể chậm với batch lớn
+});
+
+// ── AI Scoring Hangfire Job ──
+builder.Services.AddTransient<AiCvScoringJob>();
+
 // Location lookup (HttpClient-based) – must be registered BEFORE IAuthService & IAdminService
 builder.Services.AddHttpClient<ILocationLookupService, LocationLookupService>(client =>
 {
