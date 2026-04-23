@@ -1,0 +1,352 @@
+@model RJMS.vn.edu.fpt.Models.Application
+@{
+    Layout = "~/Views/Shared/_RecruiterLayout.cshtml";
+    ViewData["Title"] = "Chi tiết ứng tuyển";
+
+    var aiStatus = Model.AiProcessStatus;
+    var matchedSkillsList = new List<string>();
+    var missingSkillsList = new List<string>();
+    try
+    {
+        if (!string.IsNullOrEmpty(Model.MatchedSkills))
+            matchedSkillsList = System.Text.Json.JsonSerializer.Deserialize<List<string>>(Model.MatchedSkills) ?? new();
+        if (!string.IsNullOrEmpty(Model.MissingSkills))
+            missingSkillsList = System.Text.Json.JsonSerializer.Deserialize<List<string>>(Model.MissingSkills) ?? new();
+    }
+    catch { }
+
+    var candidateName = Model.Candidate?.FullName ?? "Ứng viên";
+    var avatar = Model.Candidate?.Avatar;
+    if (string.IsNullOrEmpty(avatar) && Model.Candidate?.User?.Avatar != null)
+    {
+        avatar = Model.Candidate.User.Avatar;
+    }
+}
+
+@section Styles {
+    <style>
+        .detail-card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+            border: 1px solid #e5e7eb;
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+        .detail-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #e5e7eb;
+            background: #f9fafb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .detail-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #111827;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .detail-body {
+            padding: 24px;
+        }
+        .cand-profile {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .cand-avatar-lg {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: #eef2ff;
+            color: #4f46e5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 1.5rem;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 24px;
+        }
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .info-label {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .info-value {
+            font-size: 1rem;
+            color: #111827;
+            font-weight: 500;
+        }
+        .cover-letter {
+            background: #f3f4f6;
+            padding: 16px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            color: #374151;
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+        .ai-score-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #fdf4ff;
+            border: 1px solid #fbcfe8;
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            height: 100%;
+        }
+        .ai-score-number {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #be185d;
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+        .ai-score-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #831843;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .skills-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .skill-tag {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        .skill-matched { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .skill-missing { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+        .ai-summary {
+            font-style: italic;
+            color: #4b5563;
+            border-left: 4px solid #8b5cf6;
+            padding-left: 16px;
+            margin-top: 16px;
+        }
+        .badge-status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        .bg-new { background: #e0f2fe; color: #0369a1; }
+        .bg-review { background: #fef3c7; color: #b45309; }
+        .bg-interview { background: #e0e7ff; color: #4338ca; }
+        .bg-hired { background: #dcfce7; color: #15803d; }
+        .bg-rejected { background: #fee2e2; color: #b91c1c; }
+    </style>
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex align-items-center mb-4">
+        <a asp-action="JobApplications" asp-route-jobId="@Model.JobId" class="btn btn-light rounded-circle me-3" style="width: 40px; height: 40px; display:flex; align-items:center; justify-content:center;">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <div>
+            <h1 class="h3 mb-1">Chi tiết hồ sơ ứng tuyển</h1>
+            <p class="text-muted mb-0">Vị trí: <strong>@Model.Job?.Title</strong></p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Cột trái: Candidate & Application Info -->
+        <div class="col-lg-8">
+            <div class="detail-card">
+                <div class="detail-header">
+                    <h2 class="detail-title"><i class="fas fa-user-circle text-primary"></i> Thông tin ứng viên</h2>
+                    @{
+                        var statusClass = Model.Status switch
+                        {
+                            "Mới" => "bg-new",
+                            "Đang xem xét" => "bg-review",
+                            "Đặt lịch hẹn" => "bg-interview",
+                            "Đã tuyển" => "bg-hired",
+                            "Từ chối" => "bg-rejected",
+                            _ => "bg-light"
+                        };
+                    }
+                    <span class="badge-status @statusClass">@Model.Status</span>
+                </div>
+                <div class="detail-body">
+                    <div class="cand-profile">
+                        @if (!string.IsNullOrEmpty(avatar))
+                        {
+                            <img src="@avatar" alt="Avatar" class="cand-avatar-lg">
+                        }
+                        else
+                        {
+                            <div class="cand-avatar-lg">@(candidateName.Substring(0, 1).ToUpper())</div>
+                        }
+                        <div>
+                            <h3 class="h4 mb-1">@candidateName</h3>
+                            <div class="text-muted"><i class="fas fa-envelope me-2"></i> @(Model.Candidate?.User?.Email ?? "N/A")</div>
+                        </div>
+                    </div>
+
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">Ngày nộp</span>
+                            <span class="info-value">@Model.CreatedAt?.ToString("dd/MM/yyyy HH:mm")</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Số điện thoại</span>
+                            <span class="info-value">@(Model.Candidate?.User?.Phone ?? Model.Candidate?.Phone ?? "N/A")</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-card">
+                <div class="detail-header">
+                    <h2 class="detail-title"><i class="fas fa-file-alt text-primary"></i> Đơn ứng tuyển (Cover Letter)</h2>
+                    <a href="/Recruiter/ViewCV/@Model.Cvid" target="_blank" class="btn btn-outline-primary btn-sm rounded-pill">
+                        <i class="fas fa-file-pdf me-1"></i> Xem CV
+                    </a>
+                </div>
+                <div class="detail-body">
+                    @if (!string.IsNullOrWhiteSpace(Model.CoverLetter))
+                    {
+                        <div class="cover-letter">@Model.CoverLetter</div>
+                    }
+                    else
+                    {
+                        <div class="text-muted fst-italic">Ứng viên không cung cấp Cover Letter.</div>
+                    }
+                </div>
+            </div>
+
+            <div class="detail-card">
+                <div class="detail-header">
+                    <h2 class="detail-title"><i class="fas fa-briefcase text-primary"></i> Thông tin vị trí tuyển dụng</h2>
+                </div>
+                <div class="detail-body">
+                    <h4 class="mb-3">@Model.Job?.Title</h4>
+                    
+                    @if (!string.IsNullOrWhiteSpace(Model.Job?.Description))
+                    {
+                        <h6 class="fw-bold mt-3 mb-2">Mô tả công việc</h6>
+                        <div class="cover-letter">@Html.Raw(Model.Job.Description.Replace("\n", "<br/>"))</div>
+                    }
+                    
+                    @if (!string.IsNullOrWhiteSpace(Model.Job?.Requirements))
+                    {
+                        <h6 class="fw-bold mt-4 mb-2">Yêu cầu công việc</h6>
+                        <div class="cover-letter">@Html.Raw(Model.Job.Requirements.Replace("\n", "<br/>"))</div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Cột phải: AI Scoring Info -->
+        <div class="col-lg-4">
+            <div class="detail-card h-100">
+                <div class="detail-header">
+                    <h2 class="detail-title"><i class="fas fa-robot text-primary"></i> Đánh giá từ AI</h2>
+                </div>
+                <div class="detail-body">
+                    @if (Model.AiScore.HasValue)
+                    {
+                        <div class="ai-score-box mb-4">
+                            <div class="ai-score-number">@Model.AiScore.Value.ToString("0.0")</div>
+                            <div class="ai-score-label">Điểm phù hợp (1-10)</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <h6 class="fw-bold mb-2">Kỹ năng phù hợp (@matchedSkillsList.Count)</h6>
+                            @if (matchedSkillsList.Any())
+                            {
+                                <div class="skills-list">
+                                    @foreach (var skill in matchedSkillsList)
+                                    {
+                                        <span class="skill-tag skill-matched"><i class="fas fa-check me-1"></i> @skill</span>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <span class="text-muted fst-italic">Không có dữ liệu</span>
+                            }
+                        </div>
+
+                        <div class="mb-4">
+                            <h6 class="fw-bold mb-2">Kỹ năng còn thiếu (@missingSkillsList.Count)</h6>
+                            @if (missingSkillsList.Any())
+                            {
+                                <div class="skills-list">
+                                    @foreach (var skill in missingSkillsList)
+                                    {
+                                        <span class="skill-tag skill-missing"><i class="fas fa-times me-1"></i> @skill</span>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <span class="text-muted fst-italic">Không phát hiện</span>
+                            }
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(Model.Summary))
+                        {
+                            <div>
+                                <h6 class="fw-bold mb-2">Nhận xét tổng quan</h6>
+                                <div class="ai-summary">
+                                    @Model.Summary
+                                </div>
+                            </div>
+                        }
+                    }
+                    else if (aiStatus == "Processing" || aiStatus == "Pending")
+                    {
+                        <div class="text-center py-5 text-muted">
+                            <i class="fas fa-circle-notch fa-spin fa-3x mb-3 text-primary"></i>
+                            <p>AI đang xử lý đánh giá CV này...</p>
+                        </div>
+                    }
+                    else if (aiStatus == "Failed")
+                    {
+                        <div class="text-center py-5 text-danger">
+                            <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
+                            <p>Quá trình chấm điểm bằng AI đã gặp lỗi. Vui lòng thử lại sau.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5 text-muted">
+                            <i class="fas fa-robot fa-3x mb-3" style="color: #cbd5e1;"></i>
+                            <p>CV này chưa được chấm điểm bằng AI.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
