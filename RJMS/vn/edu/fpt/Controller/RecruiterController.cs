@@ -486,10 +486,9 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                     .ThenInclude(cl => cl.Location)
                 .Include(j => j.JobSkills).ThenInclude(js => js.Skill)
                 .FirstOrDefaultAsync(j => j.Id == id && (
-                    // Recruiter: owns the job directly
-                    j.JobRecruiters.Any(jr => jr.RecruiterId == recruiter.Id)
-                    // Employee: job at any of their assigned locations
-                    || (IsEmployee() && j.JobRecruiters.Any(jr => recruiter.RecruiterLocations.Select(rl => rl.CompanyLocationId).Contains(jr.CompanyLocationId)))
+                    (IsEmployee() && j.JobRecruiters.Any(jr => recruiter.RecruiterLocations.Select(rl => rl.CompanyLocationId).Contains(jr.CompanyLocationId))) ||
+                    (!IsEmployee() && recruiter.CompanyId.HasValue && j.CompanyId == recruiter.CompanyId) ||
+                    (!IsEmployee() && j.JobRecruiters.Any(jr => jr.RecruiterId == recruiter.Id))
                 ));
 
             if (job == null) return NotFound();
@@ -584,8 +583,9 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                 .Include(j => j.JobSkills)
                 .Include(j => j.JobRecruiters)
                 .FirstOrDefaultAsync(j => j.Id == model.Id && (
-                    j.JobRecruiters.Any(jr => jr.RecruiterId == recruiter.Id)
-                    || (IsEmployee() && j.JobRecruiters.Any(jr => assignedLocationIds.Contains(jr.CompanyLocationId)))
+                    (IsEmployee() && j.JobRecruiters.Any(jr => assignedLocationIds.Contains(jr.CompanyLocationId))) ||
+                    (!IsEmployee() && recruiter.CompanyId.HasValue && j.CompanyId == recruiter.CompanyId) ||
+                    (!IsEmployee() && j.JobRecruiters.Any(jr => jr.RecruiterId == recruiter.Id))
                 ));
 
             if (job == null) return NotFound();
