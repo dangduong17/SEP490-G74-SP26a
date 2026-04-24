@@ -551,7 +551,7 @@ public partial class FindingJobsDbContext : DbContext
 
         modelBuilder.Entity<JobRecruiter>(entity =>
         {
-            entity.HasKey(e => new { e.JobId, e.RecruiterId });
+            entity.HasKey(e => new { e.JobId, e.RecruiterId, e.CompanyLocationId });
             entity.Property(e => e.AssignedAt).HasDefaultValueSql("(sysutcdatetime())");
             entity.Property(e => e.IsPrimary).HasDefaultValue(true);
 
