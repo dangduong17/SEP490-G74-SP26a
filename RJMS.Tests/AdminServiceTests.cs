@@ -1,12 +1,12 @@
-using Moq;
-using Xunit;
-using RJMS.Vn.Edu.Fpt.Service;
-using RJMS.Vn.Edu.Fpt.Repository;
-using RJMS.vn.edu.fpt.Models.DTOs;
-using RJMS.vn.edu.fpt.Models;
-using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using Moq;
+using RJMS.vn.edu.fpt.Models;
+using RJMS.vn.edu.fpt.Models.DTOs;
+using RJMS.Vn.Edu.Fpt.Repository;
+using RJMS.Vn.Edu.Fpt.Service;
+using Xunit;
 
 namespace RJMS.Tests
 {
@@ -14,24 +14,32 @@ namespace RJMS.Tests
     {
         private Mock<IAdminRepository> _adminRepoMock;
         private Mock<ICloudinaryService> _cloudinarySvcMock;
+        private Mock<ILocationLookupService> _locationLookupSvcMock;
         private AdminService _adminService;
 
         public AdminServiceTests()
         {
             _adminRepoMock = new Mock<IAdminRepository>();
             _cloudinarySvcMock = new Mock<ICloudinaryService>();
+            _locationLookupSvcMock = new Mock<ILocationLookupService>();
 
             _adminService = new AdminService(
                 _adminRepoMock.Object,
-                _cloudinarySvcMock.Object
+                _cloudinarySvcMock.Object,
+                _locationLookupSvcMock.Object
             );
         }
 
         [Fact]
+        [Trait("CodeModule", "Admin")]
+        [Trait("Method", "GetDashboardAsync")]
+        [Trait("UTCID", "UTCID01")]
+        [Trait("Type", "A")]
         public async Task GetDashboardAsync_ReturnsCorrectStats()
         {
             // Arrange
-            _adminRepoMock.Setup(r => r.GetDashboardStatsAsync())
+            _adminRepoMock
+                .Setup(r => r.GetDashboardStatsAsync())
                 .ReturnsAsync((100, 80, 20, 5, 60, 35));
 
             // Act
@@ -47,10 +55,20 @@ namespace RJMS.Tests
         }
 
         [Fact]
+        [Trait("CodeModule", "Admin")]
+        [Trait("Method", "CreateAdminAsync")]
+        [Trait("UTCID", "UTCID01")]
+        [Trait("Type", "B")]
         public async Task CreateAdminAsync_EmailExists_ReturnsFailure()
         {
             // Arrange
-            var model = new AdminCreateAdminViewModel { Email = "admin@test.com", Password = "Password123!", FirstName = "Admin", LastName = "User" };
+            var model = new AdminCreateAdminViewModel
+            {
+                Email = "admin@test.com",
+                Password = "Password123!",
+                FirstName = "Admin",
+                LastName = "User",
+            };
             _adminRepoMock.Setup(r => r.UserEmailExistsAsync(model.Email, null)).ReturnsAsync(true);
 
             // Act
@@ -62,6 +80,10 @@ namespace RJMS.Tests
         }
 
         [Fact]
+        [Trait("CodeModule", "Admin")]
+        [Trait("Method", "CreateSkillAsync")]
+        [Trait("UTCID", "UTCID01")]
+        [Trait("Type", "B")]
         public async Task CreateSkillAsync_SkillExists_ReturnsFailure()
         {
             // Arrange
@@ -77,6 +99,10 @@ namespace RJMS.Tests
         }
 
         [Fact]
+        [Trait("CodeModule", "Admin")]
+        [Trait("Method", "CreateSkillAsync")]
+        [Trait("UTCID", "UTCID02")]
+        [Trait("Type", "A")]
         public async Task CreateSkillAsync_ValidSkill_ReturnsSuccess()
         {
             // Arrange
@@ -92,6 +118,10 @@ namespace RJMS.Tests
         }
 
         [Fact]
+        [Trait("CodeModule", "Admin")]
+        [Trait("Method", "SoftDeleteUserAsync")]
+        [Trait("UTCID", "UTCID01")]
+        [Trait("Type", "B")]
         public async Task SoftDeleteUserAsync_UserNotFound_ReturnsNotFound()
         {
             // Arrange

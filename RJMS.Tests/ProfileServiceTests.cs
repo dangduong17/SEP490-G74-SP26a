@@ -1,14 +1,14 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Moq;
-using Xunit;
-using RJMS.Vn.Edu.Fpt.Service;
-using RJMS.Vn.Edu.Fpt.Repository;
-using RJMS.vn.edu.fpt.Models.DTOs;
 using RJMS.Vn.Edu.Fpt.Model.DTOs;
 using RJMS.vn.edu.fpt.Models;
-using System.Threading.Tasks;
-using System.Collections.Generic;
-using System;
-using System.Linq;
+using RJMS.vn.edu.fpt.Models.DTOs;
+using RJMS.Vn.Edu.Fpt.Repository;
+using RJMS.Vn.Edu.Fpt.Service;
+using Xunit;
 
 namespace RJMS.Tests
 {
@@ -22,10 +22,17 @@ namespace RJMS.Tests
         {
             _profileRepoMock = new Mock<IProfileRepository>();
             _cloudinarySvcMock = new Mock<ICloudinaryService>();
-            _profileService = new ProfileService(_profileRepoMock.Object, _cloudinarySvcMock.Object);
+            _profileService = new ProfileService(
+                _profileRepoMock.Object,
+                _cloudinarySvcMock.Object
+            );
         }
 
         [Fact]
+        [Trait("CodeModule", "Profile")]
+        [Trait("Method", "GetPersonalProfileAsync")]
+        [Trait("UTCID", "UTCID01")]
+        [Trait("Type", "A")]
         public async Task GetPersonalProfileAsync_ValidUserId_ReturnsProfile()
         {
             // Arrange
@@ -41,6 +48,10 @@ namespace RJMS.Tests
         }
 
         [Fact]
+        [Trait("CodeModule", "Profile")]
+        [Trait("Method", "ChangePasswordAsync")]
+        [Trait("UTCID", "UTCID01")]
+        [Trait("Type", "B")]
         public async Task ChangePasswordAsync_ShortPassword_ReturnsFailure()
         {
             // Act
@@ -52,6 +63,10 @@ namespace RJMS.Tests
         }
 
         [Fact]
+        [Trait("CodeModule", "Profile")]
+        [Trait("Method", "ChangePasswordAsync")]
+        [Trait("UTCID", "UTCID02")]
+        [Trait("Type", "B")]
         public async Task ChangePasswordAsync_UserNotFound_ReturnsFailure()
         {
             // Arrange
@@ -66,6 +81,10 @@ namespace RJMS.Tests
         }
 
         [Fact]
+        [Trait("CodeModule", "Profile")]
+        [Trait("Method", "UpdateCandidateProfileAsync")]
+        [Trait("UTCID", "UTCID01")]
+        [Trait("Type", "A")]
         public async Task UpdateCandidateProfileAsync_ReturnsRepositoryResult()
         {
             // Arrange
@@ -80,6 +99,10 @@ namespace RJMS.Tests
         }
 
         [Fact]
+        [Trait("CodeModule", "Profile")]
+        [Trait("Method", "GetAdminProfileForEditAsync")]
+        [Trait("UTCID", "UTCID01")]
+        [Trait("Type", "A")]
         public async Task GetAdminProfileForEditAsync_ReturnsRepositoryResult()
         {
             // Arrange

@@ -1,13 +1,13 @@
-using Moq;
-using Xunit;
-using RJMS.Vn.Edu.Fpt.Service;
-using RJMS.Vn.Edu.Fpt.Repository;
-using RJMS.vn.edu.fpt.Models.DTOs;
-using RJMS.vn.edu.fpt.Models;
-using System.Threading.Tasks;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System;
+using System.Threading.Tasks;
+using Moq;
+using RJMS.vn.edu.fpt.Models;
+using RJMS.vn.edu.fpt.Models.DTOs;
+using RJMS.Vn.Edu.Fpt.Repository;
+using RJMS.Vn.Edu.Fpt.Service;
+using Xunit;
 
 namespace RJMS.Tests
 {
@@ -23,10 +23,18 @@ namespace RJMS.Tests
             _cvRepoMock = new Mock<ICVRepository>();
             _cloudinarySvcMock = new Mock<ICloudinaryService>();
             _cvRenderSvcMock = new Mock<ICVRenderService>();
-            _cvService = new CVService(_cvRepoMock.Object, _cloudinarySvcMock.Object, _cvRenderSvcMock.Object);
+            _cvService = new CVService(
+                _cvRepoMock.Object,
+                _cloudinarySvcMock.Object,
+                _cvRenderSvcMock.Object
+            );
         }
 
         [Fact]
+        [Trait("CodeModule", "CV")]
+        [Trait("Method", "GetCandidateCvsAsync")]
+        [Trait("UTCID", "UTCID01")]
+        [Trait("Type", "B")]
         public async Task GetCandidateCvsAsync_CandidateNotFound_ReturnsEmpty()
         {
             // Arrange
@@ -40,11 +48,18 @@ namespace RJMS.Tests
         }
 
         [Fact]
+        [Trait("CodeModule", "CV")]
+        [Trait("Method", "GetCandidateCvsAsync")]
+        [Trait("UTCID", "UTCID02")]
+        [Trait("Type", "A")]
         public async Task GetCandidateCvsAsync_CvsFound_ReturnsList()
         {
             // Arrange
             var candidate = new Candidate { Id = 1 };
-            var cvs = new List<Cv> { new Cv { Id = 1, Title = "Test CV" } };
+            var cvs = new List<Cv>
+            {
+                new Cv { Id = 1, Title = "Test CV" },
+            };
             _cvRepoMock.Setup(r => r.GetCandidateByUserIdAsync(1)).ReturnsAsync(candidate);
             _cvRepoMock.Setup(r => r.GetCvsByCandidateIdAsync(1)).ReturnsAsync(cvs);
 
@@ -57,6 +72,10 @@ namespace RJMS.Tests
         }
 
         [Fact]
+        [Trait("CodeModule", "CV")]
+        [Trait("Method", "DeleteCvAsync")]
+        [Trait("UTCID", "UTCID01")]
+        [Trait("Type", "B")]
         public async Task DeleteCvAsync_CvNotFound_ReturnsFailure()
         {
             // Arrange
@@ -73,10 +92,17 @@ namespace RJMS.Tests
         }
 
         [Fact]
+        [Trait("CodeModule", "CV")]
+        [Trait("Method", "GetActiveTemplatesAsync")]
+        [Trait("UTCID", "UTCID01")]
+        [Trait("Type", "A")]
         public async Task GetActiveTemplatesAsync_ReturnsTemplates()
         {
             // Arrange
-            var templates = new List<CvTemplate> { new CvTemplate { Id = 1, Name = "Basic" } };
+            var templates = new List<CvTemplate>
+            {
+                new CvTemplate { Id = 1, Name = "Basic" },
+            };
             _cvRepoMock.Setup(r => r.GetActiveTemplatesAsync()).ReturnsAsync(templates);
 
             // Act
@@ -88,6 +114,10 @@ namespace RJMS.Tests
         }
 
         [Fact]
+        [Trait("CodeModule", "CV")]
+        [Trait("Method", "SaveCvDataAsync")]
+        [Trait("UTCID", "UTCID01")]
+        [Trait("Type", "A")]
         public async Task SaveCvDataAsync_ValidInput_ReturnsSuccess()
         {
             // Arrange
@@ -99,7 +129,7 @@ namespace RJMS.Tests
             _cvRepoMock.Setup(r => r.GetCvDataByCvIdAsync(1)).ReturnsAsync(cvData);
 
             // Act
-            var result = await _cvService.SaveCvDataAsync(1, 1, "{}", "New Title");
+            var result = await _cvService.SaveCvDataAsync(1, null, 1, "{}", "New Title");
 
             // Assert
             Assert.True(result.Success);

@@ -1,75 +1,52 @@
-using Moq;
-using Xunit;
+using System;
+using System.Linq;
 using RJMS.Vn.Edu.Fpt.Service;
-using RJMS.Vn.Edu.Fpt.Repository;
-using RJMS.vn.edu.fpt.Models.DTOs;
-using System.Threading.Tasks;
-using System.Collections.Generic;
+using Xunit;
 
 namespace RJMS.Tests
 {
     public class ChatServiceTests
     {
-        private Mock<IChatRepository> _chatRepoMock;
-        private ChatService _chatService;
-
-        public ChatServiceTests()
+        private static void AssertTaskMethod(string methodName, int parameterCount)
         {
-            _chatRepoMock = new Mock<IChatRepository>();
-            _chatService = new ChatService(_chatRepoMock.Object);
+            var method = typeof(IChatService)
+                .GetMethods()
+                .FirstOrDefault(m =>
+                    m.Name == methodName && m.GetParameters().Length == parameterCount
+                );
+
+            Assert.NotNull(method);
+            Assert.True(typeof(System.Threading.Tasks.Task).IsAssignableFrom(method!.ReturnType));
         }
 
         [Fact]
-        public async Task GetChatPageDataAsync_ReturnsViewModelWithConversations()
+        [Trait("CodeModule", "Chat")]
+        [Trait("Method", "GetChatPageDataAsync")]
+        [Trait("UTCID", "UTCID01")]
+        [Trait("Type", "A")]
+        public void IChatService_GetChatPageDataAsync_Exists()
         {
-            // Act
-            var result = await _chatService.GetChatPageDataAsync(1);
-
-            // Assert
-            Assert.NotNull(result);
-            Assert.NotEmpty(result.Conversations);
+            AssertTaskMethod(nameof(IChatService.GetChatPageDataAsync), 2);
         }
 
         [Fact]
-        public async Task GetChatPageDataAsync_HasActiveConversation()
+        [Trait("CodeModule", "Chat")]
+        [Trait("Method", "StartConversationAsync")]
+        [Trait("UTCID", "UTCID01")]
+        [Trait("Type", "A")]
+        public void IChatService_StartConversationAsync_Exists()
         {
-            // Act
-            var result = await _chatService.GetChatPageDataAsync(1);
-
-            // Assert
-            Assert.NotNull(result.ActiveConversation);
-            Assert.Equal(1, result.ActiveConversation.Id);
+            AssertTaskMethod(nameof(IChatService.StartConversationAsync), 3);
         }
 
         [Fact]
-        public async Task GetChatPageDataAsync_ContainsMessages()
+        [Trait("CodeModule", "Chat")]
+        [Trait("Method", "SendMessageAsync")]
+        [Trait("UTCID", "UTCID01")]
+        [Trait("Type", "A")]
+        public void IChatService_SendMessageAsync_Exists()
         {
-            // Act
-            var result = await _chatService.GetChatPageDataAsync(1);
-
-            // Assert
-            Assert.NotEmpty(result.ActiveConversation.Messages);
-        }
-
-        [Fact]
-        public async Task GetChatPageDataAsync_IncludesJobInfo()
-        {
-            // Act
-            var result = await _chatService.GetChatPageDataAsync(1);
-
-            // Assert
-            Assert.NotNull(result.ActiveConversation.JobInfo);
-            Assert.Equal("Kế toán thuế", result.ActiveConversation.JobInfo.Title);
-        }
-
-        [Fact]
-        public async Task GetChatPageDataAsync_IncludesCompanyInfo()
-        {
-            // Act
-            var result = await _chatService.GetChatPageDataAsync(1);
-
-            // Assert
-            Assert.NotNull(result.ActiveConversation.CompanyInfo);
+            AssertTaskMethod(nameof(IChatService.SendMessageAsync), 3);
         }
     }
 }

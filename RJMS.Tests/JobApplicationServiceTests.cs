@@ -1,10 +1,10 @@
-using Moq;
-using Xunit;
-using RJMS.Vn.Edu.Fpt.Service;
-using RJMS.Vn.Edu.Fpt.Repository;
-using RJMS.Vn.Edu.Fpt.Model.DTOs;
-using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using Moq;
+using RJMS.Vn.Edu.Fpt.Model.DTOs;
+using RJMS.Vn.Edu.Fpt.Repository;
+using RJMS.Vn.Edu.Fpt.Service;
+using Xunit;
 
 namespace RJMS.Tests
 {
@@ -20,10 +20,17 @@ namespace RJMS.Tests
         }
 
         [Fact]
+        [Trait("CodeModule", "Application")]
+        [Trait("Method", "GetApplicationsAsync")]
+        [Trait("UTCID", "UTCID01")]
+        [Trait("Type", "A")]
         public async Task GetApplicationsAsync_ValidUserId_ReturnsList()
         {
             // Arrange
-            var apps = new List<JobApplicationDTO> { new JobApplicationDTO { PositionTitle = "Dev" } };
+            var apps = new List<JobApplicationDTO>
+            {
+                new JobApplicationDTO { PositionTitle = "Dev" },
+            };
             _repoMock.Setup(r => r.GetApplicationsAsync("1")).ReturnsAsync(apps);
 
             // Act
@@ -35,10 +42,16 @@ namespace RJMS.Tests
         }
 
         [Fact]
+        [Trait("CodeModule", "Application")]
+        [Trait("Method", "GetApplicationsAsync")]
+        [Trait("UTCID", "UTCID02")]
+        [Trait("Type", "B")]
         public async Task GetApplicationsAsync_NoApps_ReturnsEmpty()
         {
             // Arrange
-            _repoMock.Setup(r => r.GetApplicationsAsync("1")).ReturnsAsync(new List<JobApplicationDTO>());
+            _repoMock
+                .Setup(r => r.GetApplicationsAsync("1"))
+                .ReturnsAsync(new List<JobApplicationDTO>());
 
             // Act
             var result = await _service.GetApplicationsAsync("1");
@@ -48,6 +61,10 @@ namespace RJMS.Tests
         }
 
         [Fact]
+        [Trait("CodeModule", "Application")]
+        [Trait("Method", "GetApplicationsAsync")]
+        [Trait("UTCID", "UTCID03")]
+        [Trait("Type", "A")]
         public async Task GetApplicationsAsync_VerifyRepositoryCall()
         {
             // Act
@@ -58,10 +75,16 @@ namespace RJMS.Tests
         }
 
         [Fact]
+        [Trait("CodeModule", "Application")]
+        [Trait("Method", "GetApplicationsAsync")]
+        [Trait("UTCID", "UTCID04")]
+        [Trait("Type", "B")]
         public async Task GetApplicationsAsync_NullUserId_HandlesRepositoryResponse()
         {
             // Arrange
-            _repoMock.Setup(r => r.GetApplicationsAsync(null)).ReturnsAsync((List<JobApplicationDTO>)null);
+            _repoMock
+                .Setup(r => r.GetApplicationsAsync(null))
+                .ReturnsAsync((List<JobApplicationDTO>)null);
 
             // Act
             var result = await _service.GetApplicationsAsync(null);
@@ -71,13 +94,17 @@ namespace RJMS.Tests
         }
 
         [Fact]
+        [Trait("CodeModule", "Application")]
+        [Trait("Method", "GetApplicationsAsync")]
+        [Trait("UTCID", "UTCID05")]
+        [Trait("Type", "A")]
         public async Task GetApplicationsAsync_MultipleApps_ReturnsAll()
         {
             // Arrange
-            var apps = new List<JobApplicationDTO> 
-            { 
+            var apps = new List<JobApplicationDTO>
+            {
                 new JobApplicationDTO { PositionTitle = "Dev" },
-                new JobApplicationDTO { PositionTitle = "QA" }
+                new JobApplicationDTO { PositionTitle = "QA" },
             };
             _repoMock.Setup(r => r.GetApplicationsAsync("1")).ReturnsAsync(apps);
 

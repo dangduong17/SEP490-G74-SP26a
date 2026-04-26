@@ -1,10 +1,10 @@
-using Moq;
-using Xunit;
-using RJMS.Vn.Edu.Fpt.Service;
-using RJMS.Vn.Edu.Fpt.Repository;
-using RJMS.vn.edu.fpt.Models.DTOs;
-using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using Moq;
+using RJMS.vn.edu.fpt.Models.DTOs;
+using RJMS.Vn.Edu.Fpt.Repository;
+using RJMS.Vn.Edu.Fpt.Service;
+using Xunit;
 
 namespace RJMS.Tests
 {
@@ -20,6 +20,10 @@ namespace RJMS.Tests
         }
 
         [Fact]
+        [Trait("CodeModule", "Subscription")]
+        [Trait("Method", "GetPlanListAsync")]
+        [Trait("UTCID", "UTCID01")]
+        [Trait("Type", "A")]
         public async Task GetPlanListAsync_CallsRepository()
         {
             // Act
@@ -30,6 +34,10 @@ namespace RJMS.Tests
         }
 
         [Fact]
+        [Trait("CodeModule", "Subscription")]
+        [Trait("Method", "GetPlanDetailAsync")]
+        [Trait("UTCID", "UTCID01")]
+        [Trait("Type", "A")]
         public async Task GetPlanDetailAsync_ReturnsData()
         {
             // Arrange
@@ -45,6 +53,10 @@ namespace RJMS.Tests
         }
 
         [Fact]
+        [Trait("CodeModule", "Subscription")]
+        [Trait("Method", "CreatePlanAsync")]
+        [Trait("UTCID", "UTCID01")]
+        [Trait("Type", "A")]
         public async Task CreatePlanAsync_CallsRepoAndReturnsId()
         {
             // Arrange
@@ -59,6 +71,10 @@ namespace RJMS.Tests
         }
 
         [Fact]
+        [Trait("CodeModule", "Subscription")]
+        [Trait("Method", "TogglePlanStatusAsync")]
+        [Trait("UTCID", "UTCID01")]
+        [Trait("Type", "A")]
         public async Task TogglePlanStatusAsync_ReturnsResult()
         {
             // Arrange
@@ -72,6 +88,10 @@ namespace RJMS.Tests
         }
 
         [Fact]
+        [Trait("CodeModule", "Subscription")]
+        [Trait("Method", "DeletePlanAsync")]
+        [Trait("UTCID", "UTCID01")]
+        [Trait("Type", "A")]
         public async Task DeletePlanAsync_ReturnsResult()
         {
             // Arrange

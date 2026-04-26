@@ -1,13 +1,13 @@
+using System.Collections.Generic;
+using System.Net;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
 using Moq;
 using Moq.Protected;
-using Xunit;
-using RJMS.Vn.Edu.Fpt.Service;
 using RJMS.vn.edu.fpt.Models.DTOs;
-using System.Net.Http;
-using System.Threading.Tasks;
-using System.Threading;
-using System.Net;
-using System.Collections.Generic;
+using RJMS.Vn.Edu.Fpt.Service;
+using Xunit;
 
 namespace RJMS.Tests
 {
@@ -20,18 +20,36 @@ namespace RJMS.Tests
         public LocationLookupServiceTests()
         {
             _msgHandlerMock = new Mock<HttpMessageHandler>();
-            _httpClient = new HttpClient(_msgHandlerMock.Object) { BaseAddress = new System.Uri("https://provinces.open-api.vn") };
+            _httpClient = new HttpClient(_msgHandlerMock.Object)
+            {
+                BaseAddress = new System.Uri("https://provinces.open-api.vn"),
+            };
             _service = new LocationLookupService(_httpClient);
         }
 
         [Fact]
+        [Trait("CodeModule", "LocationLookup")]
+        [Trait("Method", "GetProvincesAsync")]
+        [Trait("UTCID", "UTCID01")]
+        [Trait("Type", "A")]
         public async Task GetProvincesAsync_Success_ReturnsList()
         {
             // Arrange
             var json = "[{\"code\": 1, \"name\": \"Hà Nội\"}]";
-            _msgHandlerMock.Protected()
-                .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(new HttpResponseMessage { StatusCode = HttpStatusCode.OK, Content = new StringContent(json) });
+            _msgHandlerMock
+                .Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>()
+                )
+                .ReturnsAsync(
+                    new HttpResponseMessage
+                    {
+                        StatusCode = HttpStatusCode.OK,
+                        Content = new StringContent(json),
+                    }
+                );
 
             // Act
             var result = await _service.GetProvincesAsync();
@@ -42,12 +60,23 @@ namespace RJMS.Tests
         }
 
         [Fact]
+        [Trait("CodeModule", "LocationLookup")]
+        [Trait("Method", "GetProvincesAsync")]
+        [Trait("UTCID", "UTCID02")]
+        [Trait("Type", "B")]
         public async Task GetProvincesAsync_Error_ReturnsEmpty()
         {
             // Arrange
-            _msgHandlerMock.Protected()
-                .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(new HttpResponseMessage { StatusCode = HttpStatusCode.InternalServerError });
+            _msgHandlerMock
+                .Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>()
+                )
+                .ReturnsAsync(
+                    new HttpResponseMessage { StatusCode = HttpStatusCode.InternalServerError }
+                );
 
             // Act
             var result = await _service.GetProvincesAsync();
@@ -57,13 +86,28 @@ namespace RJMS.Tests
         }
 
         [Fact]
+        [Trait("CodeModule", "LocationLookup")]
+        [Trait("Method", "GetWardsByProvinceCodeAsync")]
+        [Trait("UTCID", "UTCID01")]
+        [Trait("Type", "A")]
         public async Task GetWardsByProvinceCodeAsync_ValidCode_ReturnsWards()
         {
             // Arrange
             var json = "{\"wards\": [{\"code\": 1, \"name\": \"Ward 1\"}]}";
-            _msgHandlerMock.Protected()
-                .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(new HttpResponseMessage { StatusCode = HttpStatusCode.OK, Content = new StringContent(json) });
+            _msgHandlerMock
+                .Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>()
+                )
+                .ReturnsAsync(
+                    new HttpResponseMessage
+                    {
+                        StatusCode = HttpStatusCode.OK,
+                        Content = new StringContent(json),
+                    }
+                );
 
             // Act
             var result = await _service.GetWardsByProvinceCodeAsync(1);
@@ -74,13 +118,28 @@ namespace RJMS.Tests
         }
 
         [Fact]
+        [Trait("CodeModule", "LocationLookup")]
+        [Trait("Method", "GetWardsByProvinceCodeAsync")]
+        [Trait("UTCID", "UTCID02")]
+        [Trait("Type", "A")]
         public async Task GetWardsByProvinceCodeAsync_FallbackToDistricts_ReturnsList()
         {
             // Arrange
             var json = "{\"districts\": [{\"code\": 2, \"name\": \"District 2\"}]}";
-            _msgHandlerMock.Protected()
-                .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(new HttpResponseMessage { StatusCode = HttpStatusCode.OK, Content = new StringContent(json) });
+            _msgHandlerMock
+                .Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>()
+                )
+                .ReturnsAsync(
+                    new HttpResponseMessage
+                    {
+                        StatusCode = HttpStatusCode.OK,
+                        Content = new StringContent(json),
+                    }
+                );
 
             // Act
             var result = await _service.GetWardsByProvinceCodeAsync(1);
@@ -91,11 +150,20 @@ namespace RJMS.Tests
         }
 
         [Fact]
+        [Trait("CodeModule", "LocationLookup")]
+        [Trait("Method", "GetWardsByProvinceCodeAsync")]
+        [Trait("UTCID", "UTCID03")]
+        [Trait("Type", "B")]
         public async Task GetWardsByProvinceCodeAsync_HttpError_ReturnsEmptyList()
         {
-             // Arrange
-            _msgHandlerMock.Protected()
-                .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
+            // Arrange
+            _msgHandlerMock
+                .Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>()
+                )
                 .ReturnsAsync(new HttpResponseMessage { StatusCode = HttpStatusCode.NotFound });
 
             // Act

@@ -1,11 +1,11 @@
-using Microsoft.EntityFrameworkCore;
-using Xunit;
-using RJMS.Vn.Edu.Fpt.Service;
-using RJMS.vn.edu.fpt.Models;
-using RJMS.vn.edu.fpt.Models.DTOs;
-using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using RJMS.vn.edu.fpt.Models;
+using RJMS.vn.edu.fpt.Models.DTOs;
+using RJMS.Vn.Edu.Fpt.Service;
+using Xunit;
 
 namespace RJMS.Tests
 {
@@ -20,11 +20,23 @@ namespace RJMS.Tests
         }
 
         [Fact]
+        [Trait("CodeModule", "Category")]
+        [Trait("Method", "GetCategoriesAsync")]
+        [Trait("UTCID", "UTCID01")]
+        [Trait("Type", "A")]
         public async Task GetCategoriesAsync_ReturnsPagedData()
         {
             // Arrange
             using var context = GetInMemoryDbContext();
-            context.JobCategories.Add(new JobCategory { Id = 1, Name = "IT", Level = 1, Slug = "it" });
+            context.JobCategories.Add(
+                new JobCategory
+                {
+                    Id = 1,
+                    Name = "IT",
+                    Level = 1,
+                    Slug = "it",
+                }
+            );
             await context.SaveChangesAsync();
 
             var service = new JobCategoryService(context);
@@ -38,6 +50,10 @@ namespace RJMS.Tests
         }
 
         [Fact]
+        [Trait("CodeModule", "Category")]
+        [Trait("Method", "CreateCategoryAsync")]
+        [Trait("UTCID", "UTCID01")]
+        [Trait("Type", "A")]
         public async Task CreateCategoryAsync_NewName_ReturnsSuccess()
         {
             // Arrange
@@ -54,11 +70,23 @@ namespace RJMS.Tests
         }
 
         [Fact]
+        [Trait("CodeModule", "Category")]
+        [Trait("Method", "CreateCategoryAsync")]
+        [Trait("UTCID", "UTCID02")]
+        [Trait("Type", "B")]
         public async Task CreateCategoryAsync_DuplicateName_ReturnsFailure()
         {
             // Arrange
             using var context = GetInMemoryDbContext();
-            context.JobCategories.Add(new JobCategory { Id = 1, Name = "IT", Level = 1, Slug = "it" });
+            context.JobCategories.Add(
+                new JobCategory
+                {
+                    Id = 1,
+                    Name = "IT",
+                    Level = 1,
+                    Slug = "it",
+                }
+            );
             await context.SaveChangesAsync();
 
             var service = new JobCategoryService(context);
@@ -73,15 +101,33 @@ namespace RJMS.Tests
         }
 
         [Fact]
+        [Trait("CodeModule", "Category")]
+        [Trait("Method", "UpdateCategoryAsync")]
+        [Trait("UTCID", "UTCID01")]
+        [Trait("Type", "B")]
         public async Task UpdateCategoryAsync_SelfParent_ReturnsFailure()
         {
             // Arrange
             using var context = GetInMemoryDbContext();
-            context.JobCategories.Add(new JobCategory { Id = 1, Name = "IT", Level = 1, Slug = "it" });
+            context.JobCategories.Add(
+                new JobCategory
+                {
+                    Id = 1,
+                    Name = "IT",
+                    Level = 1,
+                    Slug = "it",
+                }
+            );
             await context.SaveChangesAsync();
 
             var service = new JobCategoryService(context);
-            var model = new UpdateJobCategoryModel { Id = 1, Name = "IT Updated", ParentId = 1, Level = 1 };
+            var model = new UpdateJobCategoryModel
+            {
+                Id = 1,
+                Name = "IT Updated",
+                ParentId = 1,
+                Level = 1,
+            };
 
             // Act
             var result = await service.UpdateCategoryAsync(model);
@@ -92,12 +138,29 @@ namespace RJMS.Tests
         }
 
         [Fact]
+        [Trait("CodeModule", "Category")]
+        [Trait("Method", "DeleteCategoryAsync")]
+        [Trait("UTCID", "UTCID01")]
+        [Trait("Type", "B")]
         public async Task DeleteCategoryAsync_WithChildren_ReturnsFailure()
         {
             // Arrange
             using var context = GetInMemoryDbContext();
-            var parent = new JobCategory { Id = 1, Name = "IT", Level = 1, Slug = "it" };
-            var child = new JobCategory { Id = 2, Name = "Dev", ParentId = 1, Level = 2, Slug = "dev" };
+            var parent = new JobCategory
+            {
+                Id = 1,
+                Name = "IT",
+                Level = 1,
+                Slug = "it",
+            };
+            var child = new JobCategory
+            {
+                Id = 2,
+                Name = "Dev",
+                ParentId = 1,
+                Level = 2,
+                Slug = "dev",
+            };
             context.JobCategories.AddRange(parent, child);
             await context.SaveChangesAsync();
 
@@ -108,7 +171,10 @@ namespace RJMS.Tests
 
             // Assert
             Assert.False(result.Succeeded);
-            Assert.Equal("Không thể xóa danh mục đang có danh mục con.", result.Errors.First().Message);
+            Assert.Equal(
+                "Không thể xóa danh mục đang có danh mục con.",
+                result.Errors.First().Message
+            );
         }
     }
 }
