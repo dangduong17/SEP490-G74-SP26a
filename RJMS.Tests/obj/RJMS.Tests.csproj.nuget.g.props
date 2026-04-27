@@ -22,5 +22,6 @@
   </ImportGroup>
   <PropertyGroup Condition=" '$(ExcludeRestorePackageImports)' != 'true' ">
     <Pkgxunit_analyzers Condition=" '$(Pkgxunit_analyzers)' == '' ">/Users/dotritrong/.nuget/packages/xunit.analyzers/1.11.0</Pkgxunit_analyzers>
+    <PkgHangfire_SqlServer Condition=" '$(PkgHangfire_SqlServer)' == '' ">/Users/dotritrong/.nuget/packages/hangfire.sqlserver/1.8.23</PkgHangfire_SqlServer>
   </PropertyGroup>
 </Project>

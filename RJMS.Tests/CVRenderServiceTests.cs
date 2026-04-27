@@ -1,7 +1,7 @@
-using Moq;
-using Xunit;
-using RJMS.Vn.Edu.Fpt.Service;
 using System;
+using Moq;
+using RJMS.Vn.Edu.Fpt.Service;
+using Xunit;
 
 namespace RJMS.Tests
 {
@@ -15,6 +15,10 @@ namespace RJMS.Tests
         }
 
         [Fact]
+        [Trait("CodeModule", "CVRender")]
+        [Trait("Method", "Render")]
+        [Trait("UTCID", "UTCID01")]
+        [Trait("Type", "B")]
         public void Render_EmptyData_ReturnsWrappedDocument()
         {
             // Act
@@ -25,11 +29,15 @@ namespace RJMS.Tests
         }
 
         [Fact]
+        [Trait("CodeModule", "CVRender")]
+        [Trait("Method", "Render")]
+        [Trait("UTCID", "UTCID02")]
+        [Trait("Type", "A")]
         public void Render_CustomData_ReplacesPlaceholders()
         {
             // Arrange
             var dataJson = "{\"FullName\": \"John Doe\", \"Position\": \"Software Engineer\"}";
-            
+
             // Act
             var result = _renderService.Render("", dataJson);
 
@@ -39,19 +47,27 @@ namespace RJMS.Tests
         }
 
         [Fact]
+        [Trait("CodeModule", "CVRender")]
+        [Trait("Method", "Render")]
+        [Trait("UTCID", "UTCID03")]
+        [Trait("Type", "B")]
         public void Render_InvalidJson_HandlesExceptionGracefully()
         {
             // Act & Assert
             // The service code uses JsonSerializer.Deserialize which might throw or return null.
             // In the implementation: JsonSerializer.Deserialize<CvDataModel>(dataJson, _opts) ?? new CvDataModel();
             // If it throws, we should see what happens.
-            
+
             var result = _renderService.Render("invalid", "invalid");
             Assert.NotNull(result);
             Assert.Contains("cv-document", result);
         }
 
         [Fact]
+        [Trait("CodeModule", "CVRender")]
+        [Trait("Method", "Render")]
+        [Trait("UTCID", "UTCID04")]
+        [Trait("Type", "A")]
         public void Render_SkillsList_RendersAllSkills()
         {
             // Arrange
@@ -67,10 +83,15 @@ namespace RJMS.Tests
         }
 
         [Fact]
+        [Trait("CodeModule", "CVRender")]
+        [Trait("Method", "Render")]
+        [Trait("UTCID", "UTCID05")]
+        [Trait("Type", "A")]
         public void Render_Experience_RendersCompany()
         {
             // Arrange
-            var dataJson = "{\"Experiences\": [{\"Company\": \"Google\", \"Role\": \"Dev\", \"Period\": \"2020-2023\", \"Description\": \"Worked hard\"}]}";
+            var dataJson =
+                "{\"Experiences\": [{\"Company\": \"Google\", \"Role\": \"Dev\", \"Period\": \"2020-2023\", \"Description\": \"Worked hard\"}]}";
 
             // Act
             var result = _renderService.Render("", dataJson);

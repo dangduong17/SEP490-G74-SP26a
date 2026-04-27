@@ -23,7 +23,6 @@ namespace RJMS.Vn.Edu.Fpt.Model.DTOs
         public string Password { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Xác nhận mật khẩu là bắt buộc")]
-        [Compare("Password", ErrorMessage = "Mật khẩu xác nhận không khớp")]
         public string ConfirmPassword { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Số điện thoại là bắt buộc")]

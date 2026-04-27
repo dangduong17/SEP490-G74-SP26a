@@ -151,7 +151,7 @@
           "dependencies": {
             "AutoMapper": {
               "target": "Package",
-              "version": "[16.0.0, )"
+              "version": "[16.1.1, )"
             },
             "BCrypt.Net-Next": {
               "target": "Package",
@@ -160,6 +160,14 @@
             "CloudinaryDotNet": {
               "target": "Package",
               "version": "[1.28.0, )"
+            },
+            "Hangfire.AspNetCore": {
+              "target": "Package",
+              "version": "[1.8.23, )"
+            },
+            "Hangfire.SqlServer": {
+              "target": "Package",
+              "version": "[1.8.23, )"
             },
             "Microsoft.EntityFrameworkCore": {
               "target": "Package",
@@ -180,6 +188,10 @@
               "suppressParent": "All",
               "target": "Package",
               "version": "[8.0.24, )"
+            },
+            "PdfPig": {
+              "target": "Package",
+              "version": "[0.1.14, )"
             }
           },
           "imports": [

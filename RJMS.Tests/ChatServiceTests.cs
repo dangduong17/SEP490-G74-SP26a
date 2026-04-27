@@ -1,75 +1,99 @@
-using Moq;
-using Xunit;
-using RJMS.Vn.Edu.Fpt.Service;
-using RJMS.Vn.Edu.Fpt.Repository;
-using RJMS.vn.edu.fpt.Models.DTOs;
-using System.Threading.Tasks;
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using RJMS.vn.edu.fpt.Models;
+using RJMS.Vn.Edu.Fpt.Service;
+using Xunit;
 
 namespace RJMS.Tests
 {
     public class ChatServiceTests
     {
-        private Mock<IChatRepository> _chatRepoMock;
-        private ChatService _chatService;
-
-        public ChatServiceTests()
+        private FindingJobsDbContext GetInMemoryDbContext()
         {
-            _chatRepoMock = new Mock<IChatRepository>();
-            _chatService = new ChatService(_chatRepoMock.Object);
+            var options = new DbContextOptionsBuilder<FindingJobsDbContext>()
+                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+                .Options;
+            return new FindingJobsDbContext(options);
+        }
+
+        // --- FUNC12: GetChatPageDataAsync ---
+
+        [Fact]
+        [Trait("CodeModule", "Chat")]
+        [Trait("Method", "GetChatPageDataAsync")]
+        [Trait("UTCID", "UTCID01")]
+        [Trait("Type", "A")]
+        public async Task GetChatPageData_UTC01_NoConversations()
+        {
+            using var context = GetInMemoryDbContext();
+            var service = new ChatService(context);
+            var result = await service.GetChatPageDataAsync(1);
+            Assert.Empty(result.Conversations);
         }
 
         [Fact]
-        public async Task GetChatPageDataAsync_ReturnsViewModelWithConversations()
+        [Trait("CodeModule", "Chat")]
+        [Trait("Method", "GetChatPageDataAsync")]
+        [Trait("UTCID", "UTCID02")]
+        [Trait("Type", "A")]
+        public async Task GetChatPageData_UTC02_SingleConversation()
         {
-            // Act
-            var result = await _chatService.GetChatPageDataAsync(1);
+            using var context = GetInMemoryDbContext();
+            context.Conversations.Add(new Conversation { Id = 1 });
+            context.ConversationParticipants.Add(new ConversationParticipant { ConversationId = 1, UserId = 1 });
+            await context.SaveChangesAsync();
 
-            // Assert
-            Assert.NotNull(result);
-            Assert.NotEmpty(result.Conversations);
+            var service = new ChatService(context);
+            var result = await service.GetChatPageDataAsync(1);
+            Assert.Single(result.Conversations);
         }
 
         [Fact]
-        public async Task GetChatPageDataAsync_HasActiveConversation()
+        [Trait("CodeModule", "Chat")]
+        [Trait("Method", "GetChatPageDataAsync")]
+        [Trait("UTCID", "UTCID03")]
+        [Trait("Type", "B")]
+        public async Task GetChatPageData_UTC03_InvalidConversationId()
         {
-            // Act
-            var result = await _chatService.GetChatPageDataAsync(1);
-
-            // Assert
-            Assert.NotNull(result.ActiveConversation);
-            Assert.Equal(1, result.ActiveConversation.Id);
+            using var context = GetInMemoryDbContext();
+            var service = new ChatService(context);
+            var result = await service.GetChatPageDataAsync(1, 999);
+            Assert.Empty(result.Conversations);
         }
 
         [Fact]
-        public async Task GetChatPageDataAsync_ContainsMessages()
+        [Trait("CodeModule", "Chat")]
+        [Trait("Method", "GetChatPageDataAsync")]
+        [Trait("UTCID", "UTCID04")]
+        [Trait("Type", "A")]
+        public async Task GetChatPageData_UTC04_LoadMessages()
         {
-            // Act
-            var result = await _chatService.GetChatPageDataAsync(1);
+            using var context = GetInMemoryDbContext();
+            context.Users.Add(new User { Id = 1, Email = "test@test.com", PasswordHash = "hash" });
+            context.Conversations.Add(new Conversation { Id = 1 });
+            context.ConversationParticipants.Add(new ConversationParticipant { ConversationId = 1, UserId = 1 });
+            context.Messages.Add(new Message { ConversationId = 1, Content = "Hello", SenderId = 1, CreatedAt = DateTime.Now });
+            await context.SaveChangesAsync();
 
-            // Assert
+            var service = new ChatService(context);
+            var result = await service.GetChatPageDataAsync(1, 1);
             Assert.NotEmpty(result.ActiveConversation.Messages);
         }
 
         [Fact]
-        public async Task GetChatPageDataAsync_IncludesJobInfo()
+        [Trait("CodeModule", "Chat")]
+        [Trait("Method", "GetChatPageDataAsync")]
+        [Trait("UTCID", "UTCID05")]
+        [Trait("Type", "B")]
+        public async Task GetChatPageData_UTC05_ZeroUserId()
         {
-            // Act
-            var result = await _chatService.GetChatPageDataAsync(1);
-
-            // Assert
-            Assert.NotNull(result.ActiveConversation.JobInfo);
-            Assert.Equal("Kế toán thuế", result.ActiveConversation.JobInfo.Title);
-        }
-
-        [Fact]
-        public async Task GetChatPageDataAsync_IncludesCompanyInfo()
-        {
-            // Act
-            var result = await _chatService.GetChatPageDataAsync(1);
-
-            // Assert
-            Assert.NotNull(result.ActiveConversation.CompanyInfo);
+            using var context = GetInMemoryDbContext();
+            var service = new ChatService(context);
+            var result = await service.GetChatPageDataAsync(0);
+            Assert.Empty(result.Conversations);
         }
     }
 }
