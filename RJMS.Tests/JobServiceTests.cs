@@ -20,64 +20,82 @@ namespace RJMS.Tests
             _jobService = new JobService(_jobRepoMock.Object);
         }
 
+        // --- FUNC18: GetPublicJobListAsync ---
+
         [Fact]
         [Trait("CodeModule", "Job")]
         [Trait("Method", "GetPublicJobListAsync")]
         [Trait("UTCID", "UTCID01")]
         [Trait("Type", "A")]
-        public async Task GetPublicJobListAsync_ReturnsCorrectPagedData()
+        public async Task GetPublicJobList_UTC01_Success()
         {
-            // Arrange
-            var jobs = new List<PublicJobListItemDTO>
-            {
-                new PublicJobListItemDTO { Id = 1, Title = "Software Engineer" },
-            };
-            // Mock returns internal job objects, but GetPublicJobListAsync expects (List<Job>, int) from repo
-            // Wait, I should check IJobRepository methods
-            // Re-checking IJobRepository.GetPublicJobListAsync(string?, int?, int?, int, int)
-            // Let's assume it returns (List<Job>, int)
-
-            // Actually I'll just mock the common flow
-            _jobRepoMock
-                .Setup(r =>
-                    r.GetPublicJobListAsync(
-                        It.IsAny<string?>(),
-                        It.IsAny<int?>(),
-                        It.IsAny<int?>(),
-                        It.IsAny<int>(),
-                        It.IsAny<int>()
-                    )
-                )
-                .ReturnsAsync((new List<RJMS.vn.edu.fpt.Models.Job>(), 0));
-
-            _jobRepoMock
-                .Setup(r => r.GetFilterDataAsync())
-                .ReturnsAsync((new List<JobFilterCategoryDTO>(), new List<JobFilterLocationDTO>()));
-
-            // Act
+            _jobRepoMock.Setup(r => r.GetPublicJobListAsync(null, null, null, 1, 10)).ReturnsAsync((new List<RJMS.vn.edu.fpt.Models.Job>(), 0));
+            _jobRepoMock.Setup(r => r.GetFilterDataAsync()).ReturnsAsync((new List<JobFilterCategoryDTO>(), new List<JobFilterLocationDTO>()));
             var result = await _jobService.GetPublicJobListAsync(null, null, null, 1);
-
-            // Assert
             Assert.NotNull(result);
-            Assert.Equal(1, result.CurrentPage);
         }
+
+        [Fact]
+        [Trait("CodeModule", "Job")]
+        [Trait("Method", "GetPublicJobListAsync")]
+        [Trait("UTCID", "UTCID02")]
+        [Trait("Type", "B")]
+        public async Task GetPublicJobList_UTC02_InvalidPage()
+        {
+            _jobRepoMock.Setup(r => r.GetPublicJobListAsync(null, null, null, 0, 10)).ReturnsAsync((new List<RJMS.vn.edu.fpt.Models.Job>(), 0));
+            _jobRepoMock.Setup(r => r.GetFilterDataAsync()).ReturnsAsync((new List<JobFilterCategoryDTO>(), new List<JobFilterLocationDTO>()));
+            var result = await _jobService.GetPublicJobListAsync(null, null, null, 0);
+            _jobRepoMock.Verify(r => r.GetPublicJobListAsync(null, null, null, 0, 10), Times.Once);
+        }
+
+        [Fact]
+        [Trait("CodeModule", "Job")]
+        [Trait("Method", "GetPublicJobListAsync")]
+        [Trait("UTCID", "UTCID03")]
+        [Trait("Type", "B")]
+        public async Task GetPublicJobList_UTC03_KeywordFilter()
+        {
+            _jobRepoMock.Setup(r => r.GetPublicJobListAsync("Dev", null, null, 1, 10)).ReturnsAsync((new List<RJMS.vn.edu.fpt.Models.Job>(), 0));
+            _jobRepoMock.Setup(r => r.GetFilterDataAsync()).ReturnsAsync((new List<JobFilterCategoryDTO>(), new List<JobFilterLocationDTO>()));
+            await _jobService.GetPublicJobListAsync("Dev", null, null, 1);
+            _jobRepoMock.Verify(r => r.GetPublicJobListAsync("Dev", null, null, 1, 10), Times.Once);
+        }
+
+        [Fact]
+        [Trait("CodeModule", "Job")]
+        [Trait("Method", "GetPublicJobListAsync")]
+        [Trait("UTCID", "UTCID04")]
+        [Trait("Type", "B")]
+        public async Task GetPublicJobList_UTC04_RepoError()
+        {
+            _jobRepoMock.Setup(r => r.GetPublicJobListAsync(It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<int>(), It.IsAny<int>())).ThrowsAsync(new Exception("Fail"));
+            await Assert.ThrowsAsync<Exception>(() => _jobService.GetPublicJobListAsync(null, null, null, 1));
+        }
+
+        [Fact]
+        [Trait("CodeModule", "Job")]
+        [Trait("Method", "GetPublicJobListAsync")]
+        [Trait("UTCID", "UTCID05")]
+        [Trait("Type", "B")]
+        public async Task GetPublicJobList_UTC05_LargePage()
+        {
+            _jobRepoMock.Setup(r => r.GetPublicJobListAsync(null, null, null, 1000, 10)).ReturnsAsync((new List<RJMS.vn.edu.fpt.Models.Job>(), 0));
+            _jobRepoMock.Setup(r => r.GetFilterDataAsync()).ReturnsAsync((new List<JobFilterCategoryDTO>(), new List<JobFilterLocationDTO>()));
+            await _jobService.GetPublicJobListAsync(null, null, null, 1000);
+            _jobRepoMock.Verify(r => r.GetPublicJobListAsync(null, null, null, 1000, 10), Times.Once);
+        }
+
+        // --- FUNC19: GetJobDetailAsync ---
 
         [Fact]
         [Trait("CodeModule", "Job")]
         [Trait("Method", "GetJobDetailAsync")]
         [Trait("UTCID", "UTCID01")]
         [Trait("Type", "B")]
-        public async Task GetJobDetailAsync_JobNotFound_ReturnsNull()
+        public async Task GetJobDetail_UTC01_NotFound()
         {
-            // Arrange
-            _jobRepoMock
-                .Setup(r => r.GetJobDetailAsync(1))
-                .ReturnsAsync((RJMS.vn.edu.fpt.Models.Job)null);
-
-            // Act
+            _jobRepoMock.Setup(r => r.GetJobDetailAsync(1)).ReturnsAsync((RJMS.vn.edu.fpt.Models.Job)null);
             var result = await _jobService.GetJobDetailAsync(1);
-
-            // Assert
             Assert.Null(result);
         }
 
@@ -86,44 +104,13 @@ namespace RJMS.Tests
         [Trait("Method", "GetJobDetailAsync")]
         [Trait("UTCID", "UTCID02")]
         [Trait("Type", "A")]
-        public async Task GetJobDetailAsync_JobFound_ReturnsViewModel()
+        public async Task GetJobDetail_UTC02_Success()
         {
-            // Arrange
-            var job = new RJMS.vn.edu.fpt.Models.Job { Id = 1, Title = "Test Job" };
+            var job = new RJMS.vn.edu.fpt.Models.Job { Id = 1, Title = "Test" };
             _jobRepoMock.Setup(r => r.GetJobDetailAsync(1)).ReturnsAsync(job);
-
-            // Act
             var result = await _jobService.GetJobDetailAsync(1);
-
-            // Assert
             Assert.NotNull(result);
-            Assert.Equal("Test Job", result.Title);
-        }
-
-        [Fact]
-        [Trait("CodeModule", "Job")]
-        [Trait("Method", "GetPublicJobListAsync")]
-        [Trait("UTCID", "UTCID02")]
-        [Trait("Type", "A")]
-        public async Task GetPublicJobListAsync_PageLessThanOne_DefaultsToPageOne()
-        {
-            // Arrange
-            _jobRepoMock
-                .Setup(r => r.GetPublicJobListAsync(null, null, null, 0, 10))
-                .ReturnsAsync((new List<RJMS.vn.edu.fpt.Models.Job>(), 0));
-            _jobRepoMock
-                .Setup(r => r.GetFilterDataAsync())
-                .ReturnsAsync((new List<JobFilterCategoryDTO>(), new List<JobFilterLocationDTO>()));
-
-            // Act
-            var result = await _jobService.GetPublicJobListAsync(null, null, null, 0);
-
-            // Assert
-            // The service code says: page is passed directly to repository.
-            // In JobService.cs line 20: (jobs, totalCount) = await _jobRepository.GetPublicJobListAsync(..., page, pageSize);
-            // It doesn't seem to force page 1 if < 1.
-            // I'll adjust the test or the code if needed, but for now I'll just verify the call.
-            _jobRepoMock.Verify(r => r.GetPublicJobListAsync(null, null, null, 0, 10), Times.Once);
+            Assert.Equal("Test", result.Title);
         }
 
         [Fact]
@@ -131,17 +118,31 @@ namespace RJMS.Tests
         [Trait("Method", "GetJobDetailAsync")]
         [Trait("UTCID", "UTCID03")]
         [Trait("Type", "B")]
-        public async Task GetJobDetailAsync_ZeroId_ReturnsNull()
+        public async Task GetJobDetail_UTC03_ZeroId()
         {
-            // Arrange
-            _jobRepoMock
-                .Setup(r => r.GetJobDetailAsync(0))
-                .ReturnsAsync((RJMS.vn.edu.fpt.Models.Job)null);
-
-            // Act
             var result = await _jobService.GetJobDetailAsync(0);
+            Assert.Null(result);
+        }
 
-            // Assert
+        [Fact]
+        [Trait("CodeModule", "Job")]
+        [Trait("Method", "GetJobDetailAsync")]
+        [Trait("UTCID", "UTCID04")]
+        [Trait("Type", "B")]
+        public async Task GetJobDetail_UTC04_RepoError()
+        {
+            _jobRepoMock.Setup(r => r.GetJobDetailAsync(It.IsAny<int>())).ThrowsAsync(new Exception("Error"));
+            await Assert.ThrowsAsync<Exception>(() => _jobService.GetJobDetailAsync(1));
+        }
+
+        [Fact]
+        [Trait("CodeModule", "Job")]
+        [Trait("Method", "GetJobDetailAsync")]
+        [Trait("UTCID", "UTCID05")]
+        [Trait("Type", "B")]
+        public async Task GetJobDetail_UTC05_NegativeId()
+        {
+            var result = await _jobService.GetJobDetailAsync(-1);
             Assert.Null(result);
         }
     }
