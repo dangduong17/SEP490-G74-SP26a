@@ -58,5 +58,11 @@ namespace RJMS.Vn.Edu.Fpt.Service
 
         public Task<int> ProcessExpiredSubscriptionsAsync()
             => _repo.ProcessExpiredSubscriptionsAsync();
+
+        public Task<bool> CancelSubscriptionAsync(int subscriptionId)
+            => _repo.CancelSubscriptionAsync(subscriptionId);
+
+        public Task<RecruiterSubscriptionHistoryViewModel> GetRecruiterHistoryAsync(int userId, int page, int pageSize)
+            => _repo.GetRecruiterHistoryAsync(userId, page, pageSize);
     }
 }

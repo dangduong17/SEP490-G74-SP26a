@@ -3,6 +3,7 @@
 @{
     ViewData["Title"] = "Quản lý gói đăng ký";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["HidePageTitle"] = true;
 }
 
 @section Styles {
@@ -313,8 +314,10 @@
         <span style="font-size:0.83rem;color:#374151;font-weight:500;white-space:nowrap;">Trạng thái:</span>
         <select name="status" class="form-select" style="width:150px;">
             <option value="" selected="@(string.IsNullOrEmpty(Model.StatusFilter))">Tất cả</option>
-            <option value="active"   selected="@(Model.StatusFilter == "active"  )">Hoạt động</option>
-            <option value="inactive" selected="@(Model.StatusFilter == "inactive")">Ngừng hoạt động</option>
+            @foreach (var statusOption in Model.StatusOptions)
+            {
+                <option value="@statusOption.Value" selected="@(string.Equals(Model.StatusFilter, statusOption.Value, StringComparison.OrdinalIgnoreCase))">@statusOption.Label</option>
+            }
         </select>
 
         <span style="font-size:0.83rem;color:#374151;font-weight:500;white-space:nowrap;">Loại gói:</span>
@@ -514,3 +517,5 @@
     });
 </script>
 }
+
+

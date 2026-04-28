@@ -1,0 +1,403 @@
+@model RJMS.vn.edu.fpt.Models.DTOs.RecruiterSubscriptionHistoryViewModel
+@{
+    ViewData["Title"] = "Lịch sử đăng ký";
+    ViewData["HidePageTitle"] = true;
+    Layout = "~/Views/Shared/_RecruiterLayout.cshtml";
+}
+
+@section Styles {
+<style>
+    /* ===== Page Header ===== */
+    .hist-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        margin-bottom: 24px;
+        gap: 16px;
+    }
+    .hist-header h1 { font-size: 1.5rem; font-weight: 700; color: #111827; margin: 0 0 4px; }
+    .hist-header p  { font-size: 0.84rem; color: #6b7280; margin: 0; }
+
+    /* ===== Subscription Card ===== */
+    .sub-hist-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        margin-bottom: 20px;
+        overflow: hidden;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+
+    .sub-hist-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 18px 22px;
+        border-bottom: 1px solid #f3f4f6;
+        background: linear-gradient(135deg, #f9fafb, #fff);
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .sub-plan-name {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #111827;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .sub-status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.72rem;
+        font-weight: 700;
+    }
+    .badge-active    { background: #dcfce7; color: #15803d; }
+    .badge-expired   { background: #f3f4f6; color: #6b7280; }
+    .badge-cancelled { background: #fee2e2; color: #b91c1c; }
+
+    .sub-hist-meta {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        font-size: 0.8rem;
+        color: #6b7280;
+        align-items: center;
+    }
+    .sub-hist-meta strong { color: #374151; }
+
+    .sub-hist-price {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #00b14f;
+        white-space: nowrap;
+    }
+
+    /* ===== Period Table ===== */
+    .period-section {
+        padding: 16px 22px 20px;
+    }
+    .period-title {
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #9ca3af;
+        letter-spacing: 0.04em;
+        margin-bottom: 12px;
+    }
+
+    .period-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    .period-table thead tr { border-bottom: 1px solid #f3f4f6; }
+    .period-table th {
+        padding: 8px 12px;
+        font-size: 0.74rem;
+        font-weight: 700;
+        color: #9ca3af;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        background: #fafafa;
+        text-align: left;
+    }
+    .period-table td {
+        padding: 10px 12px;
+        border-bottom: 1px solid #f9fafb;
+        color: #374151;
+        vertical-align: middle;
+    }
+    .period-table tr:last-child td { border-bottom: none; }
+    .period-table tr:hover td { background: #f9fafb; }
+
+    .period-badge-current {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 0.65rem;
+        font-weight: 700;
+        background: #dbeafe;
+        color: #1d4ed8;
+        margin-left: 6px;
+    }
+
+    /* Usage bar */
+    .usage-bar-wrap { display: flex; align-items: center; gap: 8px; min-width: 120px; }
+    .usage-bar-bg {
+        flex: 1;
+        height: 6px;
+        background: #e5e7eb;
+        border-radius: 20px;
+        overflow: hidden;
+    }
+    .usage-bar-fill {
+        height: 6px;
+        border-radius: 20px;
+        background: linear-gradient(90deg, #00b14f, #059669);
+        transition: width 0.5s ease;
+    }
+    .usage-bar-fill.warn { background: linear-gradient(90deg, #f97316, #ef4444); }
+    .usage-text { font-size: 0.75rem; color: #6b7280; white-space: nowrap; }
+
+    /* No-periods empty state */
+    .period-empty {
+        text-align: center;
+        color: #9ca3af;
+        font-size: 0.82rem;
+        padding: 16px 0;
+        font-style: italic;
+    }
+
+    /* Cancelled banner */
+    .cancelled-banner {
+        background: #fef2f2;
+        border-left: 4px solid #ef4444;
+        border-radius: 0;
+        padding: 10px 22px;
+        font-size: 0.8rem;
+        color: #b91c1c;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* ===== Pagination ===== */
+    .hist-pagination {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 8px;
+        font-size: 0.82rem;
+        color: #6b7280;
+    }
+    .pg-btn {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 32px; height: 32px;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        font-size: 0.82rem;
+        color: #374151;
+        text-decoration: none;
+        background: #fff;
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+    .pg-btn:hover { border-color: #00b14f; color: #00b14f; }
+    .pg-btn.active { background: #00b14f; border-color: #00b14f; color: #fff; }
+    .pg-btn-text {
+        padding: 0 14px; height: 32px; border: 1px solid #e5e7eb;
+        border-radius: 6px; font-size: 0.82rem; color: #374151;
+        display: inline-flex; align-items: center;
+        text-decoration: none; background: #fff;
+        cursor: pointer; transition: all 0.15s;
+    }
+    .pg-btn-text:hover { border-color: #00b14f; color: #00b14f; }
+
+    /* ===== Empty State ===== */
+    .hist-empty {
+        text-align: center;
+        padding: 60px 20px;
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+    }
+    .hist-empty-icon { font-size: 3rem; color: #d1d5db; margin-bottom: 16px; }
+    .hist-empty-title { font-size: 1.1rem; font-weight: 700; color: #374151; margin-bottom: 8px; }
+    .hist-empty-desc  { font-size: 0.84rem; color: #9ca3af; margin-bottom: 20px; }
+</style>
+}
+
+<!-- Page Header -->
+<div class="hist-header">
+    <div>
+        <h1><i class="fas fa-history me-2" style="color:#00b14f;"></i>Lịch sử đăng ký</h1>
+        <p>Xem toàn bộ lịch sử gói dịch vụ và mức sử dụng hàng tháng của bạn.</p>
+    </div>
+    <a asp-controller="Subscription" asp-action="Index" class="btn btn-success btn-sm" style="border-radius: 8px; font-weight: 600; padding: 10px 20px;">
+        <i class="fas fa-gem me-1"></i> Nâng cấp gói
+    </a>
+</div>
+
+@if (!Model.Subscriptions.Any())
+{
+    <div class="hist-empty">
+        <div class="hist-empty-icon"><i class="fas fa-box-open"></i></div>
+        <div class="hist-empty-title">Chưa có lịch sử đăng ký</div>
+        <div class="hist-empty-desc">Bạn chưa đăng ký bất kỳ gói dịch vụ nào. Hãy khám phá các gói phù hợp!</div>
+        <a asp-controller="Subscription" asp-action="Index" class="btn btn-success" style="border-radius: 8px; font-weight: 600;">
+            <i class="fas fa-gem me-1"></i> Xem gói dịch vụ
+        </a>
+    </div>
+}
+else
+{
+    @foreach (var sub in Model.Subscriptions)
+    {
+        var statusCls = (sub.Status == "Active" || sub.Status == "ACTIVE") ? "badge-active"
+                      : sub.Status == "Expired" ? "badge-expired"
+                      : "badge-cancelled";
+        var statusIcon = (sub.Status == "Active" || sub.Status == "ACTIVE") ? "fa-check-circle"
+                       : sub.Status == "Expired" ? "fa-clock"
+                       : "fa-times-circle";
+        <div class="sub-hist-card">
+            <!-- Card header -->
+            <div class="sub-hist-card-header">
+                <div>
+                    <div class="sub-plan-name">
+                        <i class="fas fa-layer-group" style="color:#00b14f;"></i>
+                        @sub.PlanName
+                        <span class="sub-status-badge @statusCls">
+                            <i class="fas @statusIcon"></i> @sub.StatusDisplay
+                        </span>
+                        @if (sub.IsCancelled)
+                        {
+                            <span class="sub-status-badge badge-cancelled" title="Đã hủy lúc @sub.CancelledAt?.ToString("dd/MM/yyyy HH:mm")">
+                                <i class="fas fa-ban"></i> Đã hủy
+                            </span>
+                        }
+                    </div>
+                    <div class="sub-hist-meta mt-2">
+                        <span><i class="fas fa-calendar-plus me-1"></i>Bắt đầu: <strong>@(sub.StartDate?.ToString("dd/MM/yyyy") ?? "—")</strong></span>
+                        <span><i class="fas fa-calendar-times me-1"></i>Kết thúc: <strong>@(sub.EndDate?.ToString("dd/MM/yyyy") ?? "Không thời hạn")</strong></span>
+                        <span><i class="fas fa-sync me-1"></i>@sub.BillingCycleDisplay</span>
+                    </div>
+                </div>
+                <div class="sub-hist-price">
+                    @sub.Price.ToString("N0") VNĐ
+                    <span style="font-size: 0.75rem; color: #9ca3af; font-weight: 400;">/@(sub.BillingCycle == "Yearly" ? "năm" : "tháng")</span>
+                </div>
+            </div>
+
+            <!-- Cancelled banner -->
+            @if (sub.IsCancelled && sub.CancelledAt.HasValue)
+            {
+                <div class="cancelled-banner">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Gói đã được hủy vào ngày <strong>@sub.CancelledAt.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</strong>.
+                    Không tự động gia hạn sau khi hết kỳ hiện tại.
+                </div>
+            }
+
+            <!-- Periods -->
+            <div class="period-section">
+                <div class="period-title"><i class="fas fa-calendar-alt me-1"></i>Kỳ sử dụng hàng tháng</div>
+
+                @if (!sub.Periods.Any())
+                {
+                    <div class="period-empty">Chưa có kỳ sử dụng nào được ghi nhận.</div>
+                }
+                else
+                {
+                    <div style="overflow-x: auto;">
+                        <table class="period-table">
+                            <thead>
+                                <tr>
+                                    <th>Kỳ</th>
+                                    <th>Từ ngày</th>
+                                    <th>Đến ngày</th>
+                                    <th>Lượt đăng tin</th>
+                                    <th>Lọc CV AI</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var period in sub.Periods)
+                                {
+                                    <tr>
+                                        <td>
+                                            @period.PeriodStart.ToString("MM/yyyy")
+                                            @if (period.IsCurrent)
+                                            {
+                                                <span class="period-badge-current">Hiện tại</span>
+                                            }
+                                        </td>
+                                        <td>@period.PeriodStart.ToLocalTime().ToString("dd/MM/yyyy")</td>
+                                        <td>@period.PeriodEnd.ToLocalTime().ToString("dd/MM/yyyy")</td>
+                                        <td>
+                                            @{
+                                                var jobPct = period.JobPostingLimit.HasValue && period.JobPostingLimit > 0
+                                                    ? (int)((double)period.JobPostingUsed / period.JobPostingLimit.Value * 100)
+                                                    : 0;
+                                                var jobWarn = jobPct >= 80;
+                                            }
+                                            @if (period.JobPostingLimit.HasValue)
+                                            {
+                                                <div class="usage-bar-wrap">
+                                                    <div class="usage-bar-bg">
+                                                        <div class="usage-bar-fill @(jobWarn ? "warn" : "")" style="width:@jobPct%"></div>
+                                                    </div>
+                                                    <span class="usage-text">@period.JobPostingUsed / @period.JobPostingLimit</span>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <span style="color:#9ca3af;font-size:0.78rem;">@period.JobPostingUsed dùng · Không giới hạn</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @{
+                                                var aiPct = period.CvAiLimit.HasValue && period.CvAiLimit > 0
+                                                    ? (int)((double)period.CvAiUsed / period.CvAiLimit.Value * 100)
+                                                    : 0;
+                                                var aiWarn = aiPct >= 80;
+                                            }
+                                            @if (period.CvAiLimit.HasValue)
+                                            {
+                                                <div class="usage-bar-wrap">
+                                                    <div class="usage-bar-bg">
+                                                        <div class="usage-bar-fill @(aiWarn ? "warn" : "")" style="width:@aiPct%"></div>
+                                                    </div>
+                                                    <span class="usage-text">@period.CvAiUsed / @period.CvAiLimit</span>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <span style="color:#9ca3af;font-size:0.78rem;">@period.CvAiUsed dùng · Không giới hạn</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- Pagination -->
+    @if (Model.TotalPages > 1)
+    {
+        <div class="hist-pagination">
+            <span>
+                Hiển thị <strong>@((Model.Page - 1) * Model.PageSize + 1)–@Math.Min(Model.Page * Model.PageSize, Model.TotalItems)</strong>
+                trong tổng số <strong>@Model.TotalItems</strong> gói đăng ký
+            </span>
+            <div style="display:flex;gap:6px;align-items:center;">
+                @if (Model.Page > 1)
+                {
+                    <a class="pg-btn-text" asp-action="SubscriptionHistory" asp-route-page="@(Model.Page - 1)">Trước</a>
+                }
+                else
+                {
+                    <span class="pg-btn-text" style="opacity:.4;cursor:not-allowed;">Trước</span>
+                }
+
+                @for (int pg = 1; pg <= Math.Min(Model.TotalPages, 7); pg++)
+                {
+                    <a class="pg-btn @(pg == Model.Page ? "active" : "")" asp-action="SubscriptionHistory" asp-route-page="@pg">@pg</a>
+                }
+
+                @if (Model.Page < Model.TotalPages)
+                {
+                    <a class="pg-btn-text" asp-action="SubscriptionHistory" asp-route-page="@(Model.Page + 1)">Sau</a>
+                }
+                else
+                {
+                    <span class="pg-btn-text" style="opacity:.4;cursor:not-allowed;">Sau</span>
+                }
+            </div>
+        </div>
+    }
+}

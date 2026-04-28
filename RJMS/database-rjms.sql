@@ -958,3 +958,57 @@ BEGIN
     );
 END
 GO
+
+
+/* =====================================================
+BAN REASON FIELDS
+===================================================== */
+
+IF COL_LENGTH('Jobs', 'BanReason') IS NULL
+    ALTER TABLE Jobs ADD BanReason NVARCHAR(1000) NULL;
+GO
+
+IF COL_LENGTH('Jobs', 'IsBanned') IS NULL
+    ALTER TABLE Jobs ADD IsBanned BIT NOT NULL DEFAULT 0;
+GO
+
+IF COL_LENGTH('Jobs', 'BannedAt') IS NULL
+    ALTER TABLE Jobs ADD BannedAt DATETIME2 NULL;
+GO
+
+IF COL_LENGTH('Subscriptions', 'BanReason') IS NULL
+    ALTER TABLE Subscriptions ADD BanReason NVARCHAR(1000) NULL;
+GO
+
+IF COL_LENGTH('Subscriptions', 'IsBanned') IS NULL
+    ALTER TABLE Subscriptions ADD IsBanned BIT NOT NULL DEFAULT 0;
+GO
+
+IF COL_LENGTH('Subscriptions', 'BannedAt') IS NULL
+    ALTER TABLE Subscriptions ADD BannedAt DATETIME2 NULL;
+GO
+
+
+/* =====================================================
+WEB SLIDERS
+===================================================== */
+
+IF OBJECT_ID('WebSliders', 'U') IS NULL
+BEGIN
+    CREATE TABLE WebSliders
+    (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        Title NVARCHAR(255) NOT NULL,
+        Subtitle NVARCHAR(500) NULL,
+        ImageUrl NVARCHAR(500) NOT NULL,
+        LinkUrl NVARCHAR(500) NULL,
+        ButtonText NVARCHAR(100) NULL,
+        DisplayOrder INT NOT NULL DEFAULT 0,
+        IsActive BIT NOT NULL DEFAULT 1,
+        StartDate DATETIME2 NULL,
+        EndDate DATETIME2 NULL,
+        CreatedAt DATETIME2 NOT NULL DEFAULT GETDATE(),
+        UpdatedAt DATETIME2 NULL
+    );
+END
+GO

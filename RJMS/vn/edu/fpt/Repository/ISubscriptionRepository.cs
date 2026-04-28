@@ -38,5 +38,13 @@ namespace RJMS.Vn.Edu.Fpt.Repository
         // ── Quota ──
         Task<QuotaCheckResult> CheckQuotaAsync(int userId, string featureCode);
         Task ConsumeQuotaAsync(int userId, string featureCode);
+
+        // ── Cancel ──
+        /// <summary>Hủy gói subscription: set CancelledAt và AutoRenew=false. Người dùng vẫn dùng được đến hết PeriodEnd của tháng hiện tại.</summary>
+        Task<bool> CancelSubscriptionAsync(int subscriptionId);
+
+        // ── History ──
+        /// <summary>Lấy lịch sử đăng ký của recruiter (hoặc công ty nếu có), kèm periods.</summary>
+        Task<RecruiterSubscriptionHistoryViewModel> GetRecruiterHistoryAsync(int userId, int page, int pageSize);
     }
 }

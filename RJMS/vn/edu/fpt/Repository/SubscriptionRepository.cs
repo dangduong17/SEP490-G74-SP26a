@@ -47,6 +47,11 @@ namespace RJMS.Vn.Edu.Fpt.Repository
             }
 
             var totalItems = await query.CountAsync();
+            var planStatusValues = await _context.SubscriptionPlans
+                .Where(p => p.IsArchived == null || p.IsArchived == false)
+                .Select(p => p.IsActive)
+                .Distinct()
+                .ToListAsync();
 
             var plans = await query
                 .OrderByDescending(p => p.CreatedAt)
@@ -94,6 +99,7 @@ namespace RJMS.Vn.Edu.Fpt.Repository
                     .CountAsync(),
                 SearchKeyword = keyword,
                 StatusFilter = status,
+                StatusOptions = BuildPlanStatusOptions(planStatusValues),
                 TypeFilter = type,
                 Page = page,
                 PageSize = pageSize,
@@ -578,6 +584,15 @@ namespace RJMS.Vn.Edu.Fpt.Repository
             if (sub == null)
                 return new QuotaCheckResult { Allowed = false, FeatureCode = featureCode, Message = "Không tìm thấy gói dịch vụ khả dụng." };
 
+            // Check if subscription is banned by Admin
+            if (sub.IsBanned)
+                return new QuotaCheckResult
+                {
+                    Allowed = false,
+                    FeatureCode = featureCode,
+                    Message = $"Gói dịch vụ của bạn đã bị khóa bởi quản trị viên. Lý do: {sub.BanReason ?? "Vi phạm điều khoản sử dụng."}"
+                };
+
             // Lazy create period if missing for Yearly subs
             var period = sub.SubscriptionPeriods
                 .FirstOrDefault(p => p.PeriodStart <= now && p.PeriodEnd >= now);
@@ -853,6 +868,142 @@ namespace RJMS.Vn.Edu.Fpt.Repository
                 .Trim();
 
             return baseName;
+        }
+
+        private static List<StatusOptionDto> BuildPlanStatusOptions(IEnumerable<bool?> statuses)
+        {
+            var normalized = new HashSet<string>(
+                statuses.Select(s => (s ?? false) ? "active" : "inactive"),
+                StringComparer.OrdinalIgnoreCase);
+
+            return new[] { "active", "inactive" }
+                .Where(normalized.Contains)
+                .Select(value => new StatusOptionDto
+                {
+                    Value = value,
+                    Label = value.Equals("active", StringComparison.OrdinalIgnoreCase)
+                        ? "Hoạt động"
+                        : "Ngừng hoạt động"
+                })
+                .ToList();
+        }
+
+        // ───────────────────────────────────────────────────────────────
+        // Cancel Subscription
+        // ───────────────────────────────────────────────────────────────
+        public async Task<bool> CancelSubscriptionAsync(int subscriptionId)
+        {
+            var sub = await _context.Subscriptions
+                .Include(s => s.SubscriptionPeriods)
+                .FirstOrDefaultAsync(s => s.Id == subscriptionId && (s.Status == "Active" || s.Status == "ACTIVE"));
+
+            if (sub == null) return false;
+
+            var now = DateTime.UtcNow;
+
+            // Tìm period tháng hiện tại để lấy EndDate làm ngày hết hạn thực tế
+            var currentPeriod = sub.SubscriptionPeriods
+                .FirstOrDefault(p => p.PeriodStart <= now && p.PeriodEnd >= now);
+
+            // Nếu không có period hiện tại, lấy period gần nhất
+            if (currentPeriod == null)
+            {
+                currentPeriod = sub.SubscriptionPeriods
+                    .OrderByDescending(p => p.PeriodEnd)
+                    .FirstOrDefault();
+            }
+
+            sub.CancelledAt = now;
+            sub.AutoRenew = false;
+            sub.UpdatedAt = now;
+
+            // Nếu gói năm có period tháng, kết thúc subscription vào cuối period hiện tại
+            if (currentPeriod != null && sub.EndDate > currentPeriod.PeriodEnd)
+            {
+                sub.EndDate = currentPeriod.PeriodEnd;
+            }
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        // ───────────────────────────────────────────────────────────────
+        // Recruiter Subscription History
+        // ───────────────────────────────────────────────────────────────
+        public async Task<RecruiterSubscriptionHistoryViewModel> GetRecruiterHistoryAsync(int userId, int page, int pageSize)
+        {
+            // Lấy CompanyId của recruiter (nếu có)
+            var recruiter = await _context.Recruiters
+                .FirstOrDefaultAsync(r => r.UserId == userId);
+
+            int? companyId = recruiter?.CompanyId;
+
+            // Query subscriptions: của công ty (nếu có) hoặc của cá nhân
+            var query = _context.Subscriptions
+                .Include(s => s.Plan)
+                    .ThenInclude(p => p.PlanFeatures)
+                .Include(s => s.PlanOption)
+                .Include(s => s.SubscriptionPeriods)
+                    .ThenInclude(p => p.SubscriptionUsages)
+                .AsQueryable();
+
+            if (companyId.HasValue)
+            {
+                query = query.Where(s => s.CompanyId == companyId.Value || s.UserId == userId);
+            }
+            else
+            {
+                query = query.Where(s => s.UserId == userId);
+            }
+
+            var totalItems = await query.CountAsync();
+
+            var subscriptions = await query
+                .OrderByDescending(s => s.StartDate)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var items = subscriptions.Select(s =>
+            {
+                var billingCycle = s.PlanOption?.BillingCycle ?? s.SubscribedBillingCycle ?? "Monthly";
+                var jobLimit = s.Plan?.PlanFeatures.FirstOrDefault(f => f.FeatureCode == "JOB_POSTING")?.FeatureLimit;
+                var aiLimit = s.Plan?.PlanFeatures.FirstOrDefault(f => f.FeatureCode == "CV_AI_FILTER")?.FeatureLimit;
+
+                return new SubscriptionHistoryItemDto
+                {
+                    Id = s.Id,
+                    PlanName = s.SubscribedPlanName ?? s.Plan?.Name ?? "Gói không xác định",
+                    BillingCycle = billingCycle,
+                    Price = s.SubscribedPrice ?? s.Plan?.Price ?? 0,
+                    StartDate = s.StartDate,
+                    EndDate = s.EndDate,
+                    Status = s.Status ?? "Unknown",
+                    IsCancelled = s.CancelledAt.HasValue,
+                    CancelledAt = s.CancelledAt,
+                    AutoRenew = s.AutoRenew ?? false,
+                    Periods = s.SubscriptionPeriods
+                        .OrderByDescending(p => p.PeriodStart)
+                        .Select(p => new SubscriptionPeriodHistoryDto
+                        {
+                            Id = p.Id,
+                            PeriodStart = p.PeriodStart,
+                            PeriodEnd = p.PeriodEnd,
+                            JobPostingUsed = p.SubscriptionUsages.FirstOrDefault(u => u.FeatureCode == "JOB_POSTING")?.UsedCount ?? 0,
+                            JobPostingLimit = jobLimit,
+                            CvAiUsed = p.SubscriptionUsages.FirstOrDefault(u => u.FeatureCode == "CV_AI_FILTER")?.UsedCount ?? 0,
+                            CvAiLimit = aiLimit
+                        }).ToList()
+                };
+            }).ToList();
+
+            return new RecruiterSubscriptionHistoryViewModel
+            {
+                Subscriptions = items,
+                Page = page,
+                PageSize = pageSize,
+                TotalItems = totalItems
+            };
         }
     }
 }
