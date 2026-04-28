@@ -1,0 +1,140 @@
+@model RJMS.vn.edu.fpt.Models.DTOs.AdminSubscriptionDetailViewModel
+@{
+    ViewData["Title"] = $"Chi tiết gói dịch vụ - {Model.UserName}";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<style>
+    .detail-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+    .detail-title { font-size: 1.75rem; font-weight: 700; color: #1f2937; }
+    .detail-card { background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 2rem; margin-bottom: 1.5rem; }
+    .section-title { font-size: 1.25rem; font-weight: 600; color: #374151; margin-bottom: 1rem; border-bottom: 2px solid #e5e7eb; padding-bottom: 0.5rem; }
+    .info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
+    .info-item label { display: block; font-weight: 600; color: #6b7280; font-size: 0.85rem; margin-bottom: 0.5rem; }
+    .info-item .value { font-size: 1rem; color: #1f2937; }
+    .btn-back { padding: 0.75rem 1.5rem; background: #6b7280; color: white; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 1rem; }
+    .btn-back:hover { background: #4b5563; color: white; }
+    .payment-table { width: 100%; border-collapse: collapse; }
+    .payment-table th { padding: 0.75rem; background: #f9fafb; text-align: left; font-size: 0.875rem; font-weight: 600; color: #6b7280; border-bottom: 2px solid #e5e7eb; }
+    .payment-table td { padding: 0.75rem; border-bottom: 1px solid #f3f4f6; font-size: 0.9rem; }
+    .status-active { padding: 0.375rem 0.875rem; background: #d1fae5; color: #065f46; border-radius: 6px; font-weight: 600; display: inline-block; }
+    .status-expired { padding: 0.375rem 0.875rem; background: #fee2e2; color: #991b1b; border-radius: 6px; font-weight: 600; display: inline-block; }
+    .status-cancelled { padding: 0.375rem 0.875rem; background: #f3f4f6; color: #4b5563; border-radius: 6px; font-weight: 600; display: inline-block; }
+    .status-pending { padding: 0.375rem 0.875rem; background: #fef3c7; color: #92400e; border-radius: 6px; font-weight: 600; display: inline-block; }
+</style>
+
+<div class="detail-header">
+    <h1 class="detail-title">Chi tiết gói dịch vụ</h1>
+    <a asp-action="SubscriptionList" asp-controller="Admin" class="btn-back">Quay lại</a>
+</div>
+
+@if (Model.IsBanned)
+{
+    <div style="background: #fee2e2; border: 1px solid #ef4444; border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between;">
+        <div>
+            <div style="color: #991b1b; font-weight: 700; font-size: 1.1rem; margin-bottom: 0.25rem;">Gói dịch vụ này đang bị KHÓA</div>
+            <div style="color: #b91c1c; font-size: 0.9rem;">
+                <strong>Lý do:</strong> @Model.BanReason <br/>
+                <strong>Ngày khóa:</strong> @(Model.BannedAt?.ToString("dd/MM/yyyy HH:mm") ?? "—")
+            </div>
+        </div>
+        <form asp-controller="Admin" asp-action="UnbanSubscription" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@Model.Id" />
+            <button type="submit" class="btn btn-warning btn-sm fw-bold" onclick="return confirm('Mở khóa gói dịch vụ này?')">
+                MỞ KHÓA GÓI
+            </button>
+        </form>
+    </div>
+}
+else
+{
+    <div style="background: #f0fdf4; border: 1px solid #22c55e; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between;">
+        <div style="color: #166534; font-weight: 600;">Gói dịch vụ hoạt động bình thường</div>
+        <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#banSubModal">
+            KHÓA GÓI DỊCH VỤ
+        </button>
+    </div>
+}
+
+<div class="detail-card">
+    <div class="section-title">Thông tin người dùng</div>
+    <div class="info-grid">
+        <div class="info-item"><label>Tên người dùng</label><div class="value"><strong>@Model.UserName</strong></div></div>
+        <div class="info-item"><label>Email</label><div class="value">@Model.UserEmail</div></div>
+        <div class="info-item"><label>User ID</label><div class="value">@Model.UserId</div></div>
+        <div class="info-item"><label>Vai trò</label><div class="value">@Model.UserRole</div></div>
+    </div>
+</div>
+
+<div class="detail-card">
+    <div class="section-title">Thông tin gói dịch vụ</div>
+    <div class="info-grid">
+        <div class="info-item"><label>Tên gói</label><div class="value"><strong>@Model.PlanName</strong></div></div>
+        <div class="info-item"><label>Giá</label><div class="value" style="color:#10b981; font-weight:700; font-size:1.25rem;">@Model.PlanPrice.ToString("N0") VNĐ</div></div>
+        <div class="info-item"><label>Thời hạn</label><div class="value">@Model.PlanDurationDays ngày</div></div>
+        <div class="info-item"><label>Ngày bắt đầu</label><div class="value">@(Model.StartDate?.ToString("dd/MM/yyyy HH:mm") ?? "—")</div></div>
+        <div class="info-item"><label>Ngày kết thúc</label><div class="value">@(Model.EndDate?.ToString("dd/MM/yyyy HH:mm") ?? "—")</div></div>
+        <div class="info-item"><label>Trạng thái</label>
+            <div class="value">
+                @if (Model.Status?.ToUpper() == "ACTIVE") { <span class="status-active">Đang hoạt động</span> }
+                else if (Model.Status?.ToUpper() == "EXPIRED") { <span class="status-expired">Hết hạn</span> }
+                else if (Model.Status?.ToUpper() == "CANCELLED") { <span class="status-cancelled">Đã hủy</span> }
+                else if (Model.Status?.ToUpper() == "PENDING") { <span class="status-pending">Chờ xác nhận</span> }
+                else { <span class="status-cancelled">@Model.Status</span> }
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="detail-card">
+    <div class="section-title">Lịch sử thanh toán (@Model.Payments.Count)</div>
+    @if (Model.Payments.Any())
+    {
+        <table class="payment-table">
+            <thead>
+                <tr><th>Ngày thanh toán</th><th>Số tiền</th><th>Mã giao dịch</th><th>Phương thức</th><th>Trạng thái</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var payment in Model.Payments)
+                {
+                    <tr>
+                        <td>@(payment.PaymentDate?.ToString("dd/MM/yyyy HH:mm") ?? "—")</td>
+                        <td style="font-weight:600; color:#10b981;">@payment.Amount.ToString("N0") VNĐ</td>
+                        <td><code>@(payment.TransactionId ?? "—")</code></td>
+                        <td>@(payment.PaymentMethod ?? "—")</td>
+                        <td>@payment.Status</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else { <div style="text-align:center; padding:2rem; color:#9ca3af;">Chưa có lịch sử thanh toán</div> }
+</div>
+
+<!-- Modal khóa gói -->
+<div class="modal fade" id="banSubModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Khóa gói dịch vụ</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-controller="Admin" asp-action="BanSubscription" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                <div class="modal-body">
+                    <p>Sau khi bị khóa, nhà tuyển dụng sẽ <strong>không thể sử dụng quota</strong> của gói này.</p>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Lý do khóa <span class="text-danger">*</span></label>
+                        <textarea name="reason" class="form-control" rows="3" required placeholder="Nhập lý do vi phạm..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-danger">Xác nhận khóa</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

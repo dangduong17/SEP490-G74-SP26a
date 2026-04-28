@@ -379,5 +379,111 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             TempData[success ? "SuccessToast" : "ErrorToast"] = message;
             return RedirectToAction(nameof(TemplateCategories));
         }
+
+        // ─────────────────────────────────────────────────────────
+        // JOB MANAGEMENT
+        // ─────────────────────────────────────────────────────────
+
+        [HttpGet]
+        public async Task<IActionResult> JobList(string? keyword, string? status, int? companyId, string? bannedFilter = "all", int page = 1, int pageSize = 15)
+        {
+            if (RequireAdminRole() is { } r) return r;
+            var model = await _adminService.GetJobListAsync(keyword, status, companyId, bannedFilter, page, pageSize);
+            ViewData["Title"] = "Quản lý tin tuyển dụng";
+            return View(model);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> JobDetail(int id)
+        {
+            if (RequireAdminRole() is { } r) return r;
+            var model = await _adminService.GetJobDetailAsync(id);
+            if (model == null) return NotFound();
+            ViewData["Title"] = $"Chi tiết tin - {model.Title}";
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> BanJob(int id, string reason)
+        {
+            if (RequireAdminRole() is { } r) return r;
+            if (string.IsNullOrWhiteSpace(reason))
+            {
+                TempData["ErrorToast"] = "Vui lòng nhập lý do khóa.";
+                return RedirectToAction(nameof(JobDetail), new { id });
+            }
+            var result = await _adminService.BanJobAsync(id, reason);
+            TempData[result.Succeeded ? "SuccessToast" : "ErrorToast"] = result.Succeeded
+                ? "Đã khóa tin tuyển dụng thành công."
+                : result.Errors.FirstOrDefault()?.Message ?? "Thao tác thất bại.";
+            return RedirectToAction(nameof(JobDetail), new { id });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UnbanJob(int id)
+        {
+            if (RequireAdminRole() is { } r) return r;
+            var result = await _adminService.UnbanJobAsync(id);
+            TempData[result.Succeeded ? "SuccessToast" : "ErrorToast"] = result.Succeeded
+                ? "Đã mở khóa tin tuyển dụng."
+                : result.Errors.FirstOrDefault()?.Message ?? "Thao tác thất bại.";
+            return RedirectToAction(nameof(JobDetail), new { id });
+        }
+
+        // ─────────────────────────────────────────────────────────
+        // SUBSCRIPTION MANAGEMENT (Admin)
+        // ─────────────────────────────────────────────────────────
+
+        [HttpGet]
+        public async Task<IActionResult> SubscriptionList(string? keyword, string? status = "ACTIVE", int? planId = null, int page = 1, int pageSize = 10)
+        {
+            if (RequireAdminRole() is { } r) return r;
+            string? filterStatus = status == "ALL" ? null : status;
+            var model = await _adminService.GetSubscriptionListAsync(keyword, filterStatus, planId, page, pageSize);
+            model.Status = status ?? "ALL";
+            ViewData["Title"] = "Quản lý Gói dịch vụ (Recruiter)";
+            return View(model);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> SubscriptionDetail(int id)
+        {
+            if (RequireAdminRole() is { } r) return r;
+            var model = await _adminService.GetSubscriptionDetailAsync(id);
+            if (model == null) return NotFound();
+            ViewData["Title"] = $"Chi tiết gói dịch vụ - {model.UserName}";
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> BanSubscription(int id, string reason)
+        {
+            if (RequireAdminRole() is { } r) return r;
+            if (string.IsNullOrWhiteSpace(reason))
+            {
+                TempData["ErrorToast"] = "Vui lòng nhập lý do khóa.";
+                return RedirectToAction(nameof(SubscriptionDetail), new { id });
+            }
+            var result = await _adminService.BanSubscriptionAsync(id, reason);
+            TempData[result.Succeeded ? "SuccessToast" : "ErrorToast"] = result.Succeeded
+                ? "Đã khóa gói dịch vụ."
+                : result.Errors.FirstOrDefault()?.Message ?? "Thao tác thất bại.";
+            return RedirectToAction(nameof(SubscriptionDetail), new { id });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UnbanSubscription(int id)
+        {
+            if (RequireAdminRole() is { } r) return r;
+            var result = await _adminService.UnbanSubscriptionAsync(id);
+            TempData[result.Succeeded ? "SuccessToast" : "ErrorToast"] = result.Succeeded
+                ? "Đã mở khóa gói dịch vụ."
+                : result.Errors.FirstOrDefault()?.Message ?? "Thao tác thất bại.";
+            return RedirectToAction(nameof(SubscriptionDetail), new { id });
+        }
     }
 }

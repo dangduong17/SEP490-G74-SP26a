@@ -471,5 +471,56 @@ namespace RJMS.Vn.Edu.Fpt.Repository
                 .OrderBy(p => p.Price)
                 .ToListAsync();
         }
+
+        public async Task<List<string>> GetSubscriptionStatusesAsync()
+        {
+            return await _db.Subscriptions
+                .Where(s => s.Status != null)
+                .Select(s => s.Status!)
+                .Distinct()
+                .ToListAsync();
+        }
+
+        public Task<Subscription?> GetSubscriptionByIdAsync(int id)
+        {
+            return _db.Subscriptions.FirstOrDefaultAsync(s => s.Id == id);
+        }
+
+        public async Task UpdateSubscriptionAsync(Subscription subscription)
+        {
+            _db.Subscriptions.Update(subscription);
+            await _db.SaveChangesAsync();
+        }
+
+        // ── Jobs ─────────────────────────────────────────────────────────────
+
+        public IQueryable<Job> GetJobsQuery()
+        {
+            return _db.Jobs
+                .Include(j => j.Company)
+                .Include(j => j.Applications)
+                .AsQueryable();
+        }
+
+        public Task<Job?> GetJobByIdAsync(int id)
+        {
+            return _db.Jobs.FirstOrDefaultAsync(j => j.Id == id);
+        }
+
+        public Task<Job?> GetJobByIdWithDetailsAsync(int id)
+        {
+            return _db.Jobs
+                .Include(j => j.Company)
+                .Include(j => j.Applications)
+                .Include(j => j.JobSkills).ThenInclude(js => js.Skill)
+                .Include(j => j.JobRecruiters).ThenInclude(jr => jr.Recruiter).ThenInclude(r => r.User)
+                .FirstOrDefaultAsync(j => j.Id == id);
+        }
+
+        public async Task UpdateJobAsync(Job job)
+        {
+            _db.Jobs.Update(job);
+            await _db.SaveChangesAsync();
+        }
     }
 }

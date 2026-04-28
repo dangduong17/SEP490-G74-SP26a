@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using RJMS.vn.edu.fpt.Models;
 using RJMS.vn.edu.fpt.Models.DTOs;
 using RJMS.Vn.Edu.Fpt.Repository;
@@ -111,7 +112,6 @@ namespace RJMS.Vn.Edu.Fpt.Service
                 RecruiterCompanyId = recruiter?.CompanyId
             };
 
-            // Always load companies for dropdown (in case role is switched to Recruiter)
             var companies = await _repo.GetAllCompaniesAsync();
             model.Companies = companies
                 .Select(c => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
@@ -214,7 +214,6 @@ namespace RJMS.Vn.Edu.Fpt.Service
                 logoUrl = await _cloudinaryService.UploadImageAsync(model.CompanyLogoFile, "logos");
             }
 
-            // 1. Handle Location
             var provinceName = model.ProvinceName;
             var wardName = model.WardName;
 
@@ -243,7 +242,6 @@ namespace RJMS.Vn.Edu.Fpt.Service
                 await _repo.AddLocationAsync(location);
             }
 
-            // 2. Handle Company
             var company = new Company
             {
                 Name = model.CompanyName,
@@ -262,7 +260,6 @@ namespace RJMS.Vn.Edu.Fpt.Service
             };
             await _repo.AddCompanyAsync(company);
 
-            // 3. Handle CompanyLocation
             var companyLocation = new CompanyLocation
             {
                 CompanyId = company.Id,
@@ -273,7 +270,6 @@ namespace RJMS.Vn.Edu.Fpt.Service
             };
             await _repo.AddCompanyLocationAsync(companyLocation);
 
-            // 4. Handle Recruiter
             var recruiter = new Recruiter
             {
                 UserId = user.Id,
@@ -287,7 +283,6 @@ namespace RJMS.Vn.Edu.Fpt.Service
             };
             await _repo.AddRecruiterAsync(recruiter);
 
-            // 5. Handle RecruiterLocation
             var recruiterLocation = new RecruiterLocation
             {
                 RecruiterId = recruiter.Id,
@@ -414,8 +409,6 @@ namespace RJMS.Vn.Edu.Fpt.Service
             return ServiceResult.Success();
         }
 
-        // ── Private helpers ───────────────────────────────────────────────────
-
         private static User BuildUser(string email, string password, string firstName, string lastName, string? phone = null)
         {
             return new User
@@ -489,14 +482,9 @@ namespace RJMS.Vn.Edu.Fpt.Service
 
         public async Task<ServiceResult> CreateSkillAsync(AdminCreateSkillViewModel model)
         {
-            // Validate
             if (await _repo.SkillNameExistsAsync(model.Name))
             {
-                return ServiceResult.Failed(new ServiceError
-                {
-                    Key = "Name",
-                    Message = $"Kỹ năng '{model.Name}' đã tồn tại."
-                });
+                return ServiceResult.Failed(new ServiceError { Key = "Name", Message = $"Kỹ năng '{model.Name}' đã tồn tại." });
             }
 
             var skill = new Skill
@@ -514,14 +502,9 @@ namespace RJMS.Vn.Edu.Fpt.Service
             var skill = await _repo.GetSkillByIdAsync(model.Id);
             if (skill == null) return ServiceResult.NotFoundResult();
 
-            // Validate
             if (await _repo.SkillNameExistsAsync(model.Name, model.Id))
             {
-                return ServiceResult.Failed(new ServiceError
-                {
-                    Key = "Name",
-                    Message = $"Kỹ năng '{model.Name}' đã tồn tại."
-                });
+                return ServiceResult.Failed(new ServiceError { Key = "Name", Message = $"Kỹ năng '{model.Name}' đã tồn tại." });
             }
 
             skill.Name = model.Name.Trim();
@@ -596,16 +579,14 @@ namespace RJMS.Vn.Edu.Fpt.Service
             {
                 Id = j.Id,
                 Title = j.Title,
-                Location = null, // TODO: Load location if needed
+                Location = null, 
                 Salary = j.MinSalary.HasValue || j.MaxSalary.HasValue
                     ? $"{(j.MinSalary.HasValue ? j.MinSalary.Value.ToString("N0") : "")}{(j.MinSalary.HasValue && j.MaxSalary.HasValue ? " - " : "")}{(j.MaxSalary.HasValue ? j.MaxSalary.Value.ToString("N0") : "")} VNĐ"
                     : null,
                 CreatedAt = j.CreatedAt
             }).ToList();
 
-            // Get primary location for the company
-            var primaryLoc = company.CompanyLocations
-                .FirstOrDefault(cl => cl.IsPrimary)?.Location
+            var primaryLoc = company.CompanyLocations.FirstOrDefault(cl => cl.IsPrimary)?.Location
                 ?? company.CompanyLocations.FirstOrDefault()?.Location;
 
             return new AdminCompanyDetailViewModel
@@ -637,11 +618,9 @@ namespace RJMS.Vn.Edu.Fpt.Service
         {
             var company = await _repo.GetCompanyByIdWithDetailsAsync(id);
             if (company == null) return ServiceResult.NotFoundResult();
-
             company.IsVerified = true;
             company.VerifiedAt = DateTimeHelper.NowVietnam;
             company.UpdatedAt = DateTimeHelper.NowVietnam;
-
             await _repo.UpdateCompanyAsync(company);
             return ServiceResult.Success();
         }
@@ -650,96 +629,11 @@ namespace RJMS.Vn.Edu.Fpt.Service
         {
             var company = await _repo.GetCompanyByIdWithDetailsAsync(id);
             if (company == null) return ServiceResult.NotFoundResult();
-
             company.IsVerified = false;
             company.VerifiedAt = null;
             company.UpdatedAt = DateTimeHelper.NowVietnam;
-
             await _repo.UpdateCompanyAsync(company);
             return ServiceResult.Success();
-        }
-
-        // ========== SUBSCRIPTIONS MANAGEMENT ==========
-
-        public async Task<AdminSubscriptionListViewModel> GetSubscriptionListAsync(string? keyword, string? status, int? planId, int page, int pageSize)
-        {
-            page = page < 1 ? 1 : page;
-            if (pageSize != 10 && pageSize != 20 && pageSize != 50) pageSize = 10;
-
-            var (total, subscriptions) = await _repo.GetSubscriptionsPagedAsync(keyword, status, planId, page, pageSize);
-            var plans = await _repo.GetActiveSubscriptionPlansAsync();
-
-            var items = subscriptions.Select(s => new AdminSubscriptionListItemViewModel
-            {
-                Id = s.Id,
-                UserId = s.UserId,
-                UserEmail = s.User.Email,
-                UserName = $"{s.User.FirstName} {s.User.LastName}".Trim(),
-                PlanName = s.Plan?.Name ?? "N/A",
-                PlanPrice = s.Plan?.Price ?? 0,
-                StartDate = s.StartDate,
-                EndDate = s.EndDate,
-                Status = s.Status ?? "N/A",
-                AutoRenew = s.AutoRenew ?? false,
-                CreatedAt = s.CreatedAt
-            }).ToList();
-
-            var planLookup = plans.Select(p => new SubscriptionPlanLookupViewModel
-            {
-                Id = p.Id,
-                Name = p.Name ?? "",
-                Price = p.Price ?? 0
-            }).ToList();
-
-            return new AdminSubscriptionListViewModel
-            {
-                Keyword = keyword,
-                Status = status,
-                PlanId = planId,
-                Page = page,
-                PageSize = pageSize,
-                TotalItems = total,
-                Subscriptions = items,
-                Plans = planLookup
-            };
-        }
-
-        public async Task<AdminSubscriptionDetailViewModel?> GetSubscriptionDetailAsync(int id)
-        {
-            var subscription = await _repo.GetSubscriptionByIdWithDetailsAsync(id);
-            if (subscription == null) return null;
-
-            var userRole = subscription.User.UserRoles.FirstOrDefault()?.Role?.Name ?? "N/A";
-
-            var payments = subscription.Payments.Select(p => new SubscriptionPaymentViewModel
-            {
-                Id = p.Id,
-                Amount = p.Amount ?? 0,
-                PaymentDate = p.PaymentDate,
-                TransactionId = p.TransactionId,
-                Status = p.Status ?? "N/A",
-                PaymentMethod = p.PaymentMethod
-            }).ToList();
-
-            return new AdminSubscriptionDetailViewModel
-            {
-                Id = subscription.Id,
-                UserId = subscription.UserId,
-                UserEmail = subscription.User.Email,
-                UserName = $"{subscription.User.FirstName} {subscription.User.LastName}".Trim(),
-                UserRole = userRole,
-                PlanId = subscription.PlanId,
-                PlanName = subscription.SubscribedPlanName ?? subscription.Plan?.Name ?? "N/A",
-                PlanPrice = subscription.SubscribedPrice ?? subscription.PlanOption?.Price ?? subscription.Plan?.Price ?? 0,
-                PlanDurationDays = subscription.SubscribedDurationDays ?? subscription.PlanOption?.DurationDays ?? 0,
-                PlanDescription = subscription.Plan?.Description,
-                StartDate = subscription.StartDate,
-                EndDate = subscription.EndDate,
-                Status = subscription.Status ?? "N/A",
-                AutoRenew = subscription.AutoRenew ?? false,
-                CreatedAt = subscription.CreatedAt,
-                Payments = payments
-            };
         }
 
         // ========== COMPANY LOCATION MANAGEMENT ==========
@@ -795,14 +689,12 @@ namespace RJMS.Vn.Edu.Fpt.Service
                 await _repo.AddLocationAsync(location);
             }
 
-            // If IsPrimary, unset any existing primary for this company
             if (model.IsPrimary)
             {
                 var existing = await _repo.GetCompanyLocationsAsync(companyId);
                 foreach (var ex in existing.Where(cl => cl.IsPrimary))
                 {
                     ex.IsPrimary = false;
-                    _repo.SaveChangesAsync(); // fire-and-forget pattern acceptable here
                 }
                 await _repo.SaveChangesAsync();
             }
@@ -824,11 +716,7 @@ namespace RJMS.Vn.Edu.Fpt.Service
             var cl = await _repo.GetCompanyLocationByIdAsync(companyLocationId);
             if (cl == null) return ServiceResult.NotFoundResult();
             if (cl.RecruiterLocations.Any())
-                return ServiceResult.Failed(new ServiceError
-                {
-                    Key = "CompanyLocation",
-                    Message = "Không thể xóa trụ sở này vì đang có nhân viên được gán vào."
-                });
+                return ServiceResult.Failed(new ServiceError { Key = "CompanyLocation", Message = "Không thể xóa trụ sở này vì đang có nhân viên được gán vào." });
 
             await _repo.DeleteCompanyLocationAsync(cl);
             return ServiceResult.Success();
@@ -891,12 +779,10 @@ namespace RJMS.Vn.Edu.Fpt.Service
             if (await _repo.UserEmailExistsAsync(model.Email))
                 return ServiceResult.Failed(new ServiceError { Key = "Email", Message = "Email đã tồn tại." });
 
-            // Create User
             var user = BuildUser(model.Email, model.Password, model.FirstName, model.LastName, model.PhoneNumber);
             await _repo.CreateUserAsync(user);
             await AssignRoleAsync(user.Id, "Employee");
 
-            // Create Recruiter record (Employee shares Recruiter table)
             var recruiter = new Recruiter
             {
                 UserId = user.Id,
@@ -910,7 +796,6 @@ namespace RJMS.Vn.Edu.Fpt.Service
             };
             await _repo.AddRecruiterAsync(recruiter);
 
-            // Assign CompanyLocations
             foreach (var clId in model.CompanyLocationIds.Distinct())
             {
                 await _repo.AddRecruiterLocationAsync(new RecruiterLocation
@@ -927,12 +812,10 @@ namespace RJMS.Vn.Edu.Fpt.Service
 
         public async Task<ServiceResult> AssignEmployeeLocationsAsync(AdminAssignEmployeeLocationViewModel model)
         {
-            // Remove all existing assignments
             var existing = await _repo.GetRecruiterLocationsByRecruiterIdAsync(model.RecruiterId);
             foreach (var rl in existing)
                 await _repo.RemoveRecruiterLocationAsync(rl);
 
-            // Add new assignments
             var isFirst = true;
             foreach (var clId in model.CompanyLocationIds.Distinct())
             {
@@ -949,8 +832,6 @@ namespace RJMS.Vn.Edu.Fpt.Service
             return ServiceResult.Success();
         }
 
-        // ========== PRIVATE HELPERS ==========
-
         private static ServiceResult ValidatePassword(string password)
         {
             if (string.IsNullOrWhiteSpace(password) || password.Length < 8
@@ -958,12 +839,296 @@ namespace RJMS.Vn.Edu.Fpt.Service
                 || !password.Any(char.IsDigit)
                 || password.All(char.IsLetterOrDigit))
             {
-                return ServiceResult.Failed(new ServiceError
-                {
-                    Key = "Password",
-                    Message = "Mật khẩu phải có ít nhất 8 ký tự, gồm chữ hoa, chữ số và ký tự đặc biệt."
-                });
+                return ServiceResult.Failed(new ServiceError { Key = "Password", Message = "Mật khẩu phải có ít nhất 8 ký tự, gồm chữ hoa, chữ số và ký tự đặc biệt." });
             }
+            return ServiceResult.Success();
+        }
+
+        // ========== SUBSCRIPTIONS MANAGEMENT ==========
+
+        public async Task<AdminSubscriptionListViewModel> GetSubscriptionListAsync(string? keyword, string? status, int? planId, int page, int pageSize)
+        {
+            page = page < 1 ? 1 : page;
+            if (pageSize != 10 && pageSize != 20 && pageSize != 50) pageSize = 10;
+
+            var (total, subscriptions) = await _repo.GetSubscriptionsPagedAsync(keyword, status, planId, page, pageSize);
+            var plans = await _repo.GetActiveSubscriptionPlansAsync();
+            var statuses = await _repo.GetSubscriptionStatusesAsync();
+
+            var items = subscriptions.Select(s => new AdminSubscriptionListItemViewModel
+            {
+                Id = s.Id,
+                UserId = s.UserId,
+                UserEmail = s.User.Email,
+                UserName = $"{s.User.FirstName} {s.User.LastName}".Trim(),
+                PlanName = s.Plan?.Name ?? "N/A",
+                PlanPrice = s.Plan?.Price ?? 0,
+                StartDate = s.StartDate,
+                EndDate = s.EndDate,
+                Status = s.Status ?? "N/A",
+                AutoRenew = s.AutoRenew ?? false,
+                CreatedAt = s.CreatedAt,
+                IsBanned = s.IsBanned,
+                BanReason = s.BanReason
+            }).ToList();
+
+            var planLookup = plans.Select(p => new SubscriptionPlanLookupViewModel
+            {
+                Id = p.Id,
+                Name = p.Name ?? "",
+                Price = p.Price ?? 0
+            }).ToList();
+
+            return new AdminSubscriptionListViewModel
+            {
+                Keyword = keyword,
+                Status = status,
+                PlanId = planId,
+                Page = page,
+                PageSize = pageSize,
+                TotalItems = total,
+                Subscriptions = items,
+                Plans = planLookup,
+                Statuses = statuses,
+                StatusOptions = BuildSubscriptionStatusOptions(statuses)
+            };
+        }
+
+        private static List<StatusOptionDto> BuildSubscriptionStatusOptions(IEnumerable<string> statuses)
+        {
+            var labelMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["ACTIVE"] = "Đang hoạt động",
+                ["PENDING"] = "Đang chờ",
+                ["EXPIRED"] = "Hết hạn",
+                ["CANCELLED"] = "Đã hủy",
+                ["BANNED"] = "Bị khóa"
+            };
+
+            var orderedStatuses = new[] { "ACTIVE", "PENDING", "EXPIRED", "CANCELLED", "BANNED" };
+            var normalizedStatuses = statuses
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .Select(s => s.Trim().ToUpperInvariant())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            var knownStatuses = orderedStatuses
+                .Where(s => normalizedStatuses.Contains(s, StringComparer.OrdinalIgnoreCase))
+                .Select(s => new StatusOptionDto
+                {
+                    Value = s,
+                    Label = labelMap[s]
+                });
+
+            var customStatuses = normalizedStatuses
+                .Where(s => !labelMap.ContainsKey(s))
+                .OrderBy(s => s)
+                .Select(s => new StatusOptionDto
+                {
+                    Value = s,
+                    Label = s
+                });
+
+            return knownStatuses.Concat(customStatuses).ToList();
+        }
+
+        public async Task<AdminSubscriptionDetailViewModel?> GetSubscriptionDetailAsync(int id)
+        {
+            var subscription = await _repo.GetSubscriptionByIdWithDetailsAsync(id);
+            if (subscription == null) return null;
+
+            var userRole = subscription.User.UserRoles.FirstOrDefault()?.Role?.Name ?? "N/A";
+
+            var payments = subscription.Payments.Select(p => new SubscriptionPaymentViewModel
+            {
+                Id = p.Id,
+                Amount = p.Amount ?? 0,
+                PaymentDate = p.PaymentDate,
+                TransactionId = p.TransactionId,
+                Status = p.Status ?? "N/A",
+                PaymentMethod = p.PaymentMethod
+            }).ToList();
+
+            return new AdminSubscriptionDetailViewModel
+            {
+                Id = subscription.Id,
+                UserId = subscription.UserId,
+                UserEmail = subscription.User.Email,
+                UserName = $"{subscription.User.FirstName} {subscription.User.LastName}".Trim(),
+                UserRole = userRole,
+                PlanId = subscription.PlanId,
+                PlanName = subscription.SubscribedPlanName ?? subscription.Plan?.Name ?? "N/A",
+                PlanPrice = subscription.SubscribedPrice ?? subscription.PlanOption?.Price ?? subscription.Plan?.Price ?? 0,
+                PlanDurationDays = subscription.SubscribedDurationDays ?? subscription.PlanOption?.DurationDays ?? 0,
+                PlanDescription = subscription.Plan?.Description,
+                StartDate = subscription.StartDate,
+                EndDate = subscription.EndDate,
+                Status = subscription.Status ?? "N/A",
+                AutoRenew = subscription.AutoRenew ?? false,
+                CreatedAt = subscription.CreatedAt,
+                IsBanned = subscription.IsBanned,
+                BannedAt = subscription.BannedAt,
+                BanReason = subscription.BanReason,
+                Payments = payments
+            };
+        }
+
+        public async Task<ServiceResult> BanSubscriptionAsync(int id, string reason)
+        {
+            var sub = await _repo.GetSubscriptionByIdAsync(id);
+            if (sub == null) return ServiceResult.NotFoundResult();
+
+            sub.IsBanned = true;
+            sub.BannedAt = DateTimeHelper.NowVietnam;
+            sub.BanReason = reason;
+            sub.Status = "BANNED";
+            sub.UpdatedAt = DateTimeHelper.NowVietnam;
+            await _repo.UpdateSubscriptionAsync(sub);
+            return ServiceResult.Success();
+        }
+
+        public async Task<ServiceResult> UnbanSubscriptionAsync(int id)
+        {
+            var sub = await _repo.GetSubscriptionByIdAsync(id);
+            if (sub == null) return ServiceResult.NotFoundResult();
+
+            sub.IsBanned = false;
+            sub.BannedAt = null;
+            sub.BanReason = null;
+            sub.Status = "ACTIVE";
+            sub.UpdatedAt = DateTimeHelper.NowVietnam;
+            await _repo.UpdateSubscriptionAsync(sub);
+            return ServiceResult.Success();
+        }
+
+        // ========== JOBS MANAGEMENT (ADMIN) ==========
+
+        public async Task<AdminJobListViewModel> GetJobListAsync(string? keyword, string? status, int? companyId, string? bannedFilter, int page, int pageSize)
+        {
+            page = Math.Max(1, page);
+
+            var query = _repo.GetJobsQuery();
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+                query = query.Where(j => j.Title.Contains(keyword) || j.Company.Name.Contains(keyword));
+
+            if (!string.IsNullOrWhiteSpace(status) && status != "ALL")
+                query = query.Where(j => j.Status == status);
+
+            if (companyId.HasValue)
+                query = query.Where(j => j.CompanyId == companyId.Value);
+
+            if (bannedFilter == "banned")
+                query = query.Where(j => j.IsBanned);
+            else if (bannedFilter == "active")
+                query = query.Where(j => !j.IsBanned);
+
+            var total = await query.CountAsync();
+
+            var jobs = await query
+                .OrderByDescending(j => j.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(j => new AdminJobListItemViewModel
+                {
+                    Id = j.Id,
+                    Title = j.Title,
+                    CompanyName = j.Company.Name,
+                    CompanyId = j.CompanyId,
+                    Status = j.Status,
+                    IsBanned = j.IsBanned,
+                    BannedAt = j.BannedAt,
+                    BanReason = j.BanReason,
+                    CreatedAt = j.CreatedAt,
+                    ExpiryDate = j.ExpiryDate,
+                    ApplicationCount = j.Applications.Count
+                })
+                .ToListAsync();
+
+            var companies = await _repo.GetAllCompaniesAsync();
+            var companyItems = companies.Select(c => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+            {
+                Value = c.Id.ToString(),
+                Text = c.Name,
+                Selected = c.Id == companyId
+            }).ToList();
+
+            return new AdminJobListViewModel
+            {
+                Keyword = keyword,
+                Status = status,
+                CompanyId = companyId,
+                BannedFilter = bannedFilter ?? "all",
+                Page = page,
+                PageSize = pageSize,
+                TotalItems = total,
+                Jobs = jobs,
+                Companies = companyItems
+            };
+        }
+
+        public async Task<AdminJobDetailViewModel?> GetJobDetailAsync(int id)
+        {
+            var job = await _repo.GetJobByIdWithDetailsAsync(id);
+            if (job == null) return null;
+
+            return new AdminJobDetailViewModel
+            {
+                Id = job.Id,
+                Title = job.Title,
+                CompanyId = job.CompanyId,
+                CompanyName = job.Company?.Name ?? "",
+                CompanyLogo = job.Company?.Logo,
+                Description = job.Description,
+                Requirements = job.Requirements,
+                Benefits = job.Benefits,
+                JobType = job.JobType,
+                MinSalary = job.MinSalary,
+                MaxSalary = job.MaxSalary,
+                NumberOfPositions = job.NumberOfPositions,
+                ApplicationDeadline = job.ApplicationDeadline,
+                ExpiryDate = job.ExpiryDate,
+                PublishDate = job.PublishDate,
+                Status = job.Status,
+                ViewCount = job.ViewCount,
+                ApplicationCount = job.Applications.Count,
+                CreatedAt = job.CreatedAt,
+                IsBanned = job.IsBanned,
+                BannedAt = job.BannedAt,
+                BanReason = job.BanReason,
+                RecruiterNames = job.JobRecruiters
+                    .Select(jr => jr.Recruiter?.FullName ?? jr.Recruiter?.User?.Email ?? "")
+                    .Where(n => !string.IsNullOrEmpty(n))
+                    .Distinct()
+                    .ToList(),
+                Skills = job.JobSkills
+                    .Select(js => js.Skill?.Name ?? "")
+                    .Where(n => !string.IsNullOrEmpty(n))
+                    .ToList()
+            };
+        }
+
+        public async Task<ServiceResult> BanJobAsync(int id, string reason)
+        {
+            var job = await _repo.GetJobByIdAsync(id);
+            if (job == null) return ServiceResult.NotFoundResult();
+
+            job.IsBanned = true;
+            job.BannedAt = DateTimeHelper.NowVietnam;
+            job.BanReason = reason;
+            await _repo.UpdateJobAsync(job);
+            return ServiceResult.Success();
+        }
+
+        public async Task<ServiceResult> UnbanJobAsync(int id)
+        {
+            var job = await _repo.GetJobByIdAsync(id);
+            if (job == null) return ServiceResult.NotFoundResult();
+
+            job.IsBanned = false;
+            job.BannedAt = null;
+            job.BanReason = null;
+            await _repo.UpdateJobAsync(job);
             return ServiceResult.Success();
         }
     }

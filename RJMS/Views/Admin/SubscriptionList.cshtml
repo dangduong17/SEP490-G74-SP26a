@@ -1,0 +1,173 @@
+@model RJMS.vn.edu.fpt.Models.DTOs.AdminSubscriptionListViewModel
+@{
+    ViewData["Title"] = "Quản lý gói dịch vụ";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["HidePageTitle"] = true;
+    var statusMapping = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    {
+        { "ACTIVE", "Đang hoạt động" },
+        { "PENDING", "Đang chờ" },
+        { "EXPIRED", "Hết hạn" },
+        { "CANCELLED", "Đã hủy" },
+        { "BANNED", "Bị khóa" }
+    };
+}
+
+<!-- Toolbar -->
+<div class="sub-toolbar">
+    <div>
+        <h1>Quản lý gói dịch vụ (Recruiter)</h1>
+        <p>Xem danh sách đăng ký, theo dõi doanh thu và xử lý vi phạm gói dịch vụ.</p>
+    </div>
+</div>
+
+<!-- Filter bar -->
+<form method="get" asp-action="SubscriptionList" asp-controller="Admin">
+    <div class="sub-filterbar">
+        <div class="sub-search">
+            <input type="text" name="keyword" value="@Model.Keyword" placeholder="Tìm theo email, tên người dùng..." />
+        </div>
+
+        <span class="filter-label">Trạng thái:</span>
+
+        <select name="status" class="form-select">
+            <option value="ALL" selected="@(Model.Status == "ALL")">Tất cả</option>
+            @foreach (var statusOption in Model.StatusOptions)
+            {
+                <option value="@statusOption.Value" selected="@(string.Equals(Model.Status, statusOption.Value, StringComparison.OrdinalIgnoreCase))">@statusOption.Label</option>
+            }
+        </select>
+
+        <span class="filter-label">Gói:</span>
+        <select name="planId" class="form-select">
+            <option value="">Tất cả gói</option>
+            @foreach (var plan in Model.Plans)
+            {
+                <option value="@plan.Id" selected="@(Model.PlanId == plan.Id)">@plan.Name</option>
+            }
+        </select>
+
+        <button type="submit" class="btn-filter-icon" title="Lọc">
+            Lọc
+        </button>
+    </div>
+</form>
+
+<!-- Table -->
+<div class="sub-table-card">
+    <table class="sub-table">
+        <thead>
+            <tr>
+                <th>Người dùng</th>
+                <th>Gói</th>
+                <th>Giá</th>
+                <th>Bắt đầu</th>
+                <th>Kết thúc</th>
+                <th>Trạng thái</th>
+                <th>Vi phạm</th>
+                <th style="text-align:right;">Thao tác</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (!Model.Subscriptions.Any())
+            {
+                <tr><td colspan="8" class="text-center text-muted py-5">Không có dữ liệu</td></tr>
+            }
+            @foreach (var sub in Model.Subscriptions)
+            {
+                <tr>
+                    <td>
+                        <div style="font-weight:600;color:#111827;">@sub.UserName</div>
+                        <div style="font-size:0.8rem; color:#6b7280;">@sub.UserEmail</div>
+                    </td>
+                    <td>@sub.PlanName</td>
+                    <td style="font-weight:600; color:#00b14f;">@sub.PlanPrice.ToString("N0") VNĐ</td>
+                    <td style="font-size:0.82rem;color:#6b7280;">@(sub.StartDate?.ToString("dd/MM/yyyy") ?? "—")</td>
+                    <td style="font-size:0.82rem;color:#6b7280;">@(sub.EndDate?.ToString("dd/MM/yyyy") ?? "—")</td>
+                    <td>
+                        @{
+                            var badgeClass = sub.Status?.ToUpper() switch
+                            {
+                                "ACTIVE" => "st-active",
+                                "EXPIRED" => "st-expired",
+                                "CANCELLED" => "st-cancelled",
+                                "PENDING" => "st-pending",
+                                "BANNED" => "st-cancelled", // Use same style as cancelled/banned
+                                _ => "st-pending"
+                            };
+                            var badgeLabel = statusMapping.ContainsKey(sub.Status ?? "") ? statusMapping[sub.Status ?? ""] : sub.Status;
+                        }
+                        <span class="@badgeClass">@badgeLabel</span>
+                    </td>
+                    <td>
+                        @if (sub.IsBanned)
+                        {
+                            <span class="badge bg-danger">Bị khóa</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-light text-dark">Bình thường</span>
+                        }
+                    </td>
+                    <td>
+                        <div class="action-btns">
+                            <a asp-action="SubscriptionDetail" asp-controller="Admin" asp-route-id="@sub.Id" class="act-btn act-view" title="Xem chi tiết">
+                                Chi tiết
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <!-- Pagination -->
+    @if (Model.TotalPages > 1)
+    {
+        <div class="sub-pagination">
+            <span>Hiển thị <strong>@((Model.Page-1)*Model.PageSize+1)–@Math.Min(Model.Page*Model.PageSize,Model.TotalItems)</strong> trong tổng số <strong>@Model.TotalItems</strong> gói</span>
+            <div style="display:flex;gap:6px;align-items:center;">
+                @if (Model.Page > 1)
+                {
+                    <a class="pg-btn-text" asp-action="SubscriptionList" asp-controller="Admin"
+                       asp-route-keyword="@Model.Keyword"
+                       asp-route-status="@Model.Status"
+                       asp-route-planId="@Model.PlanId"
+                       asp-route-page="@(Model.Page-1)"
+                       asp-route-pageSize="@Model.PageSize">Trước</a>
+                }
+                else
+                {
+                    <span class="pg-btn-text" style="opacity:.4;cursor:not-allowed;">Trước</span>
+                }
+
+                @for (int pg = Math.Max(1, Model.Page - 2); pg <= Math.Min(Model.TotalPages, Model.Page + 2); pg++)
+                {
+                    <a class="pg-btn @(pg == Model.Page ? "active" : "")"
+                       asp-action="SubscriptionList" asp-controller="Admin"
+                       asp-route-keyword="@Model.Keyword"
+                       asp-route-status="@Model.Status"
+                       asp-route-planId="@Model.PlanId"
+                       asp-route-page="@pg"
+                       asp-route-pageSize="@Model.PageSize">@pg</a>
+                }
+
+                @if (Model.Page < Model.TotalPages)
+                {
+                    <a class="pg-btn-text" asp-action="SubscriptionList" asp-controller="Admin"
+                       asp-route-keyword="@Model.Keyword"
+                       asp-route-status="@Model.Status"
+                       asp-route-planId="@Model.PlanId"
+                       asp-route-page="@(Model.Page+1)"
+                       asp-route-pageSize="@Model.PageSize">Sau</a>
+                }
+                else
+                {
+                    <span class="pg-btn-text" style="opacity:.4;cursor:not-allowed;">Sau</span>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+

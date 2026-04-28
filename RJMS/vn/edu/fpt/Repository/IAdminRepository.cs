@@ -66,6 +66,15 @@ namespace RJMS.Vn.Edu.Fpt.Repository
         // Subscriptions
         Task<(int total, List<Subscription> items)> GetSubscriptionsPagedAsync(string? keyword, string? status, int? planId, int page, int pageSize);
         Task<Subscription?> GetSubscriptionByIdWithDetailsAsync(int id);
+        Task<Subscription?> GetSubscriptionByIdAsync(int id);
+        Task UpdateSubscriptionAsync(Subscription subscription);
         Task<List<SubscriptionPlan>> GetActiveSubscriptionPlansAsync();
+        Task<List<string>> GetSubscriptionStatusesAsync();
+
+        // Jobs
+        IQueryable<Job> GetJobsQuery();
+        Task<Job?> GetJobByIdAsync(int id);
+        Task<Job?> GetJobByIdWithDetailsAsync(int id);
+        Task UpdateJobAsync(Job job);
     }
 }
