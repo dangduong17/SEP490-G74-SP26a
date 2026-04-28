@@ -27,12 +27,30 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             return RedirectToAction("Login", "Auth");
         }
 
+        private IActionResult? EnsureCandidateRole()
+        {
+            var role = HttpContext.Request.Cookies["UserRole"];
+            if (string.IsNullOrWhiteSpace(role))
+            {
+                return RedirectToLogin();
+            }
+
+            if (!string.Equals(role, "Candidate", StringComparison.OrdinalIgnoreCase))
+            {
+                TempData["WarningToast"] = "Chức năng này chỉ dành cho ứng viên.";
+                return RedirectToAction("Index", "Home");
+            }
+
+            return null;
+        }
+
         // ──────────────────────────────────────────────────────────────────
         // GET /CV  – Danh sách CV
         // ──────────────────────────────────────────────────────────────────
         [HttpGet]
         public async Task<IActionResult> Index()
         {
+            if (EnsureCandidateRole() is { } redirect) return redirect;
             var userId = GetCurrentUserId();
             if (!userId.HasValue) return RedirectToLogin();
 
@@ -46,6 +64,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         [HttpGet]
         public IActionResult Upload()
         {
+            if (EnsureCandidateRole() is { } redirect) return redirect;
             if (GetCurrentUserId() == null) return RedirectToLogin();
             return View();
         }
@@ -53,6 +72,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         [HttpPost]
         public async Task<IActionResult> Upload(CvUploadDTO dto)
         {
+            if (EnsureCandidateRole() is { } redirect) return redirect;
             var userId = GetCurrentUserId();
             if (!userId.HasValue) return RedirectToLogin();
 
@@ -72,7 +92,15 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         [HttpGet]
         public async Task<IActionResult> Create()
         {
-            if (GetCurrentUserId() == null) return RedirectToLogin();
+            var userId = GetCurrentUserId();
+            var role = HttpContext.Request.Cookies["UserRole"];
+            var isLoggedIn = userId.HasValue;
+            var isCandidate = string.Equals(role, "Candidate", StringComparison.OrdinalIgnoreCase);
+            var canCreate = isLoggedIn && isCandidate;
+
+            ViewBag.CanCreate = canCreate;
+            ViewBag.IsLoggedIn = isLoggedIn;
+            ViewBag.IsCandidate = isCandidate;
             var templates = await _cvService.GetActiveTemplatesAsync();
             return View(templates);
         }
@@ -80,6 +108,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         [HttpPost]
         public IActionResult Create(int templateId, string title)
         {
+            if (EnsureCandidateRole() is { } redirect) return redirect;
             var userId = GetCurrentUserId();
             if (!userId.HasValue) return RedirectToLogin();
 
@@ -93,6 +122,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         [HttpGet]
         public async Task<IActionResult> Edit(int? id, int? templateId, string? title)
         {
+            if (EnsureCandidateRole() is { } redirect) return redirect;
             var userId = GetCurrentUserId();
             if (!userId.HasValue) return RedirectToLogin();
 
@@ -115,6 +145,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         [HttpPost]
         public async Task<IActionResult> Save(int? cvId, int? templateId, string jsonData, string title)
         {
+            if (EnsureCandidateRole() is { } redirect) return redirect;
             var userId = GetCurrentUserId();
             if (!userId.HasValue) return RedirectToLogin();
 
@@ -139,6 +170,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         [HttpGet]
         public async Task<IActionResult> PreviewHtml(int id)
         {
+            if (EnsureCandidateRole() is { } redirect) return redirect;
             var userId = GetCurrentUserId();
             if (!userId.HasValue) return Unauthorized();
 
@@ -149,6 +181,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         [HttpPost]
         public async Task<IActionResult> Preview(int cvId, [FromBody] JsonElement jsonData)
         {
+            if (EnsureCandidateRole() is { } redirect) return redirect;
             var userId = GetCurrentUserId();
             if (!userId.HasValue) return Unauthorized();
 
@@ -162,6 +195,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         [HttpPost]
         public async Task<IActionResult> Delete(int id)
         {
+            if (EnsureCandidateRole() is { } redirect) return redirect;
             var userId = GetCurrentUserId();
             if (!userId.HasValue) return RedirectToLogin();
 

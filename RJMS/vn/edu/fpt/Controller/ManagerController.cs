@@ -8,11 +8,19 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
     {
         private readonly IAdminService _adminService;
         private readonly IJobCategoryService _jobCategoryService;
+        private readonly IWebSliderService _sliderService;
+        private readonly ICloudinaryService _cloudinaryService;
 
-        public ManagerController(IAdminService adminService, IJobCategoryService jobCategoryService)
+        public ManagerController(
+            IAdminService adminService,
+            IJobCategoryService jobCategoryService,
+            IWebSliderService sliderService,
+            ICloudinaryService cloudinaryService)
         {
             _adminService = adminService;
             _jobCategoryService = jobCategoryService;
+            _sliderService = sliderService;
+            _cloudinaryService = cloudinaryService;
         }
 
         private IActionResult? RequireManagerRole()
@@ -327,6 +335,81 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             {
                 ModelState.AddModelError(error.Key ?? string.Empty, error.Message);
             }
+        }
+
+        // ========== SLIDER MANAGEMENT ==========
+
+        [HttpGet]
+        public async Task<IActionResult> SliderList(string? keyword, string? statusFilter, int page = 1, int pageSize = 15)
+        {
+            if (RequireManagerRole() is { } redirect) return redirect;
+            var model = await _sliderService.GetListAsync(keyword, statusFilter, page, pageSize);
+            ViewData["Title"] = "Quản lý Slider";
+            return View(model);
+        }
+
+        [HttpGet]
+        public IActionResult SliderCreate()
+        {
+            if (RequireManagerRole() is { } redirect) return redirect;
+            ViewData["Title"] = "Thêm Slider mới";
+            return View(new WebSliderFormViewModel { IsActive = true });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SliderCreate(WebSliderFormViewModel model)
+        {
+            if (RequireManagerRole() is { } redirect) return redirect;
+            ViewData["Title"] = "Thêm Slider mới";
+
+            if (model.ImageFile == null)
+                ModelState.AddModelError("ImageFile", "Vui lòng chọn ảnh.");
+
+            if (!ModelState.IsValid) return View(model);
+
+            var (success, message) = await _sliderService.CreateAsync(model);
+            TempData[success ? "SuccessToast" : "ErrorToast"] = message;
+            if (success) return RedirectToAction(nameof(SliderList));
+            return View(model);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> SliderEdit(int id)
+        {
+            if (RequireManagerRole() is { } redirect) return redirect;
+            var model = await _sliderService.GetForEditAsync(id);
+            if (model == null) return NotFound();
+            ViewData["Title"] = "Chỉnh sửa Slider";
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SliderEdit(WebSliderFormViewModel model)
+        {
+            if (RequireManagerRole() is { } redirect) return redirect;
+            ViewData["Title"] = "Chỉnh sửa Slider";
+
+            // Remove ImageFile validation — it's optional on edit
+            ModelState.Remove("ImageFile");
+
+            if (!ModelState.IsValid) return View(model);
+
+            var (success, message) = await _sliderService.UpdateAsync(model);
+            TempData[success ? "SuccessToast" : "ErrorToast"] = message;
+            if (success) return RedirectToAction(nameof(SliderList));
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SliderDelete(int id)
+        {
+            if (RequireManagerRole() is { } redirect) return redirect;
+            var (success, message) = await _sliderService.DeleteAsync(id);
+            TempData[success ? "SuccessToast" : "ErrorToast"] = message;
+            return RedirectToAction(nameof(SliderList));
         }
     }
 }

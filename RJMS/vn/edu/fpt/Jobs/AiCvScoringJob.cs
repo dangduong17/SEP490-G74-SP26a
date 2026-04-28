@@ -40,6 +40,7 @@ namespace RJMS.vn.edu.fpt.Jobs
             var db = scope.ServiceProvider.GetRequiredService<FindingJobsDbContext>();
             var gemini = scope.ServiceProvider.GetRequiredService<IGeminiService>();
             var hub = scope.ServiceProvider.GetRequiredService<IHubContext<NotificationHub>>();
+            var subscriptionService = scope.ServiceProvider.GetRequiredService<RJMS.Vn.Edu.Fpt.Service.ISubscriptionService>();
 
             // 1. Lấy thông tin job (title, requirements, skills)
             var job = await db.Jobs
@@ -138,6 +139,19 @@ namespace RJMS.vn.edu.fpt.Jobs
                         app.Summary = result.Summary;
                         app.AiProcessStatus = "Completed";
                         processedCount++;
+
+                        // Trừ quota CV_AI_FILTER chỉ khi AI trả về điểm hợp lệ (> 0)
+                        if (result.AiScore > 0)
+                        {
+                            try
+                            {
+                                await subscriptionService.ConsumeQuotaAsync(recruiterUserId, "CV_AI_FILTER");
+                            }
+                            catch (Exception qEx)
+                            {
+                                _logger.LogWarning(qEx, "Không thể trừ quota cho recruiterUserId={UserId}, appId={AppId}", recruiterUserId, app.Id);
+                            }
+                        }
 
                         // Push SignalR real-time cho từng application
                         await hub.Clients.Group($"User_{recruiterUserId}")

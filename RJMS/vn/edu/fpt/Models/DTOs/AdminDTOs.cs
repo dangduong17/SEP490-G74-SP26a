@@ -431,6 +431,9 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
         public string Status { get; set; } = string.Empty;
         public bool AutoRenew { get; set; }
         public DateTime? CreatedAt { get; set; }
+        // Ban
+        public bool IsBanned { get; set; }
+        public string? BanReason { get; set; }
     }
 
     public class AdminSubscriptionListViewModel
@@ -443,6 +446,8 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
         public int TotalItems { get; set; }
         public List<AdminSubscriptionListItemViewModel> Subscriptions { get; set; } = new();
         public List<SubscriptionPlanLookupViewModel> Plans { get; set; } = new();
+        public List<string> Statuses { get; set; } = new();
+        public List<StatusOptionDto> StatusOptions { get; set; } = new();
         public int TotalPages => (int)Math.Ceiling((double)TotalItems / PageSize);
     }
 
@@ -470,6 +475,10 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
         public string Status { get; set; } = string.Empty;
         public bool AutoRenew { get; set; }
         public DateTime? CreatedAt { get; set; }
+        // Ban
+        public bool IsBanned { get; set; }
+        public DateTime? BannedAt { get; set; }
+        public string? BanReason { get; set; }
         public List<SubscriptionPaymentViewModel> Payments { get; set; } = new();
     }
 
@@ -591,5 +600,145 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
 
         /// <summary>Danh sách CompanyLocationId mới (thay thế toàn bộ gán cũ).</summary>
         public List<int> CompanyLocationIds { get; set; } = new();
+    }
+
+    // ========== ADMIN JOB MANAGEMENT ==========
+
+    public class AdminJobListItemViewModel
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string CompanyName { get; set; } = string.Empty;
+        public int CompanyId { get; set; }
+        public string? Status { get; set; }
+        public bool IsBanned { get; set; }
+        public DateTime? BannedAt { get; set; }
+        public string? BanReason { get; set; }
+        public DateTime? CreatedAt { get; set; }
+        public DateTime? ExpiryDate { get; set; }
+        public int ApplicationCount { get; set; }
+    }
+
+    public class AdminJobListViewModel
+    {
+        public string? Keyword { get; set; }
+        public string? Status { get; set; }
+        public int? CompanyId { get; set; }
+        public string? CompanyName { get; set; }
+        public string? BannedFilter { get; set; }   // "all" | "banned" | "active"
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 15;
+        public int TotalItems { get; set; }
+        public List<AdminJobListItemViewModel> Jobs { get; set; } = new();
+        public List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> Companies { get; set; } = new();
+        public int TotalPages => (int)Math.Ceiling((double)TotalItems / PageSize);
+    }
+
+    public class AdminJobDetailViewModel
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public int CompanyId { get; set; }
+        public string CompanyName { get; set; } = string.Empty;
+        public string? CompanyLogo { get; set; }
+        public string? Description { get; set; }
+        public string? Requirements { get; set; }
+        public string? Benefits { get; set; }
+        public string? JobType { get; set; }
+        public decimal? MinSalary { get; set; }
+        public decimal? MaxSalary { get; set; }
+        public int? NumberOfPositions { get; set; }
+        public DateTime? ApplicationDeadline { get; set; }
+        public DateTime? ExpiryDate { get; set; }
+        public DateTime? PublishDate { get; set; }
+        public string? Status { get; set; }
+        public int? ViewCount { get; set; }
+        public int ApplicationCount { get; set; }
+        public DateTime? CreatedAt { get; set; }
+        // Ban info
+        public bool IsBanned { get; set; }
+        public DateTime? BannedAt { get; set; }
+        public string? BanReason { get; set; }
+        // Recruiters
+        public List<string> RecruiterNames { get; set; } = new();
+        public List<string> Skills { get; set; } = new();
+    }
+
+    // ========== BAN REQUEST MODELS ==========
+
+    public class BanJobRequest
+    {
+        public int JobId { get; set; }
+        [Required(ErrorMessage = "Lý do là bắt buộc.")]
+        [MaxLength(500)]
+        public string Reason { get; set; } = string.Empty;
+    }
+
+    public class BanSubscriptionRequest
+    {
+        public int SubscriptionId { get; set; }
+        [Required(ErrorMessage = "Lý do là bắt buộc.")]
+        [MaxLength(500)]
+        public string Reason { get; set; } = string.Empty;
+    }
+
+    // ========== WEB SLIDER MANAGEMENT ==========
+
+    public class WebSliderDto
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string? Subtitle { get; set; }
+        public string ImageUrl { get; set; } = string.Empty;
+        public string? LinkUrl { get; set; }
+        public string? ButtonText { get; set; }
+        public int DisplayOrder { get; set; }
+        public bool IsActive { get; set; }
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
+
+    public class WebSliderFormViewModel
+    {
+        public int Id { get; set; }
+
+        [Required(ErrorMessage = "Tiêu đề là bắt buộc.")]
+        [MaxLength(255)]
+        public string Title { get; set; } = string.Empty;
+
+        [MaxLength(500)]
+        public string? Subtitle { get; set; }
+
+        // ImageUrl — populated after Cloudinary upload; không required nếu edit và không đổi ảnh
+        public string? ImageUrl { get; set; }
+
+        // Existing image for edit preview
+        public string? ExistingImageUrl { get; set; }
+
+        [MaxLength(500)]
+        public string? LinkUrl { get; set; }
+
+        [MaxLength(100)]
+        public string? ButtonText { get; set; }
+
+        public int DisplayOrder { get; set; } = 0;
+        public bool IsActive { get; set; } = true;
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
+
+        // For file upload
+        public Microsoft.AspNetCore.Http.IFormFile? ImageFile { get; set; }
+    }
+
+    public class WebSliderListViewModel
+    {
+        public string? Keyword { get; set; }
+        public string? StatusFilter { get; set; }
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 15;
+        public int TotalItems { get; set; }
+        public List<WebSliderDto> Sliders { get; set; } = new();
+        public int TotalPages => (int)Math.Ceiling((double)TotalItems / PageSize);
     }
 }
