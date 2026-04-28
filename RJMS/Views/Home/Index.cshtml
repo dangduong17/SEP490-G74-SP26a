@@ -3,71 +3,547 @@
     ViewData["Title"] = "Finding Jobs - Tìm việc làm, Tuyển dụng hiệu quả";
 }
 
-<!-- Hero Banner Section -->
-<section class="hero-banner">
+@section Styles {
+<style>
+    .home-hero {
+        background: radial-gradient(1200px 400px at 20% 0%, #157a52 0%, #0c5b3a 40%, #094c32 100%);
+        padding: 18px 0 28px;
+    }
+    .hero-search-bar {
+        background: #0c5b3a;
+        border-radius: 50px;
+        display: flex;
+        align-items: center;
+        padding: 8px 8px 8px 16px;
+        gap: 0;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.18);
+    }
+    .hero-search-segment {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 16px;
+        cursor: pointer;
+        flex-shrink: 0;
+        background: transparent;
+        border: none;
+    }
+    .hero-search-segment .seg-label { color: #c4f2d5; font-size: 0.875rem; font-weight: 700; white-space: nowrap; }
+    .hero-search-divider { width: 1px; height: 28px; background: #1f6d49; flex-shrink: 0; }
+    .hero-kw-input {
+        flex: 1;
+        border: none;
+        background: transparent;
+        color: #fff;
+        font-size: 0.95rem;
+        outline: none;
+        padding: 8px 16px;
+        min-width: 0;
+    }
+    .hero-kw-input::placeholder { color: #93b7a2; }
+    .hero-loc-btn {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: transparent;
+        border: none;
+        color: #c4f2d5;
+        cursor: pointer;
+        padding: 8px 16px;
+        font-size: 0.875rem;
+        white-space: nowrap;
+    }
+    .hero-btn-search {
+        background: #00b14f;
+        color: #fff;
+        border: none;
+        border-radius: 50px;
+        padding: 12px 28px;
+        font-size: 0.95rem;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+        transition: background 0.2s;
+        margin-left: 8px;
+    }
+    .hero-btn-search:hover { background: #009744; }
+
+    .hero-layout {
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        gap: 18px;
+        margin-top: 16px;
+    }
+    .hero-categories {
+        background: #fff;
+        border-radius: 16px;
+        padding: 14px 0;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        border: 1px solid #e5e7eb;
+    }
+    .hero-categories-title {
+        padding: 0 16px 10px;
+        font-weight: 800;
+        color: #0f172a;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .hero-categories ul { list-style: none; padding: 0; margin: 0; }
+    .hero-categories li {
+        padding: 10px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .hero-categories li:hover { background: #f0fdf4; }
+    .hero-categories a { color: #111827; text-decoration: none; font-weight: 600; }
+    .hero-categories .chev { color: #9ca3af; }
+    .hero-cat-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 16px 0;
+        color: #6b7280;
+        font-size: 0.85rem;
+    }
+    .hero-cat-nav {
+        display: flex;
+        gap: 8px;
+    }
+    .hero-cat-btn {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        border: 1px solid #e5e7eb;
+        background: #fff;
+        color: #6b7280;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .hero-slider {
+        background: #fff;
+        border-radius: 16px;
+        overflow: hidden;
+        border: 4px solid #0f6b41;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+        position: relative;
+    }
+    .hero-slider .carousel,
+    .hero-slider .carousel-item {
+        height: 100%;
+    }
+    .hero-slider .carousel-inner {
+        aspect-ratio: 16 / 6;
+        min-height: 280px;
+        max-height: 420px;
+        background:
+            radial-gradient(circle at top right, rgba(22, 163, 74, 0.12), transparent 38%),
+            linear-gradient(180deg, #f8fafc 0%, #eefbf3 100%);
+    }
+    .hero-slider .carousel-item {
+        background: transparent;
+    }
+    .hero-slider .slide-link {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 14px;
+        text-decoration: none;
+    }
+    .hero-slider .slide-media {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 14px;
+        overflow: hidden;
+        background: rgba(255,255,255,0.72);
+        box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.04);
+    }
+    .hero-slider img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        object-position: center;
+        display: block;
+    }
+    .hero-slider .carousel-control-prev,
+    .hero-slider .carousel-control-next {
+        width: 52px;
+        opacity: 1;
+    }
+    .hero-slider .carousel-control-prev-icon,
+    .hero-slider .carousel-control-next-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 999px;
+        background-color: rgba(15, 23, 42, 0.48);
+        background-size: 52% 52%;
+    }
+
+    @@media (max-width: 992px) {
+        .hero-layout { grid-template-columns: 1fr; }
+        .hero-slider .carousel-inner {
+            aspect-ratio: 16 / 7;
+            min-height: 240px;
+        }
+    }
+    @@media (max-width: 640px) {
+        .hero-search-bar { flex-wrap: wrap; border-radius: 20px; padding: 10px; }
+        .hero-search-divider { display: none; }
+        .hero-btn-search { width: 100%; justify-content: center; margin-left: 0; }
+        .hero-slider .carousel-inner {
+            aspect-ratio: 4 / 3;
+            min-height: 220px;
+        }
+        .hero-slider .slide-link {
+            padding: 10px;
+        }
+        .hero-slider .carousel-control-prev,
+        .hero-slider .carousel-control-next {
+            width: 40px;
+        }
+        .hero-slider .carousel-control-prev-icon,
+        .hero-slider .carousel-control-next-icon {
+            width: 30px;
+            height: 30px;
+        }
+    }
+
+    /* Category modal */
+    .cat-modal-backdrop {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.4);
+        z-index: 1050;
+        align-items: flex-start;
+        justify-content: center;
+        padding-top: 60px;
+    }
+    .cat-modal-backdrop.open { display: flex; }
+    .cat-modal {
+        background: #fff;
+        border-radius: 14px;
+        width: 1020px;
+        max-width: 96vw;
+        max-height: 80vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        animation: slideDown 0.2s ease;
+    }
+    @@keyframes slideDown { from { transform: translateY(-16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .cat-modal-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 18px 24px;
+        border-bottom: 1px solid #f3f4f6;
+    }
+    .cat-modal-head h4 { font-size: 1.05rem; font-weight: 700; margin: 0; color: #111827; }
+    .btn-close-modal { background: none; border: none; font-size: 1.3rem; color: #6b7280; cursor: pointer; line-height: 1; }
+    .cat-search-wrap {
+        padding: 14px 24px;
+        border-bottom: 1px solid #f3f4f6;
+    }
+    .cat-search-input {
+        width: 100%;
+        border: 1.5px solid #d1d5db;
+        border-radius: 30px;
+        padding: 9px 16px 9px 40px;
+        font-size: 0.9rem;
+        outline: none;
+        background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E") no-repeat 14px center;
+        transition: border-color 0.2s;
+    }
+    .cat-search-input:focus { border-color: #00b14f; box-shadow: 0 0 0 3px rgba(0,177,79,0.1); }
+    .cat-modal-body {
+        display: grid;
+        grid-template-columns: 260px 1fr 1fr;
+        flex: 1;
+        overflow: hidden;
+        min-height: 0;
+    }
+    .cat-col {
+        overflow-y: auto;
+        border-right: 1px solid #f3f4f6;
+        padding: 0;
+    }
+    .cat-col:last-child { border-right: none; }
+    .cat-col-header {
+        padding: 10px 16px;
+        font-size: 0.72rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #9ca3af;
+        position: sticky;
+        top: 0;
+        background: #fff;
+        border-bottom: 1px solid #f3f4f6;
+        z-index: 1;
+    }
+    .cat-group-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        cursor: pointer;
+        transition: background 0.15s;
+        border-radius: 0;
+    }
+    .cat-group-item:hover { background: #f9fafb; }
+    .cat-group-item.selected { background: #f0fdf4; }
+    .cat-group-item.active-parent { background: #f0fdf4; }
+    .cat-group-item input[type=checkbox] { accent-color: #00b14f; width: 16px; height: 16px; cursor: pointer; flex-shrink: 0; }
+    .cat-group-item .cat-name { flex: 1; font-size: 0.9rem; color: #1f2937; font-weight: 500; }
+    .cat-group-item:hover .cat-name { color: #00b14f; }
+    .cat-group-item.active-parent .cat-name { color: #00b14f; font-weight: 700; }
+    .cat-arrow { color: #9ca3af; font-size: 0.75rem; }
+    .cat-empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: #9ca3af;
+        font-size: 0.9rem;
+        gap: 10px;
+    }
+    .cat-empty-state i { font-size: 3rem; }
+    .cat-modal-foot {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 24px;
+        border-top: 1px solid #f3f4f6;
+        flex-shrink: 0;
+    }
+    .cat-modal-foot .hint { font-size: 0.82rem; color: #6b7280; }
+    .cat-modal-foot .hint a { color: #00b14f; }
+    .cat-modal-foot-actions { display: flex; gap: 10px; }
+    .btn-cat-clear { background: transparent; border: 1px solid #d1d5db; border-radius: 8px; padding: 8px 18px; color: #6b7280; cursor: pointer; font-size: 0.875rem; }
+    .btn-cat-cancel { background: transparent; border: 1px solid #d1d5db; border-radius: 8px; padding: 8px 18px; color: #6b7280; cursor: pointer; font-size: 0.875rem; }
+    .btn-cat-apply { background: #00b14f; color: #fff; border: none; border-radius: 8px; padding: 8px 24px; font-weight: 700; cursor: pointer; font-size: 0.875rem; }
+    .btn-cat-apply:hover { background: #009744; }
+
+    /* Location dropdown overlay */
+    .loc-overlay {
+        display: none;
+        position: fixed;
+        z-index: 1040;
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        padding: 8px;
+        min-width: 220px;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    .loc-opt { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 0.875rem; color: #374151; }
+    .loc-opt:hover { background: #f0fdf4; color: #00b14f; }
+    .loc-opt.active { color: #00b14f; font-weight: 700; }
+
+    @@media (max-width: 768px) { .cat-modal-body { grid-template-columns: 1fr; } }
+</style>
+}
+
+<!-- Hero Section -->
+<section class="home-hero">
     <div class="container">
-        <div class="row align-items-center">
-            <div class="col-lg-6">
-                <h1 class="hero-heading">
-                    Tiếp lửa ý chí<br />
-                    <span class="text-primary">Nơi thành công</span>
-                </h1>
-                <p class="hero-subheading">
-                    Finding Jobs - Hệ sinh thái nhân sự tiên tiến<br />
-                    Công nghệ AI hóa tuyển dụng & quản trị
-                </p>
+        @{
+            var topGroups = Model.CategoryGroups.Take(6).ToList();
+            var catPages = Model.CategoryGroups.Count == 0 ? 1 : (int)Math.Ceiling((double)Model.CategoryGroups.Count / 6);
+        }
 
-                <!-- Search Box -->
-                <div class="search-box-wrapper">
-                    <form class="search-form">
-                        <div class="row g-2">
-                            <div class="col-md-5">
-                                <div class="input-group">
-                                    <span class="input-group-text bg-white border-end-0">
-                                        <i class="fas fa-search text-muted"></i>
-                                    </span>
-                                    <input type="text" class="form-control border-start-0"
-                                           placeholder="Vị trí ứng tuyển">
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="input-group">
-                                    <span class="input-group-text bg-white border-end-0">
-                                        <i class="fas fa-map-marker-alt text-muted"></i>
-                                    </span>
-                                    <select class="form-select border-start-0">
-                                        <option>Tất cả địa điểm</option>
-                                        <option>Hà Nội</option>
-                                        <option>TP. Hồ Chí Minh</option>
-                                        <option>Đà Nẵng</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <button type="submit" class="btn btn-primary w-100">
-                                    <i class="fas fa-search me-2"></i>Tìm việc
-                                </button>
-                            </div>
-                        </div>
-                    </form>
+        <form method="get" asp-controller="Job" asp-action="Index" id="homeSearchForm">
+            <input type="hidden" name="categoryId" id="hidCategoryId" value="" />
+            <input type="hidden" name="locationId" id="hidLocationId" value="" />
+            <div class="hero-search-bar">
+                <button type="button" class="hero-search-segment" onclick="openCatModal()" id="btnOpenCat">
+                    <i class="fas fa-th-large" style="color:#00b14f;"></i>
+                    <span class="seg-label" id="catLabel">Danh mục Nghề</span>
+                </button>
+                <div class="hero-search-divider"></div>
+                <input type="text" name="keyword" class="hero-kw-input"
+                       placeholder="Vị trí tuyển dụng, tên công ty..." />
+                <div class="hero-search-divider"></div>
+                <button type="button" class="hero-loc-btn" id="btnOpenLoc">
+                    <i class="fas fa-map-marker-alt" style="color:#00b14f;"></i>
+                    <span id="locLabel">Địa điểm</span>
+                    <i class="fas fa-chevron-down" style="font-size:0.7rem;"></i>
+                </button>
+                <button type="submit" class="hero-btn-search">
+                    <i class="fas fa-search"></i> Tìm kiếm
+                </button>
+            </div>
+        </form>
+
+        <div class="hero-layout">
+            <div class="hero-categories">
+                <div class="hero-categories-title">
+                    <i class="fas fa-list"></i> Danh mục Nghề
                 </div>
-
-                <!-- Popular Keywords -->
-                <div class="popular-keywords mt-3">
-                    <span class="text-muted me-2">Từ khóa phổ biến:</span>
-                    <a href="#" class="keyword-tag">IT</a>
-                    <a href="#" class="keyword-tag">Marketing</a>
-                    <a href="#" class="keyword-tag">Kinh doanh</a>
-                    <a href="#" class="keyword-tag">Kế toán</a>
+                <ul>
+                    @if (topGroups.Any())
+                    {
+                        foreach (var grp in topGroups)
+                        {
+                            <li onclick="openCatModal(); selectGroup(@grp.Id);">
+                                <a href="javascript:void(0);">@grp.Name</a>
+                                <i class="fas fa-chevron-right chev"></i>
+                            </li>
+                        }
+                    }
+                    else
+                    {
+                        <li>
+                            <span>Chưa có danh mục</span>
+                        </li>
+                    }
+                </ul>
+                <div class="hero-cat-footer">
+                    <span>1/@catPages</span>
+                    <div class="hero-cat-nav">
+                        <span class="hero-cat-btn"><i class="fas fa-chevron-left"></i></span>
+                        <span class="hero-cat-btn"><i class="fas fa-chevron-right"></i></span>
+                    </div>
                 </div>
             </div>
-            <div class="col-lg-6 d-none d-lg-block">
-                <img src="https://cdn-new.topcv.vn/unsafe/https://static.topcv.vn/v4/image/welcome/hero/image-hero.png"
-                     alt="Hero" class="img-fluid">
+
+            <div class="hero-slider">
+                @if (Model.Sliders != null && Model.Sliders.Any())
+                {
+                    <div id="heroCarousel" class="carousel slide" data-bs-ride="carousel">
+                        <div class="carousel-inner">
+                            @for (int i = 0; i < Model.Sliders.Count; i++)
+                            {
+                                var slider = Model.Sliders[i];
+                                <div class="carousel-item @(i == 0 ? "active" : "")" data-bs-interval="3000">
+                                    <a class="slide-link" href="@(string.IsNullOrEmpty(slider.LinkUrl) ? "#" : slider.LinkUrl)">
+                                        <div class="slide-media">
+                                            <img src="@slider.ImageUrl" alt="@slider.Title">
+                                        </div>
+                                    </a>
+                                </div>
+                            }
+                        </div>
+                        <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
+                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Previous</span>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
+                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Next</span>
+                        </button>
+                    </div>
+                }
+                else
+                {
+                    <div class="hero-fallback bg-light p-5 text-center" style="height: 320px; display:flex; align-items:center; justify-content:center;">
+                        <div>
+                            <h2 class="mb-2">Nơi thành công bắt đầu</h2>
+                            <p class="text-muted mb-0">Hệ sinh thái nhân sự tiên tiến hàng đầu.</p>
+                        </div>
+                    </div>
+                }
             </div>
         </div>
     </div>
 </section>
+
+<!-- CATEGORY MODAL -->
+<div class="cat-modal-backdrop" id="catModalBackdrop">
+    <div class="cat-modal" role="dialog" aria-modal="true">
+        <div class="cat-modal-head">
+            <h4><i class="fas fa-th-large me-2 text-success"></i>Chọn Nhóm nghề, Nghề hoặc Chuyên môn</h4>
+            <button class="btn-close-modal" id="btnCloseCatModal" title="Đóng">×</button>
+        </div>
+        <div class="cat-search-wrap">
+            <input type="text" class="cat-search-input" id="catSearchInput" placeholder="Nhập từ khóa tìm kiếm" />
+        </div>
+        <div class="cat-modal-body">
+            <div class="cat-col" id="colGroups">
+                <div class="cat-col-header">Nhóm nghề</div>
+                @foreach (var grp in Model.CategoryGroups)
+                {
+                    <div class="cat-group-item" data-id="@grp.Id" data-has-children="@(grp.Children.Any() ? "true" : "false")" onclick="selectGroup(@grp.Id)">
+                        <input type="checkbox" id="chk_grp_@grp.Id" onclick="event.stopPropagation(); toggleGroupCheck(@grp.Id, this.checked)" />
+                        <span class="cat-name">@grp.Name</span>
+                        @if (grp.Children.Any())
+                        {
+                            <i class="fas fa-chevron-right cat-arrow"></i>
+                        }
+                    </div>
+                }
+            </div>
+
+            <div class="cat-col" id="colChildren">
+                <div class="cat-col-header">Nghề</div>
+                <div id="childrenContent">
+                    <div class="cat-empty-state">
+                        <i class="far fa-compass"></i>
+                        <span>Vui lòng chọn Nhóm nghề</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="cat-col" id="colSubChildren">
+                <div class="cat-col-header">Vị trí chuyên môn</div>
+                <div id="subChildrenContent">
+                    <div class="cat-empty-state">
+                        <i class="far fa-compass"></i>
+                        <span>Vui lòng chọn Nghề</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="cat-modal-foot">
+            <div class="hint">Bạn gặp vấn đề với Danh mục Nghề? <a href="#">Gửi góp ý</a></div>
+            <div class="cat-modal-foot-actions">
+                <button class="btn-cat-clear" onclick="clearCatSelection()">Bỏ chọn tất cả</button>
+                <button class="btn-cat-cancel" onclick="closeCatModal()">Huỷ</button>
+                <button class="btn-cat-apply" onclick="applyCatFilter()">Chọn</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- LOCATION OVERLAY -->
+<div class="loc-overlay" id="locOverlay">
+    <div class="loc-opt active" data-id="" onclick="selectLocation('','Tất cả địa điểm')">
+        <i class="fas fa-globe-asia text-muted"></i> Tất cả địa điểm
+    </div>
+    @foreach (var loc in Model.Locations)
+    {
+        <div class="loc-opt" data-id="@loc.Id" onclick="selectLocation('@loc.Id','@loc.Name')">
+            <i class="fas fa-map-marker-alt text-muted"></i> @loc.Name
+        </div>
+    }
+</div>
+
+<!-- Embed category data as JSON for JS -->
+<script id="catData" type="application/json">
+@{
+    var catJson = System.Text.Json.JsonSerializer.Serialize(Model.CategoryGroups, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase });
+}
+@Html.Raw(catJson)
+</script>
 
 <!-- Stats Section -->
 <section class="stats-section">
@@ -173,7 +649,7 @@
     <div class="container">
         <div class="section-header">
             <h2 class="section-title">Thương hiệu lớn tiêu biểu</h2>
-            <a href="#" class="view-all-link">Xem tất cả <i class="fas fa-arrow-right ms-2"></i></a>
+            <a asp-controller="Company" asp-action="Index" class="view-all-link">Xem tất cả <i class="fas fa-arrow-right ms-2"></i></a>
         </div>
 
         <div class="row">
@@ -182,7 +658,7 @@
                 @foreach (var company in Model.TopCompanies)
                 {
                     <div class="col-6 col-md-4 col-lg-3 mb-4">
-                        <div class="company-card">
+                        <a class="company-card" asp-controller="Company" asp-action="Detail" asp-route-id="@company.Id">
                             <div class="company-logo-wrapper">
                                 @if (!string.IsNullOrWhiteSpace(company.Logo))
                                 {
@@ -197,7 +673,7 @@
                             <p class="company-jobs-count">
                                 <i class="fas fa-briefcase me-1"></i>@company.ActiveJobCount việc làm
                             </p>
-                        </div>
+                        </a>
                     </div>
                 }
             }
@@ -211,148 +687,180 @@
     </div>
 </section>
 
-<!-- CV Builder Section -->
-<section class="cv-builder-section">
-    <div class="container">
-        <div class="row align-items-center">
-            <div class="col-lg-6 mb-4 mb-lg-0">
-                <img src="https://cdn-new.topcv.vn/unsafe/https://static.topcv.vn/v4/image/welcome/feature-job-seeker/cv-builder/bg-section-cv.png"
-                     alt="CV Builder" class="img-fluid">
-            </div>
-            <div class="col-lg-6">
-                <div class="feature-content">
-                    <h2 class="feature-title">Tạo CV online miễn phí</h2>
-                    <p class="feature-description">
-                        Công cụ tạo CV chuyên nghiệp, dễ dàng và nhanh chóng.
-                        Hơn 100+ mẫu CV đẹp, chuẩn theo từng ngành nghề.
-                    </p>
-                    <ul class="feature-list">
-                        <li><i class="fas fa-check-circle text-primary me-2"></i>Hơn 100+ mẫu CV đẹp, chuẩn</li>
-                        <li><i class="fas fa-check-circle text-primary me-2"></i>Tạo CV nhanh chóng, dễ dùng</li>
-                        <li><i class="fas fa-check-circle text-primary me-2"></i>Tải xuống PDF chất lượng cao</li>
-                        <li><i class="fas fa-check-circle text-primary me-2"></i>AI gợi ý nội dung CV</li>
-                    </ul>
-                    <a asp-controller="CVs" asp-action="CVList" class="btn btn-primary btn-lg mt-3">
-                        <i class="fas fa-file-alt me-2"></i>Tạo CV ngay
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
 <!-- Categories Section -->
 <section class="categories-section">
     <div class="container">
         <h2 class="section-title text-center mb-5">Top ngành nghề nổi bật</h2>
         <div class="row">
-            <div class="col-6 col-md-4 col-lg-3 mb-4">
-                <a href="#" class="category-card">
-                    <div class="category-icon">
-                        <i class="fas fa-laptop-code"></i>
+            @if (Model.FeaturedCategories.Any())
+            {
+                foreach (var cat in Model.FeaturedCategories)
+                {
+                    <div class="col-6 col-md-4 col-lg-3 mb-4">
+                        <a asp-controller="Job" asp-action="Index" asp-route-categoryId="@cat.Id" class="category-card">
+                            <div class="category-icon">
+                                <i class="fas fa-briefcase"></i>
+                            </div>
+                            <h4 class="category-name">@cat.Name</h4>
+                            <p class="category-jobs">@cat.JobCount.ToString("N0") việc làm</p>
+                        </a>
                     </div>
-                    <h4 class="category-name">IT - Phần mềm</h4>
-                    <p class="category-jobs">12,500 việc làm</p>
-                </a>
-            </div>
-            <div class="col-6 col-md-4 col-lg-3 mb-4">
-                <a href="#" class="category-card">
-                    <div class="category-icon">
-                        <i class="fas fa-bullhorn"></i>
-                    </div>
-                    <h4 class="category-name">Marketing</h4>
-                    <p class="category-jobs">8,200 việc làm</p>
-                </a>
-            </div>
-            <div class="col-6 col-md-4 col-lg-3 mb-4">
-                <a href="#" class="category-card">
-                    <div class="category-icon">
-                        <i class="fas fa-chart-line"></i>
-                    </div>
-                    <h4 class="category-name">Kinh doanh</h4>
-                    <p class="category-jobs">9,500 việc làm</p>
-                </a>
-            </div>
-            <div class="col-6 col-md-4 col-lg-3 mb-4">
-                <a href="#" class="category-card">
-                    <div class="category-icon">
-                        <i class="fas fa-calculator"></i>
-                    </div>
-                    <h4 class="category-name">Kế toán</h4>
-                    <p class="category-jobs">6,300 việc làm</p>
-                </a>
-            </div>
-            <div class="col-6 col-md-4 col-lg-3 mb-4">
-                <a href="#" class="category-card">
-                    <div class="category-icon">
-                        <i class="fas fa-user-tie"></i>
-                    </div>
-                    <h4 class="category-name">Nhân sự</h4>
-                    <p class="category-jobs">4,800 việc làm</p>
-                </a>
-            </div>
-            <div class="col-6 col-md-4 col-lg-3 mb-4">
-                <a href="#" class="category-card">
-                    <div class="category-icon">
-                        <i class="fas fa-paint-brush"></i>
-                    </div>
-                    <h4 class="category-name">Thiết kế</h4>
-                    <p class="category-jobs">5,100 việc làm</p>
-                </a>
-            </div>
-            <div class="col-6 col-md-4 col-lg-3 mb-4">
-                <a href="#" class="category-card">
-                    <div class="category-icon">
-                        <i class="fas fa-headset"></i>
-                    </div>
-                    <h4 class="category-name">Chăm sóc KH</h4>
-                    <p class="category-jobs">7,200 việc làm</p>
-                </a>
-            </div>
-            <div class="col-6 col-md-4 col-lg-3 mb-4">
-                <a href="#" class="category-card">
-                    <div class="category-icon">
-                        <i class="fas fa-gavel"></i>
-                    </div>
-                    <h4 class="category-name">Pháp lý</h4>
-                    <p class="category-jobs">3,600 việc làm</p>
-                </a>
-            </div>
+                }
+            }
+            else
+            {
+                <div class="col-12">
+                    <div class="alert alert-light border">Hiện chưa có ngành nghề nổi bật.</div>
+                </div>
+            }
         </div>
     </div>
 </section>
 
-<!-- App Download Section -->
-<section class="app-download-section">
-    <div class="container">
-        <div class="row align-items-center">
-            <div class="col-lg-6">
-                <h2 class="app-title">Kiến tạo sự nghiệp của riêng bạn với ứng dụng Finding Jobs</h2>
-                <p class="app-description">
-                    "Tất cả trong một" - Trải nghiệm tạo CV, tìm việc, ứng tuyển và hơn thế nữa
-                    chỉ với một ứng dụng duy nhất. Bắt đầu ngay hôm nay!
-                </p>
-                <div class="app-download-buttons">
-                    <a href="#" class="app-btn">
-                        <i class="fab fa-apple"></i>
-                        <div>
-                            <small>Download on the</small>
-                            <strong>App Store</strong>
-                        </div>
-                    </a>
-                    <a href="#" class="app-btn">
-                        <i class="fab fa-google-play"></i>
-                        <div>
-                            <small>GET IT ON</small>
-                            <strong>Google Play</strong>
-                        </div>
-                    </a>
-                </div>
-            </div>
-            <div class="col-lg-6 text-center d-none d-lg-block">
-                <img src="https://cdn-new.topcv.vn/unsafe/https://static.topcv.vn/v4/image/welcome/download-app/phone.png"
-                     alt="App Screenshot" class="img-fluid" style="max-width: 400px;">
-            </div>
-        </div>
-    </div>
-</section>
+@section Scripts {
+<script>
+    const CAT_GROUPS = JSON.parse(document.getElementById('catData').textContent);
+    let selectedCatId = null;
+    let selectedCatName = '';
+    let activeGroupId = null;
+
+    const locBtn = document.getElementById('btnOpenLoc');
+    const locOverlay = document.getElementById('locOverlay');
+    if (locBtn && locOverlay) {
+        locBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            const hidden = locOverlay.style.display !== 'block';
+            locOverlay.style.display = hidden ? 'block' : 'none';
+            if (hidden) {
+                const r = locBtn.getBoundingClientRect();
+                locOverlay.style.top = (r.bottom + window.scrollY + 6) + 'px';
+                locOverlay.style.left = r.left + 'px';
+            }
+        });
+        document.addEventListener('click', () => locOverlay.style.display = 'none');
+        locOverlay.addEventListener('click', e => e.stopPropagation());
+    }
+
+    function selectLocation(id, name) {
+        document.getElementById('hidLocationId').value = id;
+        document.getElementById('locLabel').textContent = name || 'Địa điểm';
+        locOverlay.style.display = 'none';
+    }
+
+    function openCatModal() {
+        document.getElementById('catModalBackdrop').classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+    function closeCatModal() {
+        document.getElementById('catModalBackdrop').classList.remove('open');
+        document.body.style.overflow = '';
+    }
+    document.getElementById('btnCloseCatModal').onclick = closeCatModal;
+    document.getElementById('catModalBackdrop').addEventListener('click', e => {
+        if (e.target === document.getElementById('catModalBackdrop')) closeCatModal();
+    });
+
+    function renderChildrenCol(groupId) {
+        const grp = CAT_GROUPS.find(g => g.id === groupId);
+        const col = document.getElementById('childrenContent');
+        const subCol = document.getElementById('subChildrenContent');
+        subCol.innerHTML = '<div class="cat-empty-state"><i class="far fa-compass"></i><span>Vui lòng chọn Nghề</span></div>';
+
+        if (!grp || !grp.children || grp.children.length === 0) {
+            col.innerHTML = '<div class="cat-empty-state"><i class="far fa-compass"></i><span>Không có nghề con</span></div>';
+            return;
+        }
+        col.innerHTML = '';
+        grp.children.forEach(child => {
+            const el = document.createElement('div');
+            el.className = 'cat-group-item';
+            if (selectedCatId === child.id) el.classList.add('active-parent');
+            el.dataset.id = child.id;
+            el.innerHTML = `
+                <input type="checkbox" ${selectedCatId == child.id ? 'checked' : ''}
+                    onclick="event.stopPropagation(); toggleChildCheck(${child.id}, '${child.name.replace(/'/g,"\\'")}', this.checked, this)"/>
+                <span class="cat-name">${child.name}</span>
+                ${child.children && child.children.length > 0 ? '<i class="fas fa-chevron-right cat-arrow"></i>' : ''}
+            `;
+            el.onclick = () => { if (child.children && child.children.length > 0) renderSubChildrenCol(child.id); };
+            col.appendChild(el);
+        });
+    }
+
+    function renderSubChildrenCol(childId) {
+        const grp = CAT_GROUPS.find(g => g.children.some(c => c.id === childId));
+        if (!grp) return;
+        const child = grp.children.find(c => c.id === childId);
+        const col = document.getElementById('subChildrenContent');
+        if (!child || !child.children || child.children.length === 0) {
+            col.innerHTML = '<div class="cat-empty-state"><i class="far fa-compass"></i><span>Không có vị trí chuyên môn</span></div>';
+            return;
+        }
+        col.innerHTML = '';
+        child.children.forEach(sub => {
+            const el = document.createElement('div');
+            el.className = 'cat-group-item';
+            el.innerHTML = `
+                <input type="checkbox" ${selectedCatId == sub.id ? 'checked' : ''}
+                    onclick="event.stopPropagation(); toggleChildCheck(${sub.id}, '${sub.name.replace(/'/g,"\\'")}', this.checked, this)"/>
+                <span class="cat-name">${sub.name}</span>
+            `;
+            col.appendChild(el);
+        });
+    }
+
+    function selectGroup(id) {
+        activeGroupId = id;
+        document.querySelectorAll('#colGroups .cat-group-item').forEach(el => el.classList.remove('active-parent'));
+        const el = document.querySelector(`#colGroups [data-id="${id}"]`);
+        if (el) el.classList.add('active-parent');
+        renderChildrenCol(id);
+    }
+
+    function toggleGroupCheck(groupId, checked) {
+        if (checked) {
+            selectedCatId = groupId;
+            const grp = CAT_GROUPS.find(g => g.id === groupId);
+            selectedCatName = grp ? grp.name : '';
+            document.querySelectorAll('.cat-modal input[type=checkbox]').forEach(cb => {
+                if (cb.id !== 'chk_grp_' + groupId) cb.checked = false;
+            });
+        } else {
+            if (selectedCatId === groupId) { selectedCatId = null; selectedCatName = ''; }
+        }
+    }
+
+    function toggleChildCheck(catId, catName, checked, element) {
+        if (checked) {
+            selectedCatId = catId;
+            selectedCatName = catName;
+            document.querySelectorAll('.cat-modal input[type=checkbox]').forEach(cb => {
+                if (cb !== element) cb.checked = false;
+            });
+        } else {
+            if (selectedCatId === catId) { selectedCatId = null; selectedCatName = ''; }
+        }
+    }
+
+    function clearCatSelection() {
+        selectedCatId = null;
+        selectedCatName = '';
+        document.querySelectorAll('.cat-modal input[type=checkbox]').forEach(cb => cb.checked = false);
+    }
+
+    function applyCatFilter() {
+        document.getElementById('hidCategoryId').value = selectedCatId ?? '';
+        document.getElementById('catLabel').textContent = selectedCatName || 'Danh mục Nghề';
+        closeCatModal();
+        document.getElementById('homeSearchForm').submit();
+    }
+
+    document.getElementById('catSearchInput').addEventListener('input', function() {
+        const kw = this.value.toLowerCase();
+        document.querySelectorAll('#colGroups .cat-group-item').forEach(el => {
+            const name = el.querySelector('.cat-name')?.textContent.toLowerCase() ?? '';
+            el.style.display = !kw || name.includes(kw) ? '' : 'none';
+        });
+    });
+</script>
+}
