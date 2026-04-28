@@ -60,6 +60,8 @@ builder.Services.AddScoped<SubscriptionRenewalJob>();
 builder.Services.AddScoped<IApplicationService, ApplicationService>();
 builder.Services.AddScoped<IRecruiterManagementRepository, RecruiterManagementRepository>();
 builder.Services.AddScoped<IRecruiterManagementService, RecruiterManagementService>();
+builder.Services.AddScoped<IWebSliderService, WebSliderService>();
+builder.Services.AddScoped<SliderExpiryJob>();
 
 // ── Gemini AI Service ──
 builder.Services.AddHttpClient<IGeminiService, GeminiService>(client =>
@@ -209,6 +211,12 @@ using (var scope = app.Services.CreateScope())
         "yearly-period-renewal",
         job => job.Execute(),
         Cron.Daily(1) 
+    );
+
+    recurringJobManager.AddOrUpdate<SliderExpiryJob>(
+        "slider-expiry-check",
+        job => job.ExecuteAsync(),
+        Cron.Daily(2)  // runs at 02:00 AM daily
     );
 }
 

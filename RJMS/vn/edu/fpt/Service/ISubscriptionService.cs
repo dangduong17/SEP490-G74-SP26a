@@ -31,5 +31,11 @@ namespace RJMS.Vn.Edu.Fpt.Service
         Task ConsumeQuotaAsync(int userId, string featureCode);
         Task<int> RenewExpiredPeriodsAsync();
         Task<int> ProcessExpiredSubscriptionsAsync();
+
+        // ── Cancel ──
+        Task<bool> CancelSubscriptionAsync(int subscriptionId);
+
+        // ── History ──
+        Task<RecruiterSubscriptionHistoryViewModel> GetRecruiterHistoryAsync(int userId, int page, int pageSize);
     }
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace RJMS.vn.edu.fpt.Models;
@@ -34,6 +34,11 @@ public partial class Subscription
 
     // Audit trail
     public DateTime? UpdatedAt { get; set; }
+
+    // Admin ban
+    public bool IsBanned { get; set; } = false;
+    public DateTime? BannedAt { get; set; }
+    public string? BanReason { get; set; }
 
     // Snapshot fields to preserve purchase-time plan data
     public decimal? SubscribedPrice { get; set; }
