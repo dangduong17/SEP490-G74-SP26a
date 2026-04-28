@@ -69,18 +69,24 @@ namespace RJMS.Vn.Edu.Fpt.Service
             // 1. Update Payment = SUCCESS
             await _paymentRepo.UpdatePaymentStatusAsync(paymentId, "SUCCESS", transactionId);
 
-            // 2. Update Subscription = ACTIVE
+            // 2. Hủy tất cả subscription Active cũ của user/công ty (trừ cái vừa tạo)
+            await _paymentRepo.CancelPreviousActiveSubscriptionsAsync(
+                subscription.UserId,
+                subscription.CompanyId,
+                payment.SubscriptionId);
+
+            // 3. Update Subscription = ACTIVE
             await _paymentRepo.UpdateSubscriptionStatusAsync(payment.SubscriptionId, "ACTIVE");
 
-            // 3. Create SubscriptionPeriod
+            // 4. Create SubscriptionPeriod (chỉ cho period đầu tiên; yearly sẽ tự roll bởi Hangfire hàng tháng)
             await _paymentRepo.CreateSubscriptionPeriodAsync(
                 payment.SubscriptionId,
                 subscription.PlanId,
                 subscription.StartDate ?? DateTime.UtcNow,
-                subscription.EndDate ?? DateTime.UtcNow.AddDays(30)
+                (subscription.StartDate ?? DateTime.UtcNow).AddMonths(1)
             );
 
-            // 4. Create Invoice
+            // 5. Create Invoice
             var invoiceNumber = $"INV-{DateTime.Now:yyyyMMdd}-{paymentId:D6}";
             var invoice = new Invoice
             {
@@ -97,7 +103,7 @@ namespace RJMS.Vn.Edu.Fpt.Service
 
             await _paymentRepo.CreateInvoiceAsync(invoice);
 
-            // 5. Send email
+            // 6. Send email
             var user = subscription.User;
             if (user != null && !string.IsNullOrEmpty(user.Email))
             {

@@ -15,6 +15,7 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
         // Filters
         public string? SearchKeyword { get; set; }
         public string? StatusFilter { get; set; }   // "active" | "inactive" | ""
+        public List<StatusOptionDto> StatusOptions { get; set; } = new();
         public string? TypeFilter { get; set; }      // "Basic" | "Standard" | "Premium" | ""
 
         // Pagination
@@ -222,6 +223,58 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
     {
         public string FeatureCode { get; set; } = string.Empty;
         public int? FeatureLimit { get; set; }
+    }
+
+    // ── Recruiter Subscription History ─────────────────────────────────────────
+    public class RecruiterSubscriptionHistoryViewModel
+    {
+        public List<SubscriptionHistoryItemDto> Subscriptions { get; set; } = new();
+
+        // Pagination
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 5;
+        public int TotalItems { get; set; }
+        public int TotalPages => (int)Math.Ceiling((double)TotalItems / PageSize);
+    }
+
+    public class SubscriptionHistoryItemDto
+    {
+        public int Id { get; set; }
+        public string PlanName { get; set; } = string.Empty;
+        public string PlanType { get; set; } = string.Empty;
+        public string BillingCycle { get; set; } = string.Empty;
+        public decimal Price { get; set; }
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
+        public string Status { get; set; } = string.Empty;
+        public bool IsCancelled { get; set; }
+        public DateTime? CancelledAt { get; set; }
+        public bool AutoRenew { get; set; }
+
+        public string StatusDisplay => Status switch
+        {
+            "Active" or "ACTIVE" => "Đang hoạt động",
+            "Expired" => "Hết hạn",
+            "Cancelled" => "Đã hủy",
+            _ => Status
+        };
+
+        public string BillingCycleDisplay => BillingCycle == "Yearly" ? "Hàng năm" : "Hàng tháng";
+
+        public List<SubscriptionPeriodHistoryDto> Periods { get; set; } = new();
+    }
+
+    public class SubscriptionPeriodHistoryDto
+    {
+        public int Id { get; set; }
+        public DateTime PeriodStart { get; set; }
+        public DateTime PeriodEnd { get; set; }
+        public bool IsCurrent => DateTime.UtcNow >= PeriodStart && DateTime.UtcNow <= PeriodEnd;
+
+        public int JobPostingUsed { get; set; }
+        public int? JobPostingLimit { get; set; }
+        public int CvAiUsed { get; set; }
+        public int? CvAiLimit { get; set; }
     }
 }
 

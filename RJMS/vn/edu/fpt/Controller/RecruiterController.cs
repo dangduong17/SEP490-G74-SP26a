@@ -253,6 +253,18 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                         var detailUsage = usages.FirstOrDefault(u => u.FeatureCode == "CV_AI_FILTER");
                         model.CvSearchesTotal = detailFeature?.FeatureLimit ?? 0;
                         model.CvSearchesUsed = detailUsage?.UsedCount ?? 0;
+
+                        // Populate cancel fields
+                        var now = DateTime.UtcNow;
+                        var currentPeriod = await _context.SubscriptionPeriods
+                            .Where(p => p.SubscriptionId == activeSubscription.Id && p.PeriodStart <= now && p.PeriodEnd >= now)
+                            .FirstOrDefaultAsync();
+                        currentPeriod ??= activePeriod;
+
+                        model.ActiveSubscriptionId = activeSubscription.Id;
+                        model.CurrentPeriodEnd = currentPeriod?.PeriodEnd.ToLocalTime().ToString("dd/MM/yyyy");
+                        // Chỉ cho phép hủy nếu đây là gói trả phí và chưa được hủy
+                        model.CanCancel = (activeSubscription.Plan.Price ?? 0) > 0 && !activeSubscription.CancelledAt.HasValue;
                     }
                 }
                 else
@@ -823,9 +835,18 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
 
             var recruiter = await _context.Recruiters
                 .Include(r => r.Company)
+                    .ThenInclude(c => c.CompanyLocations)
+                    .ThenInclude(cl => cl.Location)
+                .Include(r => r.RecruiterLocations)
+                    .ThenInclude(rl => rl.CompanyLocation)
+                        .ThenInclude(cl => cl.Location)
                 .FirstOrDefaultAsync(r => r.UserId == userId);
 
             if (recruiter == null) return Unauthorized();
+
+            var allowedLocationIds = IsEmployee()
+                ? recruiter.RecruiterLocations.Select(rl => rl.CompanyLocationId).Distinct().ToList()
+                : recruiter.Company?.CompanyLocations.Select(cl => cl.Id).Distinct().ToList() ?? new List<int>();
 
             bool isDraft = model.ActionType == "Draft";
 
@@ -865,6 +886,15 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                 ModelState.AddModelError("JobCategoryId", "Vui lòng chọn hoặc thêm nhóm nghề.");
             }
 
+            if (model.SelectedCompanyLocationIds == null || !model.SelectedCompanyLocationIds.Any())
+            {
+                ModelState.AddModelError(nameof(model.SelectedCompanyLocationIds), "Vui lòng chọn ít nhất một địa điểm làm việc.");
+            }
+            else if (model.SelectedCompanyLocationIds.Any(id => !allowedLocationIds.Contains(id)))
+            {
+                ModelState.AddModelError(nameof(model.SelectedCompanyLocationIds), "Địa điểm làm việc không hợp lệ.");
+            }
+
             // Application Deadline & Expiry & Publish Date Validation
             if (model.ApplicationDeadline.Date > DateTime.Now.Date.AddDays(30))
             {
@@ -888,7 +918,14 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
                 TempData["ErrorToast"] = "Vui lòng kiểm tra lại thông tin đăng tin!";
                 ViewBag.Categories1 = await _context.JobCategories.Where(c => c.Level == 1).OrderBy(c => c.Name).ToListAsync();
                 ViewBag.Skills = await _context.Skills.OrderBy(s => s.Name).ToListAsync();
-                if (recruiter?.Company != null)
+                if (IsEmployee())
+                {
+                    ViewBag.CompanyLocations = recruiter.RecruiterLocations
+                        .Select(rl => rl.CompanyLocation)
+                        .Where(cl => cl != null)
+                        .ToList();
+                }
+                else if (recruiter?.Company != null)
                 {
                     ViewBag.CompanyLocations = recruiter.Company.CompanyLocations.ToList();
                 }
@@ -1759,6 +1796,46 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             }
 
             return RedirectToAction("ManageLocations");
+        }
+
+        // ── Cancel Subscription ───────────────────────────────────────────────────
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CancelSubscription(int subscriptionId)
+        {
+            if (RequireRecruiter() is { } redirect) return redirect;
+
+            // Chỉ role Recruiter mới được hủy
+            if (Request.Cookies["UserRole"] != "Recruiter")
+                return Json(new { success = false, message = "Bạn không có quyền thực hiện hành động này." });
+
+            var success = await _subscriptionService.CancelSubscriptionAsync(subscriptionId);
+            if (success)
+                return Json(new { success = true, message = "Đã hủy gói thành công. Gói dịch vụ sẽ tiếp tục hoạt động đến hết chu kỳ tháng hiện tại." });
+
+            return Json(new { success = false, message = "Không tìm thấy gói đăng ký hoạt động hoặc gói đã được hủy trước đó." });
+        }
+
+        // ── Subscription History ──────────────────────────────────────────────────
+        [HttpGet]
+        public async Task<IActionResult> SubscriptionHistory(int page = 1)
+        {
+            if (RequireRecruiter() is { } redirect) return redirect;
+
+            // Chỉ role Recruiter mới được xem
+            if (Request.Cookies["UserRole"] != "Recruiter")
+            {
+                TempData["ErrorToast"] = "Chỉ nhà tuyển dụng mới có thể xem lịch sử đăng ký.";
+                return RedirectToAction("RecruiterDashboard");
+            }
+
+            var userIdStr = Request.Cookies["UserId"];
+            if (!int.TryParse(userIdStr, out int userId))
+                return RedirectToAction("Login", "Auth");
+
+            var model = await _subscriptionService.GetRecruiterHistoryAsync(userId, page, 5);
+            ViewData["Title"] = "Lịch sử đăng ký";
+            return View(model);
         }
     }
 }

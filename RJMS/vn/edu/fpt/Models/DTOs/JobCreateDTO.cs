@@ -22,10 +22,12 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
         [Required(ErrorMessage = "Vui lòng chọn hình thức làm việc")]
         public string JobType { get; set; } = string.Empty;
 
-        [Range(1, 1000, ErrorMessage = "Số lượng tuyển phải lớn hơn 0")]
+        [Range(1, 50, ErrorMessage = "S? lu?ng tuy?n ph?i trong kho?ng t? 1 d?n 50")]
         public int? NumberOfPositions { get; set; }
 
+        [Range(typeof(decimal), "0", "500000000", ErrorMessage = "M?c luong t?i thi?u ph?i trong kho?ng t? 0 d?n 500000000")]
         public decimal? MinSalary { get; set; }
+        [Range(typeof(decimal), "0", "500000000", ErrorMessage = "M?c luong t?i da ph?i trong kho?ng t? 0 d?n 500000000")]
         public decimal? MaxSalary { get; set; }
 
         // Location Info
@@ -64,7 +66,9 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
         public int Id { get; set; }
         public string Title { get; set; } = string.Empty;
         public string? LocationName { get; set; }
+        [Range(typeof(decimal), "0", "500000000", ErrorMessage = "M?c luong t?i thi?u ph?i trong kho?ng t? 0 d?n 500000000")]
         public decimal? MinSalary { get; set; }
+        [Range(typeof(decimal), "0", "500000000", ErrorMessage = "M?c luong t?i da ph?i trong kho?ng t? 0 d?n 500000000")]
         public decimal? MaxSalary { get; set; }
         public DateTime? CreatedAt { get; set; }
         public DateTime? ApplicationDeadline { get; set; }
@@ -73,3 +77,4 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
         public int ApplicationCount { get; set; }
     }
 }
+
