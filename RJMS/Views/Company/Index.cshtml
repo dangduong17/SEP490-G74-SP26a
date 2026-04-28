@@ -1,0 +1,188 @@
+@model RJMS.vn.edu.fpt.Models.DTOs.CompanyListViewModel
+@{
+    ViewData["Title"] = "Danh sách công ty";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+<style>
+    body { background: #f5f7f6; }
+    .company-list-wrap {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 24px 16px 60px;
+    }
+    .company-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+    .company-toolbar h1 { font-size: 1.5rem; font-weight: 800; margin: 0; color: #0f172a; }
+
+    .company-filter {
+        background: #fff;
+        border-radius: 14px;
+        border: 1px solid #e5e7eb;
+        padding: 14px;
+        display: grid;
+        grid-template-columns: 1.5fr 1fr auto;
+        gap: 10px;
+        margin-bottom: 18px;
+    }
+    .company-filter input,
+    .company-filter select {
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 10px 12px;
+        font-size: 0.95rem;
+        outline: none;
+    }
+    .company-filter button {
+        background: #00b14f;
+        border: none;
+        color: #fff;
+        border-radius: 10px;
+        font-weight: 700;
+        padding: 10px 18px;
+    }
+
+    .company-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+    }
+    .company-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        text-decoration: none;
+        color: inherit;
+        transition: all 0.2s;
+    }
+    .company-card:hover { border-color: #00b14f; box-shadow: 0 8px 20px rgba(0,177,79,0.12); transform: translateY(-2px); }
+    .company-cover {
+        height: 120px;
+        background: #e5f3eb url('/images/company_cover_1.jpg') no-repeat center;
+        background-size: cover;
+        background-position: center;
+    }
+    .company-card-body { padding: 16px; }
+    .company-logo {
+        width: 54px; height: 54px;
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: -36px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    }
+    .company-logo img { max-width: 80%; max-height: 80%; object-fit: contain; }
+    .company-name { font-size: 1.05rem; font-weight: 800; margin: 8px 0 6px; color: #0f172a; }
+    .company-meta { color: #6b7280; font-size: 0.85rem; display: flex; flex-wrap: wrap; gap: 10px; }
+    .company-meta span { display: inline-flex; align-items: center; gap: 6px; }
+
+    .company-card-footer {
+        margin-top: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 0.85rem;
+    }
+    .badge-jobs {
+        background: #ecfdf5;
+        color: #059669;
+        font-weight: 700;
+        border-radius: 999px;
+        padding: 4px 10px;
+    }
+
+    .pagination-wrap { display: flex; justify-content: center; align-items: center; gap: 6px; margin-top: 20px; }
+    .pg-btn { width: 34px; height: 34px; border-radius: 50%; border: 1px solid #e5e7eb; background: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; color: #374151; text-decoration: none; font-weight: 600; }
+    .pg-btn.active { background: #00b14f; border-color: #00b14f; color: #fff; }
+    .pg-btn.disabled { opacity: 0.4; pointer-events: none; }
+
+    @@media (max-width: 1024px) { .company-grid { grid-template-columns: repeat(2, 1fr); } }
+    @@media (max-width: 640px) {
+        .company-grid { grid-template-columns: 1fr; }
+        .company-filter { grid-template-columns: 1fr; }
+    }
+</style>
+}
+
+<div class="company-list-wrap">
+    <div class="company-toolbar">
+        <h1>Danh sách công ty</h1>
+    </div>
+
+    <form method="get" asp-action="Index" class="company-filter">
+        <input type="text" name="keyword" value="@Model.Keyword" placeholder="Tìm theo tên công ty, ngành nghề..." />
+        <input type="text" name="industry" value="@Model.Industry" placeholder="Ngành nghề" />
+        <button type="submit"><i class="fas fa-filter"></i> Lọc</button>
+    </form>
+
+    <div class="company-grid">
+        @if (Model.Companies.Any())
+        {
+            foreach (var c in Model.Companies)
+            {
+                <a class="company-card" asp-action="Detail" asp-route-id="@c.Id">
+                    <div class="company-cover" style="background-image: url('@(string.IsNullOrEmpty(c.CoverImage) ? "/images/company_cover_1.jpg" : c.CoverImage)');"></div>
+                    <div class="company-card-body">
+                        <div class="company-logo">
+                            <img src="@(string.IsNullOrEmpty(c.Logo) ? "/images/logo_default.png" : c.Logo)" alt="@c.Name" />
+                        </div>
+                        <div class="company-name">@c.Name</div>
+                        <div class="company-meta">
+                            @if (!string.IsNullOrEmpty(c.Industry))
+                            {
+                                <span><i class="fas fa-briefcase text-success"></i> @c.Industry</span>
+                            }
+                            @if (!string.IsNullOrEmpty(c.CompanySize))
+                            {
+                                <span><i class="fas fa-users text-success"></i> @c.CompanySize</span>
+                            }
+                            @if (!string.IsNullOrEmpty(c.CityName))
+                            {
+                                <span><i class="fas fa-map-marker-alt text-success"></i> @c.CityName</span>
+                            }
+                        </div>
+                        <div class="company-card-footer">
+                            <span class="badge-jobs">@c.ActiveJobCount việc làm</span>
+                            <span class="text-muted"><i class="fas fa-heart me-1"></i>@c.FollowerCount</span>
+                        </div>
+                    </div>
+                </a>
+            }
+        }
+        else
+        {
+            <div class="alert alert-light border">Chưa có công ty để hiển thị.</div>
+        }
+    </div>
+
+    @if (Model.TotalPages > 1)
+    {
+        <div class="pagination-wrap">
+            <a class="pg-btn @(Model.Page <= 1 ? "disabled" : "")"
+               href="@Url.Action("Index", new { keyword = Model.Keyword, industry = Model.Industry, page = Model.Page - 1, pageSize = Model.PageSize })">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            @for (int i = Math.Max(1, Model.Page - 2); i <= Math.Min(Model.TotalPages, Model.Page + 2); i++)
+            {
+                <a class="pg-btn @(i == Model.Page ? "active" : "")"
+                   href="@Url.Action("Index", new { keyword = Model.Keyword, industry = Model.Industry, page = i, pageSize = Model.PageSize })">@i</a>
+            }
+            <a class="pg-btn @(Model.Page >= Model.TotalPages ? "disabled" : "")"
+               href="@Url.Action("Index", new { keyword = Model.Keyword, industry = Model.Industry, page = Model.Page + 1, pageSize = Model.PageSize })">
+                <i class="fas fa-chevron-right"></i>
+            </a>
+        </div>
+    }
+</div>

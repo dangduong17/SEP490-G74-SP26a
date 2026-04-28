@@ -1,0 +1,138 @@
+@model RJMS.vn.edu.fpt.Models.DTOs.WebSliderListViewModel
+@{
+    ViewData["Title"] = "Quản lý Slider";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["HidePageTitle"] = true;
+}
+
+<div class="sub-toolbar">
+    <div>
+        <h1>Quản lý Slider</h1>
+        <p>Quản lý slider hiển thị trên trang chủ.</p>
+    </div>
+    <a asp-action="SliderCreate" class="btn-create">Thêm slider mới</a>
+</div>
+
+<form method="get" asp-action="SliderList">
+    <div class="sub-filterbar">
+        <div class="sub-search">
+            <input type="text" name="keyword" value="@Model.Keyword" placeholder="Tìm theo tiêu đề, phụ đề..." />
+        </div>
+
+        <span class="filter-label">Trạng thái:</span>
+        <select name="statusFilter" class="form-select" style="width: 200px;">
+            <option value="" selected="@(string.IsNullOrEmpty(Model.StatusFilter))">Tất cả</option>
+            <option value="active" selected="@(Model.StatusFilter == "active")">Đang hiển thị</option>
+            <option value="inactive" selected="@(Model.StatusFilter == "inactive")">Tạm ẩn</option>
+        </select>
+
+        <button type="submit" class="btn-filter-icon" title="Lọc">Lọc</button>
+    </div>
+</form>
+
+<div class="sub-table-card">
+    <table class="sub-table">
+        <thead>
+            <tr>
+                <th>Hình ảnh</th>
+                <th>Tiêu đề</th>
+                <th>Thứ tự</th>
+                <th>Trạng thái</th>
+                <th>Thời gian</th>
+                <th>Ngày tạo</th>
+                <th style="text-align:right;">Thao tác</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (!Model.Sliders.Any())
+            {
+                <tr><td colspan="7" class="text-center text-muted py-5">Không có dữ liệu</td></tr>
+            }
+            @foreach (var s in Model.Sliders)
+            {
+                <tr>
+                    <td style="width:140px;">
+                        <img src="@s.ImageUrl" alt="@s.Title" style="width:120px;height:60px;object-fit:cover;border-radius:8px;border:1px solid #e5e7eb;" />
+                    </td>
+                    <td>
+                        <div style="font-weight:600;color:#111827;">@s.Title</div>
+                        <div style="font-size:0.82rem; color:#6b7280;">@(s.Subtitle ?? "—")</div>
+                    </td>
+                    <td>@s.DisplayOrder</td>
+                    <td>
+                        @if (s.IsActive)
+                        {
+                            <span class="st-active">Đang hiển thị</span>
+                        }
+                        else
+                        {
+                            <span class="st-cancelled">Tạm ẩn</span>
+                        }
+                    </td>
+                    <td style="font-size:0.82rem;color:#6b7280;">
+                        @(s.StartDate?.ToString("dd/MM/yyyy") ?? "—")
+                        -
+                        @(s.EndDate?.ToString("dd/MM/yyyy") ?? "—")
+                    </td>
+                    <td style="font-size:0.82rem;color:#6b7280;">@s.CreatedAt.ToString("dd/MM/yyyy")</td>
+                    <td style="text-align:right;">
+                        <div class="action-btns">
+                            <a asp-action="SliderEdit" asp-route-id="@s.Id" class="act-btn act-edit" title="Sửa">Sửa</a>
+                            <form asp-action="SliderDelete" asp-route-id="@s.Id" method="post" style="display:inline;" onsubmit="return confirm('Bạn có chắc muốn xóa slider này?');">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="act-btn act-delete" title="Xóa">Xóa</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @if (Model.TotalPages > 1)
+    {
+        <div class="sub-pagination">
+            <span>
+                Hiển thị <strong>@((Model.Page-1)*Model.PageSize+1)–@Math.Min(Model.Page*Model.PageSize,Model.TotalItems)</strong>
+                trong tổng số <strong>@Model.TotalItems</strong> slider
+            </span>
+            <div style="display:flex;gap:6px;align-items:center;">
+                @if (Model.Page > 1)
+                {
+                    <a class="pg-btn-text" asp-action="SliderList"
+                       asp-route-keyword="@Model.Keyword"
+                       asp-route-statusFilter="@Model.StatusFilter"
+                       asp-route-page="@(Model.Page-1)"
+                       asp-route-pageSize="@Model.PageSize">Trước</a>
+                }
+                else
+                {
+                    <span class="pg-btn-text" style="opacity:.4;cursor:not-allowed;">Trước</span>
+                }
+
+                @for (int pg = Math.Max(1, Model.Page - 2); pg <= Math.Min(Model.TotalPages, Model.Page + 2); pg++)
+                {
+                    <a class="pg-btn @(pg == Model.Page ? "active" : "")"
+                       asp-action="SliderList"
+                       asp-route-keyword="@Model.Keyword"
+                       asp-route-statusFilter="@Model.StatusFilter"
+                       asp-route-page="@pg"
+                       asp-route-pageSize="@Model.PageSize">@pg</a>
+                }
+
+                @if (Model.Page < Model.TotalPages)
+                {
+                    <a class="pg-btn-text" asp-action="SliderList"
+                       asp-route-keyword="@Model.Keyword"
+                       asp-route-statusFilter="@Model.StatusFilter"
+                       asp-route-page="@(Model.Page+1)"
+                       asp-route-pageSize="@Model.PageSize">Sau</a>
+                }
+                else
+                {
+                    <span class="pg-btn-text" style="opacity:.4;cursor:not-allowed;">Sau</span>
+                }
+            </div>
+        </div>
+    }
+</div>

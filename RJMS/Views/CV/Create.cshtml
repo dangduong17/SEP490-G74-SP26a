@@ -2,6 +2,9 @@
 @{
     ViewData["Title"] = "Chọn Template CV";
     Layout = "~/Views/Shared/_Layout.cshtml";
+    var canCreate = ViewBag.CanCreate is bool b && b;
+    var isLoggedIn = ViewBag.IsLoggedIn is bool loggedIn && loggedIn;
+    var isCandidate = ViewBag.IsCandidate is bool candidate && candidate;
     
     // Extract unique categories from templates
     var cats = Model
@@ -113,10 +116,13 @@
     }
     else
     {
-        <form asp-action="Create" method="post" id="createForm" style="display:none;">
-            <input type="hidden" name="templateId" id="selectedTemplateId" />
-            <input type="hidden" name="title" id="autoTitle" value="CV Mới - @DateTime.Now.ToString("dd/MM/yyyy")" />
-        </form>
+        @if (canCreate)
+        {
+            <form asp-action="Create" method="post" id="createForm" style="display:none;">
+                <input type="hidden" name="templateId" id="selectedTemplateId" />
+                <input type="hidden" name="title" id="autoTitle" value="CV Mới - @DateTime.Now.ToString("dd/MM/yyyy")" />
+            </form>
+        }
 
         <div class="cat-filters">
             <div class="cat-pill active" data-cat="0" onclick="filterCat(this, 0)">
@@ -137,7 +143,9 @@
                     <div class="tpl-card">
                         <div class="mini-a4-wrap" id="mini_@tpl.Id" data-cfg="@tpl.ConfigJson"></div>
                         <div class="tpl-overlay" onclick="selectAndSubmit(@tpl.Id)">
-                            <button type="button" class="btn-use">Dùng mẫu</button>
+                            <button type="button" class="btn-use">
+                                @(canCreate ? "Dùng mẫu" : (!isLoggedIn ? "Đăng nhập để dùng mẫu" : "Chỉ ứng viên mới dùng được"))
+                            </button>
                         </div>
                     </div>
                     <div class="tpl-lbl-wrap">
@@ -151,6 +159,10 @@
 
 @section Scripts {
 <script>
+const canCreate = @canCreate.ToString().ToLowerInvariant();
+const isLoggedIn = @isLoggedIn.ToString().ToLowerInvariant();
+const isCandidate = @isCandidate.ToString().ToLowerInvariant();
+
 function filterCat(btn, id){
     document.querySelectorAll('.cat-pill').forEach(c => c.classList.remove('active'));
     btn.classList.add('active');
@@ -162,6 +174,14 @@ function filterCat(btn, id){
 }
 
 function selectAndSubmit(id){
+    if (!canCreate) {
+        if (!isLoggedIn) {
+            window.location.href = '/Auth/Login';
+        } else if (!isCandidate) {
+            alert('Chức năng này chỉ dành cho ứng viên.');
+        }
+        return;
+    }
     document.getElementById('selectedTemplateId').value = id;
     document.getElementById('createForm').submit();
 }

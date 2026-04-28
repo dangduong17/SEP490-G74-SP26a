@@ -29,7 +29,7 @@
     }
     .hero-cover {
         height: 220px;
-        background: linear-gradient(135deg, #1c3e2e 0%, #00b14f 100%);
+        background: #e5f3eb url('/images/company_cover_1.jpg') no-repeat center;
         background-size: cover;
         background-position: center;
     }
@@ -115,7 +115,7 @@
 <div class="company-container">
     <!-- Hero -->
     <div class="company-hero">
-        <div class="hero-cover" style="background-image: url(@(string.IsNullOrEmpty(Model.CoverImage) ? "" : Model.CoverImage))"></div>
+        <div class="hero-cover" style="background-image: url('@(string.IsNullOrEmpty(Model.CoverImage) ? "/images/company_cover_1.jpg" : Model.CoverImage)')"></div>
         <div class="hero-content">
             <div class="company-logo-big">
                 <img src="@(string.IsNullOrEmpty(Model.Logo) ? "/images/logo_default.png" : Model.Logo)" alt="@Model.Name" />
@@ -127,7 +127,10 @@
                     {
                         <span><i class="fas fa-globe"></i> @(new Uri(Model.Website).Host)</span>
                     }
-                    <span><i class="fas fa-users"></i> @(Model.CompanySize ?? "N/A") nhân viên</span>
+                    @if (!string.IsNullOrEmpty(Model.CompanySize))
+                    {
+                        <span><i class="fas fa-users"></i> @Model.CompanySize nhân viên</span>
+                    }
                     <span><i class="fas fa-heart"></i> @Model.FollowerCount người theo dõi</span>
                 </div>
             </div>
@@ -143,6 +146,7 @@
                         <i class="fas fa-plus"></i> <span>Theo dõi công ty</span>
                     }
                 </button>
+                <a href="#jobs" class="btn btn-outline-success">Xem việc làm</a>
             </div>
         </div>
     </div>
