@@ -42,5 +42,13 @@ namespace RJMS.Vn.Edu.Fpt.Service
         // Subscriptions management
         Task<AdminSubscriptionListViewModel> GetSubscriptionListAsync(string? keyword, string? status, int? planId, int page, int pageSize);
         Task<AdminSubscriptionDetailViewModel?> GetSubscriptionDetailAsync(int id);
+        Task<ServiceResult> BanSubscriptionAsync(int id, string reason);
+        Task<ServiceResult> UnbanSubscriptionAsync(int id);
+
+        // Jobs management (Admin)
+        Task<AdminJobListViewModel> GetJobListAsync(string? keyword, string? status, int? companyId, string? bannedFilter, int page, int pageSize);
+        Task<AdminJobDetailViewModel?> GetJobDetailAsync(int id);
+        Task<ServiceResult> BanJobAsync(int id, string reason);
+        Task<ServiceResult> UnbanJobAsync(int id);
     }
 }

@@ -1,0 +1,179 @@
+@model RJMS.vn.edu.fpt.Models.DTOs.AdminJobDetailViewModel
+@{
+    ViewData["Title"] = $"Chi tiết tin - {Model.Title}";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="sub-toolbar">
+    <a asp-controller="Admin" asp-action="JobList" class="btn btn-sm btn-outline-secondary">← Quay lại danh sách</a>
+    <h2 class="page-title mb-0">Chi tiết tin tuyển dụng</h2>
+</div>
+
+@if (Model.IsBanned)
+{
+    <div class="alert alert-danger d-flex align-items-center mb-4" role="alert">
+        <i class="fas fa-ban me-2"></i>
+        <div>
+            <strong>Tin này đã bị khóa</strong> vào @(Model.BannedAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "—")<br/>
+            <span>Lý do: <em>@Model.BanReason</em></span>
+        </div>
+        <form asp-controller="Admin" asp-action="UnbanJob" method="post" class="ms-auto">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@Model.Id" />
+            <button type="submit" class="btn btn-sm btn-warning"
+                    onclick="return confirm('Bạn có chắc muốn mở khóa tin này?')">Mở khóa</button>
+        </form>
+    </div>
+}
+else
+{
+    <div class="alert alert-success d-flex align-items-center mb-4" role="alert">
+        <i class="fas fa-check-circle me-2"></i>
+        <div>Tin đang <strong>hoạt động bình thường</strong>.</div>
+        <button class="btn btn-sm btn-danger ms-auto" data-bs-toggle="modal" data-bs-target="#banModal">
+            Khóa tin
+        </button>
+    </div>
+}
+
+<div class="row g-4">
+    <!-- Main info -->
+    <div class="col-lg-8">
+        <div class="table-card p-4">
+            <h4 class="fw-bold mb-3">@Model.Title</h4>
+            <div class="row mb-3">
+                <div class="col-6">
+                    <label class="text-muted small">Công ty</label>
+                    <div class="fw-semibold">@Model.CompanyName</div>
+                </div>
+                <div class="col-6">
+                    <label class="text-muted small">Trạng thái</label>
+                    <div><span class="badge @(Model.Status == "Active" ? "bg-success" : "bg-secondary") fs-6">@Model.Status</span></div>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-6">
+                    <label class="text-muted small">Loại công việc</label>
+                    <div>@(Model.JobType ?? "—")</div>
+                </div>
+                <div class="col-6">
+                    <label class="text-muted small">Số lượng tuyển</label>
+                    <div>@(Model.NumberOfPositions?.ToString() ?? "—")</div>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-6">
+                    <label class="text-muted small">Mức lương</label>
+                    <div>
+                        @if (Model.MinSalary.HasValue || Model.MaxSalary.HasValue)
+                        {
+                            @($"{Model.MinSalary?.ToString("N0") ?? ""}{(Model.MinSalary.HasValue && Model.MaxSalary.HasValue ? " - " : "")}{Model.MaxSalary?.ToString("N0") ?? ""} VNĐ")
+                        }
+                        else
+                        {
+                            <span class="text-muted">Thỏa thuận</span>
+                        }
+                    </div>
+                </div>
+                <div class="col-6">
+                    <label class="text-muted small">Hạn nộp hồ sơ</label>
+                    <div>@(Model.ApplicationDeadline?.ToString("dd/MM/yyyy") ?? "—")</div>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-6">
+                    <label class="text-muted small">Ngày đăng</label>
+                    <div>@(Model.PublishDate?.ToString("dd/MM/yyyy") ?? "—")</div>
+                </div>
+                <div class="col-6">
+                    <label class="text-muted small">Ngày hết hạn</label>
+                    <div>@(Model.ExpiryDate?.ToString("dd/MM/yyyy") ?? "—")</div>
+                </div>
+            </div>
+            @if (Model.Description != null)
+            {
+                <div class="mb-3">
+                    <label class="text-muted small">Mô tả công việc</label>
+                    <div class="border rounded p-3 mt-1" style="max-height:200px;overflow-y:auto">@Html.Raw(Model.Description)</div>
+                </div>
+            }
+            @if (Model.Requirements != null)
+            {
+                <div class="mb-3">
+                    <label class="text-muted small">Yêu cầu</label>
+                    <div class="border rounded p-3 mt-1" style="max-height:200px;overflow-y:auto">@Html.Raw(Model.Requirements)</div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Side info -->
+    <div class="col-lg-4">
+        <div class="table-card p-4 mb-4">
+            <h6 class="fw-bold mb-3">Thông tin thống kê</h6>
+            <div class="d-flex justify-content-between mb-2">
+                <span class="text-muted">Lượt xem</span><span>@(Model.ViewCount ?? 0)</span>
+            </div>
+            <div class="d-flex justify-content-between mb-2">
+                <span class="text-muted">Đơn ứng tuyển</span><span>@Model.ApplicationCount</span>
+            </div>
+            <div class="d-flex justify-content-between mb-2">
+                <span class="text-muted">Ngày tạo</span><span>@(Model.CreatedAt?.ToString("dd/MM/yyyy") ?? "—")</span>
+            </div>
+        </div>
+
+        @if (Model.RecruiterNames.Any())
+        {
+            <div class="table-card p-4 mb-4">
+                <h6 class="fw-bold mb-3">Nhà tuyển dụng</h6>
+                @foreach (var r in Model.RecruiterNames)
+                {
+                    <div class="mb-1">@r</div>
+                }
+            </div>
+        }
+
+        @if (Model.Skills.Any())
+        {
+            <div class="table-card p-4">
+                <h6 class="fw-bold mb-3">Kỹ năng yêu cầu</h6>
+                @foreach (var s in Model.Skills)
+                {
+                    <span class="badge bg-light text-dark me-1 mb-1">@s</span>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Ban Modal -->
+@if (!Model.IsBanned)
+{
+    <div class="modal fade" id="banModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">Khóa tin tuyển dụng</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form asp-controller="Admin" asp-action="BanJob" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <div class="modal-body">
+                        <div class="alert alert-warning">
+                            Sau khi khóa, tin "<strong>@Model.Title</strong>" sẽ bị ẩn khỏi trang tìm kiếm và không thể ứng tuyển.
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Lý do khóa <span class="text-danger">*</span></label>
+                            <textarea name="reason" class="form-control" rows="3" placeholder="Nhập lý do cụ thể..." required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-danger">Xác nhận khóa</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}

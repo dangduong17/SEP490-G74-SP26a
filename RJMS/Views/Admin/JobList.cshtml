@@ -1,0 +1,132 @@
+@model RJMS.vn.edu.fpt.Models.DTOs.AdminJobListViewModel
+@using RJMS.vn.edu.fpt.Models.DTOs
+@{
+    ViewData["Title"] = "Quản lý tin tuyển dụng";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="sub-toolbar">
+    <h2 class="page-title">Tin tuyển dụng</h2>
+    <div class="d-flex gap-2">
+        <a asp-controller="Admin" asp-action="JobList" asp-route-bannedFilter="banned" class="btn btn-sm btn-outline-danger">Đang bị khóa</a>
+        <a asp-controller="Admin" asp-action="JobList" asp-route-bannedFilter="all" class="btn btn-sm btn-outline-secondary">Tất cả</a>
+    </div>
+</div>
+
+<!-- Filter bar -->
+<div class="filter-bar mb-4">
+    <form method="get" asp-action="JobList" asp-controller="Admin" class="row g-2 align-items-end">
+        <div class="col-md-4">
+            <input type="text" name="keyword" value="@Model.Keyword" class="form-control" placeholder="Tìm theo tên job, công ty..." />
+        </div>
+        <div class="col-md-3">
+            <select name="companyId" class="form-select">
+                <option value="">-- Tất cả công ty --</option>
+                @foreach (var c in Model.Companies)
+                {
+                    <option value="@c.Value" selected="@(c.Selected)">@c.Text</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="status" class="form-select">
+                <option value="ALL" selected="@(Model.Status == "ALL")">Tất cả trạng thái</option>
+                <option value="Active" selected="@(Model.Status == "Active")">Active</option>
+                <option value="Expired" selected="@(Model.Status == "Expired")">Hết hạn</option>
+                <option value="Draft" selected="@(Model.Status == "Draft")">Nháp</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="bannedFilter" class="form-select">
+                <option value="all" selected="@(Model.BannedFilter == "all")">Tất cả</option>
+                <option value="active" selected="@(Model.BannedFilter == "active")">Không bị khóa</option>
+                <option value="banned" selected="@(Model.BannedFilter == "banned")">Đang bị khóa</option>
+            </select>
+        </div>
+        <div class="col-md-1">
+            <button type="submit" class="btn btn-primary w-100">Lọc</button>
+        </div>
+    </form>
+</div>
+
+<!-- Table -->
+<div class="table-card">
+    <div class="table-header">
+        <span>@Model.TotalItems tin tuyển dụng</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Tiêu đề</th>
+                    <th>Công ty</th>
+                    <th>Trạng thái</th>
+                    <th>Khóa</th>
+                    <th>Đơn ứng tuyển</th>
+                    <th>Ngày tạo</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var job in Model.Jobs)
+                {
+                    <tr>
+                        <td><span class="text-muted">#@job.Id</span></td>
+                        <td>
+                            <strong>@job.Title</strong>
+                            @if (job.ExpiryDate.HasValue && job.ExpiryDate < DateTime.Now)
+                            {
+                                <span class="badge bg-secondary ms-1">Hết hạn</span>
+                            }
+                        </td>
+                        <td>@job.CompanyName</td>
+                        <td>
+                            <span class="badge @(job.Status == "Active" ? "bg-success" : "bg-secondary")">@job.Status</span>
+                        </td>
+                        <td>
+                            @if (job.IsBanned)
+                            {
+                                <span class="badge bg-danger">Đã khóa</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-light text-dark">Bình thường</span>
+                            }
+                        </td>
+                        <td>@job.ApplicationCount</td>
+                        <td>@(job.CreatedAt?.ToString("dd/MM/yyyy") ?? "—")</td>
+                        <td>
+                            <a asp-controller="Admin" asp-action="JobDetail" asp-route-id="@job.Id"
+                               class="btn btn-sm btn-outline-primary">Chi tiết</a>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Jobs.Any())
+                {
+                    <tr><td colspan="8" class="text-center text-muted py-4">Không có dữ liệu.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    @if (Model.TotalPages > 1)
+    {
+        <div class="d-flex justify-content-center p-3">
+            <nav>
+                <ul class="pagination pagination-sm mb-0">
+                    @for (int i = 1; i <= Model.TotalPages; i++)
+                    {
+                        <li class="page-item @(i == Model.Page ? "active" : "")">
+                            <a class="page-link" asp-action="JobList" asp-controller="Admin"
+                               asp-route-keyword="@Model.Keyword" asp-route-status="@Model.Status"
+                               asp-route-companyId="@Model.CompanyId" asp-route-bannedFilter="@Model.BannedFilter"
+                               asp-route-page="@i">@i</a>
+                        </li>
+                    }
+                </ul>
+            </nav>
+        </div>
+    }
+</div>
