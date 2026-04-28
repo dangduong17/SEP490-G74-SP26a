@@ -15,6 +15,59 @@ namespace RJMS.Vn.Edu.Fpt.Service
             _context = context;
         }
 
+        public async Task<CompanyListViewModel> GetCompanyListAsync(string? keyword, string? industry, int page, int pageSize)
+        {
+            if (page < 1) page = 1;
+            if (pageSize < 1) pageSize = 12;
+
+            var query = _context.Companies
+                .AsNoTracking()
+                .Include(c => c.CompanyLocations)
+                .ThenInclude(cl => cl.Location)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+                query = query.Where(c => c.Name.Contains(keyword) || (c.Industry != null && c.Industry.Contains(keyword)));
+
+            if (!string.IsNullOrWhiteSpace(industry))
+                query = query.Where(c => c.Industry != null && c.Industry.Contains(industry));
+
+            var total = await query.CountAsync();
+
+            var companies = await query
+                .OrderByDescending(c => c.Jobs.Count(j => j.Status == "Active"))
+                .ThenBy(c => c.Name)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(c => new CompanyListItemViewModel
+                {
+                    Id = c.Id,
+                    Name = c.Name,
+                    Logo = c.Logo,
+                    CoverImage = c.CoverImage,
+                    Industry = c.Industry,
+                    CompanySize = c.CompanySize,
+                    CityName = c.CompanyLocations
+                        .Where(cl => cl.Location != null)
+                        .OrderByDescending(cl => cl.IsPrimary)
+                        .Select(cl => cl.Location!.CityName)
+                        .FirstOrDefault(),
+                    ActiveJobCount = c.Jobs.Count(j => j.Status == "Active"),
+                    FollowerCount = _context.CompanyFollowers.Count(f => f.CompanyId == c.Id)
+                })
+                .ToListAsync();
+
+            return new CompanyListViewModel
+            {
+                Keyword = keyword,
+                Industry = industry,
+                Page = page,
+                PageSize = pageSize,
+                TotalItems = total,
+                Companies = companies
+            };
+        }
+
         public async Task<CompanyDetailsViewModel?> GetCompanyDetailsAsync(int id, int? currentUserId = null)
         {
             var company = await _context.Companies

@@ -209,5 +209,38 @@ namespace RJMS.Vn.Edu.Fpt.Repository
                 .OrderByDescending(s => s.EndDate)
                 .FirstOrDefaultAsync();
         }
+
+        public async Task CancelPreviousActiveSubscriptionsAsync(int userId, int? companyId, int newSubscriptionId)
+        {
+            var now = DateTime.UtcNow;
+
+            // Tìm tất cả subscription đang Active của user/công ty (trừ subscription mới)
+            var query = _context.Subscriptions
+                .Where(s => s.Id != newSubscriptionId
+                    && (s.Status == "Active" || s.Status == "ACTIVE")
+                    && s.EndDate >= now);
+
+            if (companyId.HasValue)
+            {
+                query = query.Where(s => s.CompanyId == companyId.Value || s.UserId == userId);
+            }
+            else
+            {
+                query = query.Where(s => s.UserId == userId);
+            }
+
+            var oldSubs = await query.ToListAsync();
+            foreach (var sub in oldSubs)
+            {
+                sub.Status = "Expired";
+                sub.CancelledAt = now;
+                sub.AutoRenew = false;
+                sub.EndDate = now;  // Kết thúc ngay khi upgrade
+                sub.UpdatedAt = now;
+            }
+
+            if (oldSubs.Any())
+                await _context.SaveChangesAsync();
+        }
     }
 }

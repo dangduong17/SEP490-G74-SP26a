@@ -75,6 +75,7 @@ public partial class FindingJobsDbContext : DbContext
     public virtual DbSet<CompanyLocation> CompanyLocations { get; set; }
     public virtual DbSet<RecruiterLocation> RecruiterLocations { get; set; }
     public virtual DbSet<JobRecruiter> JobRecruiters { get; set; }
+    public virtual DbSet<WebSlider> WebSliders { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 {

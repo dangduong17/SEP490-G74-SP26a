@@ -359,6 +359,9 @@ img {
   text-align: center;
   transition: var(--transition);
   height: 100%;
+  display: block;
+  text-decoration: none;
+  color: inherit;
 }
 
 .company-card:hover {

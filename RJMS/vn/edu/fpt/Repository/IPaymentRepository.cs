@@ -16,5 +16,7 @@ namespace RJMS.Vn.Edu.Fpt.Repository
         Task<Subscription?> GetSubscriptionByIdAsync(int subscriptionId);
         Task<Subscription?> GetActiveSubscriptionByUserIdAsync(int userId);
         Task<User?> GetUserByIdAsync(int userId);
+        /// <summary>Hủy (Expired) tất cả subscription Active cũ (trừ subscriptionId vừa tạo mới).</summary>
+        Task CancelPreviousActiveSubscriptionsAsync(int userId, int? companyId, int newSubscriptionId);
     }
 }

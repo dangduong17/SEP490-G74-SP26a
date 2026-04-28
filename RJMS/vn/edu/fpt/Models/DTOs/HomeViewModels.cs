@@ -12,6 +12,14 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
 
         public List<HomeJobCardDTO> LatestJobs { get; set; } = new();
         public List<HomeCompanyCardDTO> TopCompanies { get; set; } = new();
+        public List<WebSliderDto> Sliders { get; set; } = new();
+
+        // Filters and featured data for home page
+        public List<JobFilterCategoryDTO> Categories { get; set; } = new();
+        public List<JobFilterCategoryDTO> CategoryGroups { get; set; } = new();
+        public List<JobFilterLocationDTO> Locations { get; set; } = new();
+        public List<JobFilterCategoryDTO> FeaturedCategories { get; set; } = new();
+        public List<string> SuggestedKeywords { get; set; } = new();
     }
 
     public class HomeJobCardDTO

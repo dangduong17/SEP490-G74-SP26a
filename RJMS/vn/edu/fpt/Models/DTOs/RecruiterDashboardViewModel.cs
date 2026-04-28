@@ -26,6 +26,11 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
         public int CvSearchesUsed { get; set; }
         public int CvSearchesTotal { get; set; }
 
+        // Cancel subscription support
+        public int? ActiveSubscriptionId { get; set; }
+        public bool CanCancel { get; set; }
+        public string? CurrentPeriodEnd { get; set; }   // ngày cuối period tháng hiện tại (dd/MM/yyyy)
+
         // ---- Recent Applications ----
         public List<RecentApplicationItem> RecentApplications { get; set; } = new();
 

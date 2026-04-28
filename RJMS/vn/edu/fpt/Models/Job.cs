@@ -24,6 +24,11 @@ public partial class Job
     public int? ApplicationCount { get; set; }
     public DateTime? CreatedAt { get; set; }
 
+    // Admin ban
+    public bool IsBanned { get; set; } = false;
+    public DateTime? BannedAt { get; set; }
+    public string? BanReason { get; set; }
+
     public virtual ICollection<Application> Applications { get; set; } = new List<Application>();
     public virtual Company Company { get; set; } = null!;
     public virtual JobCategory? JobCategory { get; set; }
