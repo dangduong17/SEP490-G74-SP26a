@@ -193,11 +193,13 @@
                     <div id="salaryFields" style="display: @(!Model.MinSalary.HasValue && !Model.MaxSalary.HasValue ? "none" : "block")">
                         <div class="mb-2">
                             <label asp-for="MinSalary" class="form-label">Từ (VNĐ)</label>
-                            <input asp-for="MinSalary" type="number" class="form-control salary-input" placeholder="10,000,000" />
+                            <input asp-for="MinSalary" type="hidden" />
+                            <input type="text" id="MinSalaryDisplay" class="form-control salary-display" inputmode="numeric" autocomplete="off" placeholder="10.000.000" value="@(Model.MinSalary.HasValue ? string.Format(new System.Globalization.CultureInfo("vi-VN"), "{0:N0}", Model.MinSalary.Value) : "")" />
                         </div>
                         <div>
                             <label asp-for="MaxSalary" class="form-label">Đến (VNĐ)</label>
-                            <input asp-for="MaxSalary" type="number" class="form-control salary-input" placeholder="20,000,000" />
+                            <input asp-for="MaxSalary" type="hidden" />
+                            <input type="text" id="MaxSalaryDisplay" class="form-control salary-display" inputmode="numeric" autocomplete="off" placeholder="20.000.000" value="@(Model.MaxSalary.HasValue ? string.Format(new System.Globalization.CultureInfo("vi-VN"), "{0:N0}", Model.MaxSalary.Value) : "")" />
                         </div>
                     </div>
                 </div>
@@ -236,7 +238,7 @@
                     <h3>Thông tin ứng viên</h3>
                     <div class="mb-2">
                         <label asp-for="NumberOfPositions" class="form-label">Số lượng tuyển</label>
-                        <input asp-for="NumberOfPositions" class="form-control" type="number" min="1" placeholder="1" />
+                        <input asp-for="NumberOfPositions" class="form-control" type="number" min="1" max="50" step="1" placeholder="1" />
                     </div>
                 </div>
 
@@ -372,7 +374,91 @@
     document.getElementById('ThoaThuan').addEventListener('change', function() {
         let fields = document.getElementById('salaryFields');
         fields.style.display = this.checked ? 'none' : 'block';
+        document.querySelectorAll('.salary-display').forEach(i => i.disabled = this.checked);
+        if (this.checked) {
+            document.getElementById('MinSalary').value = '';
+            document.getElementById('MaxSalary').value = '';
+            document.getElementById('MinSalaryDisplay').value = '';
+            document.getElementById('MaxSalaryDisplay').value = '';
+        }
     });
+
+    function attachNumericLimit(input, min, max, { allowEmpty = true } = {}) {
+        if (!input) return;
+
+        input.addEventListener('keydown', function(e) {
+            if (['e', 'E', '+', '-', '.'].includes(e.key)) {
+                e.preventDefault();
+            }
+        });
+
+        input.addEventListener('input', function() {
+            let raw = this.value.replace(/[^\d]/g, '');
+            if (allowEmpty && raw === '') {
+                this.value = '';
+                return;
+            }
+
+            let value = parseInt(raw || '0', 10);
+            if (Number.isNaN(value)) {
+                this.value = allowEmpty ? '' : String(min);
+                return;
+            }
+
+            if (value > max) value = max;
+            if (!allowEmpty && value < min) value = min;
+            this.value = String(value);
+        });
+
+        input.addEventListener('blur', function() {
+            if (allowEmpty && this.value === '') return;
+
+            let value = parseInt(this.value || '0', 10);
+            if (Number.isNaN(value) || value < min) value = min;
+            if (value > max) value = max;
+            this.value = String(value);
+        });
+    }
+
+    function attachFormattedSalary(displayInput, hiddenInput, min, max) {
+        if (!displayInput || !hiddenInput) return;
+
+        displayInput.addEventListener('keydown', function(e) {
+            if (['e', 'E', '+', '-', '.'].includes(e.key)) {
+                e.preventDefault();
+            }
+        });
+
+        const syncSalaryValue = () => {
+            let raw = displayInput.value.replace(/[^\d]/g, '');
+            if (raw === '') {
+                displayInput.value = '';
+                hiddenInput.value = '';
+                return;
+            }
+
+            let value = parseInt(raw, 10);
+            if (Number.isNaN(value)) {
+                displayInput.value = '';
+                hiddenInput.value = '';
+                return;
+            }
+
+            if (value < min) value = min;
+            if (value > max) value = max;
+
+            hiddenInput.value = String(value);
+            displayInput.value = value.toLocaleString('vi-VN');
+        };
+
+        displayInput.addEventListener('input', syncSalaryValue);
+        displayInput.addEventListener('blur', syncSalaryValue);
+        syncSalaryValue();
+    }
+
+    attachFormattedSalary(document.getElementById('MinSalaryDisplay'), document.getElementById('MinSalary'), 0, 500000000);
+    attachFormattedSalary(document.getElementById('MaxSalaryDisplay'), document.getElementById('MaxSalary'), 0, 500000000);
+    attachNumericLimit(document.getElementById('NumberOfPositions'), 1, 50, { allowEmpty: true });
 
     // ---------- Skills ----------
     function renderSelectedSkills() {
@@ -511,3 +597,5 @@
     }
     </script>
 }
+
+

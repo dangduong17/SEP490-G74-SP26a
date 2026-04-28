@@ -181,6 +181,13 @@
                    asp-controller="Profile" asp-action="EditCompanyProfile">
                     Thông tin công ty
                 </a>
+                @if (_role == "Recruiter")
+                {
+                    <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "SubscriptionHistory" ? "active" : "")"
+                       asp-controller="Recruiter" asp-action="SubscriptionHistory">
+                        Lịch sử đăng ký
+                    </a>
+                }
             </nav>
         </aside>
 

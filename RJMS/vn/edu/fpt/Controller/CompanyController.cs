@@ -13,6 +13,15 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             _companyService = companyService;
         }
 
+        // GET: /Company/Index
+        [HttpGet]
+        public async Task<IActionResult> Index(string? keyword, string? industry, int page = 1, int pageSize = 12)
+        {
+            var model = await _companyService.GetCompanyListAsync(keyword, industry, page, pageSize);
+            ViewData["Title"] = "Công ty";
+            return View(model);
+        }
+
         // GET: /Company/Detail/{id}
         [HttpGet]
         public async Task<IActionResult> Detail(int id)

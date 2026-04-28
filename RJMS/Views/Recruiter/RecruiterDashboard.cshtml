@@ -800,12 +800,20 @@
                     <a asp-controller="Subscription" asp-action="Index" class="btn-upgrade mb-0" style="margin-top: 0; flex: 1;">
                         Nâng cấp gói <i class="fas fa-arrow-trend-up ms-1"></i>
                     </a>
-                    @if (Model.PlanPrice > 0)
+                    @if (Model.CanCancel)
                     {
-                        <button class="btn btn-outline-light btn-sm" style="font-size: 0.8rem; border-color: rgba(255,255,255,0.3); height: 40px;">
+                        <button id="btnCancelSub" class="btn btn-outline-light btn-sm"
+                                style="font-size: 0.8rem; border-color: rgba(255,255,255,0.3); height: 40px;"
+                                data-sub-id="@Model.ActiveSubscriptionId"
+                                data-period-end="@Model.CurrentPeriodEnd">
                             <i class="fas fa-times-circle"></i> Hủy gói
                         </button>
                     }
+                </div>
+                <div class="text-center mt-2" style="font-size: 0.75rem; opacity: 0.75;">
+                    <a href="/Recruiter/SubscriptionHistory" style="color: rgba(255,255,255,0.9); text-decoration: underline;">
+                        <i class="fas fa-history me-1"></i>Xem lịch sử đăng ký
+                    </a>
                 </div>
             </div>
         </div>
@@ -852,8 +860,83 @@
 </div><!-- /rdash-grid -->
 
 @section Scripts {
+<!-- Bootstrap Modal: Hủy gói -->
+<div class="modal fade" id="cancelSubModal" tabindex="-1" aria-labelledby="cancelSubModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius: 12px; border: none; box-shadow: 0 20px 60px rgba(0,0,0,0.15);">
+      <div class="modal-header" style="background: linear-gradient(135deg, #dc2626, #b91c1c); border-radius: 12px 12px 0 0; color: #fff; border: none; padding: 18px 24px;">
+        <h5 class="modal-title fw-bold" id="cancelSubModalLabel"><i class="fas fa-exclamation-triangle me-2"></i>Xác nhận hủy gói</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" style="padding: 24px;">
+        <div class="alert alert-warning d-flex align-items-start gap-2" style="border-radius: 8px; font-size: 0.875rem;">
+          <i class="fas fa-info-circle mt-1 flex-shrink-0"></i>
+          <div>
+            <strong>Lưu ý quan trọng:</strong><br>
+            <ul class="mb-0 mt-1 ps-3">
+              <li>Gói dịch vụ sẽ tiếp tục hoạt động đến hết ngày <strong id="cancelPeriodEnd">--/--/----</strong>.</li>
+              <li>Sau đó gói sẽ không được tự động gia hạn.</li>
+              <li class="text-danger fw-semibold">Không hoàn trả phí dịch vụ.</li>
+            </ul>
+          </div>
+        </div>
+        <p class="text-muted mb-0" style="font-size: 0.85rem;">Bạn có chắc muốn hủy gói hiện tại không?</p>
+      </div>
+      <div class="modal-footer" style="border-top: 1px solid #f3f4f6; padding: 16px 24px;">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border-radius: 8px;">Không, giữ lại</button>
+        <button type="button" id="btnConfirmCancel" class="btn btn-danger" style="border-radius: 8px; font-weight: 600;">
+          <i class="fas fa-times-circle me-1"></i>Xác nhận hủy
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden form for cancel POST -->
+<form id="cancelSubForm" method="post" asp-controller="Recruiter" asp-action="CancelSubscription" style="display:none;">
+  @Html.AntiForgeryToken()
+  <input type="hidden" name="subscriptionId" id="cancelSubIdInput" value="" />
+</form>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
 <script>
+    // ===== Cancel Subscription Modal =====
+    const btnCancelSub = document.getElementById('btnCancelSub');
+    if (btnCancelSub) {
+        btnCancelSub.addEventListener('click', function() {
+            document.getElementById('cancelPeriodEnd').textContent = this.dataset.periodEnd || '--/--/----';
+            document.getElementById('cancelSubIdInput').value = this.dataset.subId || '';
+            new bootstrap.Modal(document.getElementById('cancelSubModal')).show();
+        });
+    }
+
+    document.getElementById('btnConfirmCancel')?.addEventListener('click', async function() {
+        const btn = this;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Đang xử lý...';
+
+        const form = document.getElementById('cancelSubForm');
+        const formData = new FormData(form);
+
+        try {
+            const resp = await fetch(form.action, { method: 'POST', body: formData });
+            const json = await resp.json();
+            bootstrap.Modal.getInstance(document.getElementById('cancelSubModal')).hide();
+
+            if (json.success) {
+                alert('✅ ' + json.message);
+                location.reload();
+            } else {
+                alert('❌ ' + json.message);
+            }
+        } catch (e) {
+            alert('Có lỗi xảy ra. Vui lòng thử lại.');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-times-circle me-1"></i>Xác nhận hủy';
+        }
+    });
+
     // ===== Applications Overview - Bar Chart =====
     new Chart(document.getElementById('appOverviewChart'), {
         type: 'bar',
@@ -897,10 +980,8 @@
     function renderJobPostsLegend(values) {
         const legend = document.getElementById('jobPostsLegend');
         if (!legend) return;
-
         const total = values.reduce((sum, value) => sum + value, 0);
         legend.innerHTML = '';
-
         jobPostsLabels.forEach((label, index) => {
             const value = values[index] ?? 0;
             const percent = total > 0 ? Math.round((value / total) * 100) : 0;
@@ -922,7 +1003,6 @@
         if (jobPostsChart) jobPostsChart.destroy();
         const values = jobPostsData[filter].data;
         renderJobPostsLegend(values);
-        
         jobPostsChart = new Chart(ctx, {
             type: 'doughnut',
             data: {
@@ -938,26 +1018,18 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                }
+                plugins: { legend: { display: false } }
             }
         });
     }
 
-    // Initialize chart
     initJobPostsChart('all');
 
-    // Handle filter select change
     const jobPostsFilterSelect = document.getElementById('jobPostsFilter');
     if (jobPostsFilterSelect) {
         jobPostsFilterSelect.addEventListener('change', function() {
-            const filter = this.value;
-            initJobPostsChart(filter);
+            initJobPostsChart(this.value);
         });
     }
-
 </script>
 }

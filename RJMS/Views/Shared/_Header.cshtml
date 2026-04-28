@@ -277,6 +277,11 @@
             <div class="collapse navbar-collapse" id="navbarContent">
                 <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
                     <li class="nav-item">
+                        <a class="nav-link fw-semibold" asp-controller="Home" asp-action="Index">
+                            Trang chủ
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link fw-semibold" asp-controller="Job" asp-action="Index">
                             Việc làm
                         </a>
@@ -290,14 +295,23 @@
                         </li>
                     }
                     <li class="nav-item">
-                        <a class="nav-link fw-semibold" asp-controller="Home" asp-action="Index">
+                        <a class="nav-link fw-semibold" asp-controller="Company" asp-action="Index">
                             Công ty
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link fw-semibold" asp-controller="Home" asp-action="Index">
-                            Công cụ
-                        </a>
+                        <div class="nav-link fw-semibold dropdown">
+                            <a class="dropdown-toggle text-decoration-none" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Công cụ
+                            </a>
+                            <ul class="dropdown-menu shadow-sm">
+                                <li>
+                                    <a class="dropdown-item" asp-controller="CV" asp-action="Create">
+                                        <i class="fas fa-file-alt me-2 text-success"></i>Tạo CV
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
                     </li>
                     @if (isAuthenticated)
                     {
