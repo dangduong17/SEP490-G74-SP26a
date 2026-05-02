@@ -7,17 +7,20 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
     public class ManagerController : Controller
     {
         private readonly IAdminService _adminService;
+        private readonly IManagerDashboardService _managerDashboardService;
         private readonly IJobCategoryService _jobCategoryService;
         private readonly IWebSliderService _sliderService;
         private readonly ICloudinaryService _cloudinaryService;
 
         public ManagerController(
             IAdminService adminService,
+            IManagerDashboardService managerDashboardService,
             IJobCategoryService jobCategoryService,
             IWebSliderService sliderService,
             ICloudinaryService cloudinaryService)
         {
             _adminService = adminService;
+            _managerDashboardService = managerDashboardService;
             _jobCategoryService = jobCategoryService;
             _sliderService = sliderService;
             _cloudinaryService = cloudinaryService;
@@ -37,7 +40,7 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
         public async Task<IActionResult> Index()
         {
             if (RequireManagerRole() is { } redirect) return redirect;
-            var model = await _adminService.GetDashboardAsync();
+            var model = await _managerDashboardService.GetDashboardAsync();
             return View("ManagerDashboard", model);
         }
 

@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using RJMS.vn.edu.fpt.Models;
+using RJMS.vn.edu.fpt.Models.DTOs;
+using vn.edu.fpt.Utilities;
 
 namespace RJMS.Vn.Edu.Fpt.Repository
 {
@@ -92,6 +94,203 @@ namespace RJMS.Vn.Edu.Fpt.Repository
                 userRoles.Count(ur => ur.Role.Name == "Candidate"),
                 userRoles.Count(ur => ur.Role.Name == "Recruiter")
             );
+        }
+
+        public async Task<DashboardPeriodData> GetDashboardPeriodDataAsync(int days)
+        {
+            var endDate = DateTimeHelper.NowVietnam.Date;
+            var startDate = endDate.AddDays(-(days - 1));
+            var endExclusive = endDate.AddDays(1);
+
+            var roleEvents = await _db.UserRoles
+                .AsNoTracking()
+                .Where(ur => ur.User.CreatedAt != null && ur.User.CreatedAt >= startDate && ur.User.CreatedAt < endExclusive)
+                .Where(ur => ur.Role.Name == "Candidate" || ur.Role.Name == "Recruiter")
+                .Select(ur => new RoleEvent(ur.Role.Name, ur.User.CreatedAt!.Value))
+                .ToListAsync();
+
+            var jobEvents = await _db.Jobs
+                .AsNoTracking()
+                .Where(j => j.CreatedAt != null && j.CreatedAt >= startDate && j.CreatedAt < endExclusive)
+                .Select(j => j.CreatedAt!.Value)
+                .ToListAsync();
+
+            var lockedJobs = await _db.Jobs
+                .AsNoTracking()
+                .Where(j => j.IsBanned && (j.BannedAt == null || (j.BannedAt >= startDate && j.BannedAt < endExclusive)))
+                .CountAsync();
+
+            var canceledSubs = await _db.Subscriptions
+                .AsNoTracking()
+                .Where(s => s.CancelledAt != null && s.CancelledAt >= startDate && s.CancelledAt < endExclusive)
+                .CountAsync();
+
+            var bannedSubs = await _db.Subscriptions
+                .AsNoTracking()
+                .Where(s => s.IsBanned && (s.BannedAt == null || (s.BannedAt >= startDate && s.BannedAt < endExclusive)))
+                .CountAsync();
+
+            var templateCategoryCounts = await _db.CvTemplates
+                .AsNoTracking()
+                .GroupBy(t => t.Category != null ? t.Category.Name : "Chưa phân loại")
+                .Select(g => new DashboardCategoryCount { Label = g.Key ?? "Chưa phân loại", Value = g.Count() })
+                .OrderByDescending(x => x.Value)
+                .ToListAsync();
+
+            var templateUsageCounts = await _db.Cvs
+                .AsNoTracking()
+                .Where(c => c.TemplateId != null)
+                .Join(_db.CvTemplates.AsNoTracking(), c => c.TemplateId, t => t.Id, (c, t) => new { t.Name })
+                .GroupBy(x => x.Name)
+                .Select(g => new DashboardCategoryCount { Label = g.Key, Value = g.Count() })
+                .OrderByDescending(x => x.Value)
+                .Take(5)
+                .ToListAsync();
+
+            templateCategoryCounts = NormalizeCounts(templateCategoryCounts, "Chưa có dữ liệu");
+            templateUsageCounts = NormalizeCounts(templateUsageCounts, "Chưa có dữ liệu");
+
+            var data = new DashboardPeriodData
+            {
+                LockedJobs = lockedJobs,
+                CanceledSubscriptions = canceledSubs,
+                BannedSubscriptions = bannedSubs,
+                TemplateCategoryCounts = templateCategoryCounts,
+                TemplateUsageCounts = templateUsageCounts
+            };
+
+            if (days <= 7)
+            {
+                BuildDailySeries(data, startDate, days, roleEvents, jobEvents);
+            }
+            else if (days <= 30)
+            {
+                BuildWeeklySeries(data, startDate, 4, roleEvents, jobEvents);
+            }
+            else
+            {
+                BuildMonthlySeries(data, startDate, 3, roleEvents, jobEvents);
+            }
+
+            data.CandidateTotal = data.CandidateCounts.Sum();
+            data.RecruiterTotal = data.RecruiterCounts.Sum();
+            return data;
+        }
+
+        private static List<DashboardCategoryCount> NormalizeCounts(List<DashboardCategoryCount> items, string fallbackLabel)
+        {
+            if (items.Count > 0) return items;
+            return new List<DashboardCategoryCount>
+            {
+                new DashboardCategoryCount { Label = fallbackLabel, Value = 0 }
+            };
+        }
+
+        private static void BuildDailySeries(
+            DashboardPeriodData data,
+            DateTime startDate,
+            int days,
+            List<RoleEvent> roleEvents,
+            List<DateTime> jobEvents)
+        {
+            var labels = new List<string>();
+            var candidateCounts = new List<int>();
+            var recruiterCounts = new List<int>();
+            var jobCounts = new List<int>();
+
+            for (var i = 0; i < days; i++)
+            {
+                var day = startDate.AddDays(i).Date;
+                labels.Add(day.ToString("dd/MM"));
+                candidateCounts.Add(roleEvents.Count(e => e.Role == "Candidate" && e.CreatedAt.Date == day));
+                recruiterCounts.Add(roleEvents.Count(e => e.Role == "Recruiter" && e.CreatedAt.Date == day));
+                jobCounts.Add(jobEvents.Count(d => d.Date == day));
+            }
+
+            data.Labels = labels;
+            data.CandidateCounts = candidateCounts;
+            data.RecruiterCounts = recruiterCounts;
+            data.JobPostingCounts = jobCounts;
+        }
+
+        private static void BuildWeeklySeries(
+            DashboardPeriodData data,
+            DateTime startDate,
+            int weeks,
+            List<RoleEvent> roleEvents,
+            List<DateTime> jobEvents)
+        {
+            var labels = Enumerable.Range(1, weeks).Select(i => $"Tuần {i}").ToList();
+            var candidateCounts = Enumerable.Repeat(0, weeks).ToList();
+            var recruiterCounts = Enumerable.Repeat(0, weeks).ToList();
+            var jobCounts = Enumerable.Repeat(0, weeks).ToList();
+
+            foreach (var ev in roleEvents)
+            {
+                var index = Math.Min(weeks - 1, (ev.CreatedAt.Date - startDate).Days / 7);
+                if (index < 0) continue;
+                if (ev.Role == "Candidate") candidateCounts[index]++;
+                if (ev.Role == "Recruiter") recruiterCounts[index]++;
+            }
+
+            foreach (var jobDate in jobEvents)
+            {
+                var index = Math.Min(weeks - 1, (jobDate.Date - startDate).Days / 7);
+                if (index < 0) continue;
+                jobCounts[index]++;
+            }
+
+            data.Labels = labels;
+            data.CandidateCounts = candidateCounts;
+            data.RecruiterCounts = recruiterCounts;
+            data.JobPostingCounts = jobCounts;
+        }
+
+        private static void BuildMonthlySeries(
+            DashboardPeriodData data,
+            DateTime startDate,
+            int months,
+            List<RoleEvent> roleEvents,
+            List<DateTime> jobEvents)
+        {
+            var labels = Enumerable.Range(0, months)
+                .Select(i => $"Tháng {startDate.AddMonths(i).Month}")
+                .ToList();
+            var candidateCounts = Enumerable.Repeat(0, months).ToList();
+            var recruiterCounts = Enumerable.Repeat(0, months).ToList();
+            var jobCounts = Enumerable.Repeat(0, months).ToList();
+
+            foreach (var ev in roleEvents)
+            {
+                var index = (ev.CreatedAt.Year - startDate.Year) * 12 + ev.CreatedAt.Month - startDate.Month;
+                if (index < 0 || index >= months) continue;
+                if (ev.Role == "Candidate") candidateCounts[index]++;
+                if (ev.Role == "Recruiter") recruiterCounts[index]++;
+            }
+
+            foreach (var jobDate in jobEvents)
+            {
+                var index = (jobDate.Year - startDate.Year) * 12 + jobDate.Month - startDate.Month;
+                if (index < 0 || index >= months) continue;
+                jobCounts[index]++;
+            }
+
+            data.Labels = labels;
+            data.CandidateCounts = candidateCounts;
+            data.RecruiterCounts = recruiterCounts;
+            data.JobPostingCounts = jobCounts;
+        }
+
+        private sealed class RoleEvent
+        {
+            public RoleEvent(string role, DateTime createdAt)
+            {
+                Role = role;
+                CreatedAt = createdAt;
+            }
+
+            public string Role { get; }
+            public DateTime CreatedAt { get; }
         }
 
         public async Task UpdateUserAsync(User user)

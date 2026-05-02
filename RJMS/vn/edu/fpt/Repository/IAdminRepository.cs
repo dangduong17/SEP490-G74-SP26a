@@ -1,4 +1,5 @@
 using RJMS.vn.edu.fpt.Models;
+using RJMS.vn.edu.fpt.Models.DTOs;
 
 namespace RJMS.Vn.Edu.Fpt.Repository
 {
@@ -11,6 +12,7 @@ namespace RJMS.Vn.Edu.Fpt.Repository
         Task<(int total, List<User> items)> GetUsersPagedAsync(
             string? keyword, string? role, string? status, int page, int pageSize);
         Task<(int total, int active, int inactive, int admins, int candidates, int recruiters)> GetDashboardStatsAsync();
+        Task<DashboardPeriodData> GetDashboardPeriodDataAsync(int days);
         Task UpdateUserAsync(User user);
         Task SoftDeleteUserAsync(User user);
 
