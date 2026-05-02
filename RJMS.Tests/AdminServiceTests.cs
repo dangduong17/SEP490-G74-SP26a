@@ -24,6 +24,9 @@ namespace RJMS.Tests
             _adminRepoMock = new Mock<IAdminRepository>();
             _cloudMock = new Mock<ICloudinaryService>();
             _locMock = new Mock<ILocationLookupService>();
+            _adminRepoMock
+                .Setup(r => r.GetDashboardPeriodDataAsync(It.IsAny<int>()))
+                .ReturnsAsync(new DashboardPeriodData());
             _adminService = new AdminService(_adminRepoMock.Object, _cloudMock.Object, _locMock.Object);
         }
 

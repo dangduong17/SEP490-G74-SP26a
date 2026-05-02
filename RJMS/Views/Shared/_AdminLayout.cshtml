@@ -385,13 +385,14 @@
 
         <!-- Sidebar -->
         <aside class="admin-sidebar">
+            @{
+                var role = Context.Request.Cookies["UserRole"];
+                var panelTitle = role == "Manager" ? "Manager Panel" : "Admin Panel";
+            }
             <div class="admin-sidebar-logo">
-                Admin Panel
+                @panelTitle
             </div>
             <nav class="nav flex-column pt-1">
-                @{
-                    var role = Context.Request.Cookies["UserRole"];
-                }
                 <span class="nav-section">Tổng quan</span>
                 <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Index" ? "active" : "")"
                    asp-controller="@(role == "Admin" ? "Admin" : "Manager")" asp-action="Index">
