@@ -1,19 +1,26 @@
-@model AdminDashboardViewModel
+@using System.Text.Json
+@using RJMS.vn.edu.fpt.Models.DTOs
+@model ManagerDashboardViewModel
 @{
-    ViewData["Title"] = "Bảng điều khiển quản trị";
+    ViewData["Title"] = "Bảng điều khiển quản lý";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var defaultPeriod = 7;
+    var defaultData = Model.Periods.ContainsKey(defaultPeriod)
+        ? Model.Periods[defaultPeriod]
+        : new ManagerPeriodData();
+    var periodDataJson = JsonSerializer.Serialize(
+        Model.Periods,
+        new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
 }
 
 @section Styles {
     <style>
-        /* ===== Dashboard Override: make admin-card transparent so charts fill naturally ===== */
         .admin-card {
             background: transparent;
             border: none;
             padding: 0;
         }
 
-        /* ===== Toolbar ===== */
         .dash-toolbar {
             display: flex;
             align-items: center;
@@ -57,19 +64,9 @@
             border-color: #00b14f;
         }
 
-        .dash-select-wrap select {
-            border: 1px solid #e5e7eb;
-            border-radius: 6px;
-            padding: 6px 12px;
-            font-size: 0.82rem;
-            color: #374151;
-            cursor: pointer;
-        }
-
-        /* ===== Stat Cards ===== */
         .stat-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(2, 1fr);
             gap: 16px;
             margin-bottom: 20px;
         }
@@ -111,18 +108,9 @@
             font-weight: 700;
             color: #111827;
             line-height: 1;
-            margin-bottom: 4px;
+            margin-bottom: 0;
         }
 
-        .stat-info .trend {
-            font-size: 0.78rem;
-            font-weight: 600;
-        }
-
-        .trend-up { color: #00b14f; }
-        .trend-down { color: #ef4444; }
-
-        /* ===== Chart cards ===== */
         .chart-row {
             display: grid;
             gap: 16px;
@@ -131,10 +119,6 @@
 
         .chart-row-2 {
             grid-template-columns: 3fr 2fr;
-        }
-
-        .chart-row-2b {
-            grid-template-columns: 2fr 2fr;
         }
 
         .chart-card {
@@ -157,7 +141,6 @@
             margin-bottom: 14px;
         }
 
-        /* ===== Activity Table ===== */
         .activity-table {
             width: 100%;
             border-collapse: collapse;
@@ -194,7 +177,6 @@
         .status-success  { background: #dbeafe; color: #1d4ed8; }
         .status-pending  { background: #fef9c3; color: #92400e; }
 
-        /* ===== Alerts ===== */
         .alert-section .alert-item {
             display: flex;
             align-items: center;
@@ -212,12 +194,11 @@
 
         @@media (max-width: 1100px) {
             .stat-grid { grid-template-columns: repeat(2, 1fr); }
-            .chart-row-2, .chart-row-2b { grid-template-columns: 1fr; }
+            .chart-row-2 { grid-template-columns: 1fr; }
         }
     </style>
 }
 
-<!-- Toolbar -->
 <div class="dash-toolbar">
     <div class="dash-toolbar-title">
         <h2>Manager Dashboard</h2>
@@ -226,28 +207,16 @@
     <button class="dash-period-btn active" onclick="setPeriod(this,7)">7 ngày</button>
     <button class="dash-period-btn" onclick="setPeriod(this,30)">30 ngày</button>
     <button class="dash-period-btn" onclick="setPeriod(this,90)">90 ngày</button>
-    <div class="dash-select-wrap">
-        <select>
-            <option>Theo tháng</option>
-            <option>Theo tuần</option>
-            <option>Theo năm</option>
-        </select>
-    </div>
-    <button class="dash-period-btn">
-        <i class="fas fa-download me-1"></i> Xuất báo cáo
-    </button>
 </div>
 
-<!-- Stat Cards -->
-<div class="stat-grid" style="grid-template-columns: repeat(2, 1fr);">
+<div class="stat-grid">
     <div class="stat-card">
         <div class="stat-icon" style="background:#ecfdf5;">
             <i class="fas fa-chart-line" style="color:#00b14f;"></i>
         </div>
         <div class="stat-info">
             <div class="label">Doanh thu</div>
-            <div class="value">245,000,000 đ</div>
-            <div class="trend trend-up"><i class="fas fa-arrow-up"></i> +12%</div>
+            <div class="value" id="statRevenue">@string.Format("{0:N0} đ", defaultData.TotalRevenue)</div>
         </div>
     </div>
     <div class="stat-card">
@@ -256,13 +225,11 @@
         </div>
         <div class="stat-info">
             <div class="label">Tin tuyển dụng</div>
-            <div class="value">@Model.TotalRecruiters</div>
-            <div class="trend trend-up"><i class="fas fa-arrow-up"></i> +8%</div>
+            <div class="value" id="statJobPosts">@defaultData.TotalJobPosts</div>
         </div>
     </div>
 </div>
 
-<!-- Row 1: Line Chart + Bar Chart -->
 <div class="chart-row chart-row-2">
     <div class="chart-card">
         <div class="chart-card-title">Doanh thu</div>
@@ -271,24 +238,22 @@
     </div>
     <div class="chart-card">
         <div class="chart-card-title">Bài đăng tuyển dụng</div>
-        <div class="chart-card-sub">&nbsp;</div>
+        <div class="chart-card-sub">Theo thời gian</div>
         <canvas id="jobPostChart" height="110"></canvas>
     </div>
 </div>
 
-<!-- Row 2: Donut Chart -->
 <div class="chart-row">
     <div class="chart-card">
         <div class="chart-card-title">Doanh thu theo gói</div>
-        <div class="chart-card-sub">&nbsp;</div>
-        <div style="display:flex;align-items:center;gap:20px;">
+        <div class="chart-card-sub">Tỷ trọng theo kỳ đã chọn</div>
+        <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
             <canvas id="revenueDonut" width="200" height="200" style="max-width:200px;max-height:200px;"></canvas>
             <div id="donutLegend" style="font-size:0.8rem;line-height:2;"></div>
         </div>
     </div>
 </div>
 
-<!-- Recent Activity -->
 <div class="chart-card mb-4">
     <div class="chart-card-title mb-3">Hoạt động gần đây</div>
     <table class="activity-table">
@@ -302,102 +267,114 @@
             </tr>
         </thead>
         <tbody>
-            <tr>
-                <td>10:30 AM</td>
-                <td>Đăng tin</td>
-                <td>FPT Software</td>
-                <td>Senior Frontend Developer</td>
-                <td><span class="status-badge status-active">Hoạt động</span></td>
-            </tr>
-            <tr>
-                <td>09:15 AM</td>
-                <td>Mua gói</td>
-                <td>Vietcombank</td>
-                <td>Gói Enterprise – 3 tháng</td>
-                <td><span class="status-badge status-success">Thành công</span></td>
-            </tr>
-            <tr>
-                <td>08:45 AM</td>
-                <td>Tạo tài khoản</td>
-                <td>Nguyễn Văn A</td>
-                <td>Ứng viên mới đăng ký</td>
-                <td><span class="status-badge status-pending">Đang xử lý</span></td>
-            </tr>
-            <tr>
-                <td>07:50 AM</td>
-                <td>Đăng tin</td>
-                <td>Vingroup</td>
-                <td>Product Manager</td>
-                <td><span class="status-badge status-active">Hoạt động</span></td>
-            </tr>
+            @if (Model.RecentActivities.Count == 0)
+            {
+                <tr>
+                    <td colspan="5">Chưa có dữ liệu.</td>
+                </tr>
+            }
+            else
+            {
+                foreach (var item in Model.RecentActivities)
+                {
+                    <tr>
+                        <td>@item.TimeLabel</td>
+                        <td>@item.Type</td>
+                        <td>@item.Actor</td>
+                        <td>@item.Detail</td>
+                        <td><span class="status-badge @item.StatusClass">@item.StatusLabel</span></td>
+                    </tr>
+                }
+            }
         </tbody>
     </table>
 </div>
 
-<!-- Alerts -->
 <div class="chart-card alert-section mb-2">
     <div class="chart-card-title mb-3">Cảnh báo</div>
-    <div class="alert-item danger">
-        <i class="fas fa-exclamation-triangle"></i>
-        5 tin tuyển dụng bị báo cáo trong 24h
-    </div>
-    <div class="alert-item warning">
-        <i class="fas fa-clock"></i>
-        2 recruiter sắp hết gói
-    </div>
-    <div class="alert-item success">
-        <i class="fas fa-arrow-trend-up"></i>
-        Tăng đột biến đăng ký 30%
-    </div>
+    @if (Model.Alerts.Count == 0)
+    {
+        <div class="alert-item success">
+            <i class="fas fa-check-circle"></i>
+            Không có cảnh báo mới.
+        </div>
+    }
+    else
+    {
+        foreach (var alert in Model.Alerts)
+        {
+            <div class="alert-item @alert.Style">
+                <i class="fas fa-exclamation-triangle"></i>
+                @alert.Message
+            </div>
+        }
+    }
 </div>
 
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
     <script>
-        // ===== Revenue Line Chart =====
-        new Chart(document.getElementById('revenueChart'), {
+        const periodData = @Html.Raw(periodDataJson);
+        const defaultPeriod = @defaultPeriod;
+
+        function getPeriod(days) {
+            return periodData[days] || periodData[String(days)] || {};
+        }
+
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('vi-VN').format(value || 0) + ' đ';
+        }
+
+        function normalizeSeries(labels, values) {
+            if (!labels || labels.length === 0) {
+                return { labels: ['Chưa có dữ liệu'], values: [0] };
+            }
+            return { labels, values };
+        }
+
+        function buildRevenueDatasets(series) {
+            const colors = ['#22c55e', '#3b82f6', '#a855f7', '#f59e0b', '#0ea5e9'];
+            if (!series || series.length === 0) {
+                return [{ label: 'Chưa có dữ liệu', data: [0], borderColor: colors[0], backgroundColor: 'rgba(34,197,94,0.07)', tension: 0.4, borderWidth: 2, pointRadius: 3, fill: false }];
+            }
+            return series.map((item, idx) => ({
+                label: item.label,
+                data: item.values,
+                borderColor: colors[idx % colors.length],
+                backgroundColor: 'rgba(34,197,94,0.07)',
+                tension: 0.4,
+                borderWidth: 2,
+                pointRadius: 3,
+                fill: false
+            }));
+        }
+
+        function toDonutData(items) {
+            if (!items || items.length === 0) {
+                return { labels: ['Chưa có dữ liệu'], values: [0] };
+            }
+            return {
+                labels: items.map(x => x.label),
+                values: items.map(x => x.value)
+            };
+        }
+
+        const initial = getPeriod(defaultPeriod);
+        const initialJobPosts = normalizeSeries(initial.labels, initial.jobPostCounts || []);
+        const initialDonut = toDonutData(initial.revenueByPlan || []);
+
+        const revenueChart = new Chart(document.getElementById('revenueChart'), {
             type: 'line',
             data: {
-                labels: ['T1','T2','T3','T4','T5','T6','T7'],
-                datasets: [
-                    {
-                        label: 'Gói Basic',
-                        data: [62,58,65,70,68,72,75],
-                        borderColor: '#22c55e',
-                        backgroundColor: 'rgba(34,197,94,0.07)',
-                        tension: 0.4,
-                        borderWidth: 2,
-                        pointRadius: 3,
-                        fill: false,
-                    },
-                    {
-                        label: 'Gói Pro',
-                        data: [80,76,85,80,88,84,90],
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59,130,246,0.07)',
-                        tension: 0.4,
-                        borderWidth: 2,
-                        pointRadius: 3,
-                        fill: false,
-                    },
-                    {
-                        label: 'Gói Enterprise',
-                        data: [90,92,88,95,96,100,105],
-                        borderColor: '#a855f7',
-                        backgroundColor: 'rgba(168,85,247,0.07)',
-                        tension: 0.4,
-                        borderWidth: 2,
-                        pointRadius: 3,
-                        fill: false,
-                    }
-                ]
+                labels: initial.labels || initialJobPosts.labels,
+                datasets: buildRevenueDatasets(initial.revenueSeries)
             },
             options: {
                 responsive: true,
                 plugins: { legend: { position: 'top', labels: { font: { size: 11 }, boxWidth: 16 } } },
                 scales: {
                     y: {
-                        ticks: { font: { size: 10 }, callback: v => v + 'M' },
+                        ticks: { font: { size: 10 }, callback: v => new Intl.NumberFormat('vi-VN').format(v) },
                         grid: { color: '#f3f4f6' }
                     },
                     x: { ticks: { font: { size: 10 } }, grid: { display: false } }
@@ -405,17 +382,16 @@
             }
         });
 
-        // ===== Job Post Bar Chart =====
-        new Chart(document.getElementById('jobPostChart'), {
+        const jobPostChart = new Chart(document.getElementById('jobPostChart'), {
             type: 'bar',
             data: {
-                labels: ['T1','T2','T3','T4','T5','T6','T7','CN'],
+                labels: initialJobPosts.labels,
                 datasets: [{
                     label: 'Bài đăng',
-                    data: [130,160,150,185,175,195,210,90],
+                    data: initialJobPosts.values,
                     backgroundColor: '#10b981',
                     borderRadius: 4,
-                    borderSkipped: false,
+                    borderSkipped: false
                 }]
             },
             options: {
@@ -428,47 +404,67 @@
             }
         });
 
-        // ===== Revenue Donut Chart =====
-        const donutData = {
-            labels: ['Pro', 'Enterprise', 'Basic'],
-            datasets: [{
-                data: [40, 31.7, 28.3],
-                backgroundColor: ['#3b82f6', '#a855f7', '#22c55e'],
-                borderWidth: 3,
-                borderColor: '#fff',
-                hoverOffset: 6,
-            }]
-        };
-
-        new Chart(document.getElementById('revenueDonut'), {
+        const donutColors = ['#3b82f6', '#a855f7', '#22c55e', '#f59e0b', '#0ea5e9'];
+        const revenueDonut = new Chart(document.getElementById('revenueDonut'), {
             type: 'doughnut',
-            data: donutData,
+            data: {
+                labels: initialDonut.labels,
+                datasets: [{
+                    data: initialDonut.values,
+                    backgroundColor: donutColors,
+                    borderWidth: 3,
+                    borderColor: '#fff',
+                    hoverOffset: 6
+                }]
+            },
             options: {
                 responsive: false,
                 cutout: '60%',
                 plugins: {
                     legend: { display: false },
-                    tooltip: { callbacks: { label: ctx => ctx.label + ': ' + ctx.parsed + '%' } }
+                    tooltip: { callbacks: { label: ctx => ctx.label + ': ' + formatCurrency(ctx.parsed) } }
                 }
             }
         });
 
-        // Custom legend for donut
-        const colors = ['#3b82f6','#a855f7','#22c55e'];
-        const legend = document.getElementById('donutLegend');
-        ['Pro – 40%','Enterprise – 31.7%','Basic – 28.3%'].forEach((item, i) => {
-            const div = document.createElement('div');
-            div.style.display = 'flex';
-            div.style.alignItems = 'center';
-            div.style.gap = '8px';
-            div.innerHTML = `<span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:${colors[i]};"></span> ${item}`;
-            legend.appendChild(div);
-        });
+        function renderDonutLegend(labels, values) {
+            const legend = document.getElementById('donutLegend');
+            legend.innerHTML = '';
+            labels.forEach((item, i) => {
+                const div = document.createElement('div');
+                div.style.display = 'flex';
+                div.style.alignItems = 'center';
+                div.style.gap = '8px';
+                div.innerHTML = `<span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:${donutColors[i % donutColors.length]};"></span> ${item} - ${formatCurrency(values[i])}`;
+                legend.appendChild(div);
+            });
+        }
 
-        // Period button toggle
+        renderDonutLegend(initialDonut.labels, initialDonut.values);
+
         function setPeriod(btn, days) {
+            const data = getPeriod(days);
             document.querySelectorAll('.dash-period-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
+
+            const jobSeries = normalizeSeries(data.labels, data.jobPostCounts || []);
+
+            revenueChart.data.labels = data.labels || jobSeries.labels;
+            revenueChart.data.datasets = buildRevenueDatasets(data.revenueSeries || []);
+            revenueChart.update();
+
+            jobPostChart.data.labels = jobSeries.labels;
+            jobPostChart.data.datasets[0].data = jobSeries.values;
+            jobPostChart.update();
+
+            const donutData = toDonutData(data.revenueByPlan || []);
+            revenueDonut.data.labels = donutData.labels;
+            revenueDonut.data.datasets[0].data = donutData.values;
+            revenueDonut.update();
+            renderDonutLegend(donutData.labels, donutData.values);
+
+            document.getElementById('statRevenue').textContent = formatCurrency(data.totalRevenue ?? 0);
+            document.getElementById('statJobPosts').textContent = data.totalJobPosts ?? 0;
         }
     </script>
 }

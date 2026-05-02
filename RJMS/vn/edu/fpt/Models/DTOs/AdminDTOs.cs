@@ -48,6 +48,76 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
         public int TotalAdmins { get; set; }
         public int TotalCandidates { get; set; }
         public int TotalRecruiters { get; set; }
+        public Dictionary<int, DashboardPeriodData> Periods { get; set; } = new();
+    }
+
+    public class DashboardPeriodData
+    {
+        public List<string> Labels { get; set; } = new();
+        public List<int> CandidateCounts { get; set; } = new();
+        public List<int> RecruiterCounts { get; set; } = new();
+        public List<int> JobPostingCounts { get; set; } = new();
+        public int CandidateTotal { get; set; }
+        public int RecruiterTotal { get; set; }
+        public int LockedJobs { get; set; }
+        public int CanceledSubscriptions { get; set; }
+        public int BannedSubscriptions { get; set; }
+        public List<DashboardCategoryCount> TemplateCategoryCounts { get; set; } = new();
+        public List<DashboardCategoryCount> TemplateUsageCounts { get; set; } = new();
+    }
+
+    public class DashboardCategoryCount
+    {
+        public string Label { get; set; } = string.Empty;
+        public int Value { get; set; }
+    }
+
+    // ---------- Manager Dashboard ----------
+
+    public class ManagerDashboardViewModel
+    {
+        public Dictionary<int, ManagerPeriodData> Periods { get; set; } = new();
+        public List<ManagerActivityItem> RecentActivities { get; set; } = new();
+        public List<ManagerAlertItem> Alerts { get; set; } = new();
+    }
+
+    public class ManagerPeriodData
+    {
+        public List<string> Labels { get; set; } = new();
+        public List<ManagerSeries> RevenueSeries { get; set; } = new();
+        public List<int> JobPostCounts { get; set; } = new();
+        public decimal TotalRevenue { get; set; }
+        public int TotalJobPosts { get; set; }
+        public List<ManagerCategoryAmount> RevenueByPlan { get; set; } = new();
+    }
+
+    public class ManagerSeries
+    {
+        public string Label { get; set; } = string.Empty;
+        public List<decimal> Values { get; set; } = new();
+    }
+
+    public class ManagerCategoryAmount
+    {
+        public string Label { get; set; } = string.Empty;
+        public decimal Value { get; set; }
+    }
+
+    public class ManagerActivityItem
+    {
+        public DateTime Time { get; set; }
+        public string TimeLabel { get; set; } = string.Empty;
+        public string Type { get; set; } = string.Empty;
+        public string Actor { get; set; } = string.Empty;
+        public string Detail { get; set; } = string.Empty;
+        public string StatusLabel { get; set; } = string.Empty;
+        public string StatusClass { get; set; } = string.Empty;
+    }
+
+    public class ManagerAlertItem
+    {
+        public string Style { get; set; } = string.Empty;
+        public string Message { get; set; } = string.Empty;
     }
 
     // ---------- User List ----------

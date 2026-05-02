@@ -23,6 +23,9 @@ namespace RJMS.Vn.Edu.Fpt.Service
         {
             var (total, active, inactive, admins, candidates, recruiters) =
                 await _repo.GetDashboardStatsAsync();
+            var period7 = await _repo.GetDashboardPeriodDataAsync(7);
+            var period30 = await _repo.GetDashboardPeriodDataAsync(30);
+            var period90 = await _repo.GetDashboardPeriodDataAsync(90);
             return new AdminDashboardViewModel
             {
                 TotalUsers = total,
@@ -30,7 +33,13 @@ namespace RJMS.Vn.Edu.Fpt.Service
                 InactiveUsers = inactive,
                 TotalAdmins = admins,
                 TotalCandidates = candidates,
-                TotalRecruiters = recruiters
+                TotalRecruiters = recruiters,
+                Periods = new Dictionary<int, DashboardPeriodData>
+                {
+                    [7] = period7,
+                    [30] = period30,
+                    [90] = period90
+                }
             };
         }
 

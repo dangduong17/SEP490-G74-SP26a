@@ -129,9 +129,11 @@
         <aside class="recruiter-sidebar">
             @{
                 var _role = Context.Request.Cookies["UserRole"];
+                var roleTitle = _role == "Employee" ? "Employee Panel" : "Recruiter Panel";
             }
             <div class="recruiter-sidebar-logo" style="text-align: center;">
                 <div class="logo-title">Finding Jobs</div>
+                <div>@roleTitle</div>
             </div>
             <nav class="nav flex-column pt-2 pb-4">
                 <span class="nav-section">Tổng quan</span>
