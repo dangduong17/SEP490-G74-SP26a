@@ -231,6 +231,9 @@
                     <a href="/Recruiter/ViewCV/@Model.Cvid" target="_blank" class="btn btn-outline-primary btn-sm rounded-pill">
                         <i class="fas fa-file-pdf me-1"></i> Xem CV
                     </a>
+                    <a href="/Recruiter/DownloadCvPdf/@Model.Cvid" class="btn btn-outline-info btn-sm rounded-pill ms-2" title="Tải xuống PDF">
+                        <i class="fas fa-download me-1"></i> Tải PDF
+                    </a>
                 </div>
                 <div class="detail-body">
                     @if (!string.IsNullOrWhiteSpace(Model.CoverLetter))
