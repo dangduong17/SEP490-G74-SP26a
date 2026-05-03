@@ -66,7 +66,16 @@ namespace RJMS.Vn.Edu.Fpt.Service
                 {
                     if (!(user.EmailConfirmed ?? false))
                     {
-                        return (false, "Email chưa được xác nhận. Vui lòng kiểm tra hộp thư.");
+                        try
+                        {
+                            var confirmToken = GenerateEmailToken(user.Email ?? string.Empty, TimeSpan.FromHours(24));
+                            var confirmLink = BuildConfirmLink(confirmToken);
+                            await _emailService.SendEmailConfirmationAsync(user.Email ?? string.Empty, confirmLink);
+                        }
+                        catch (Exception exMail)
+                        {
+                            Console.WriteLine($"[LOGIN] Gửi email xác nhận thất bại: {exMail.Message}");
+                        }
                     }
 
                     // Manual Cookie Authentication

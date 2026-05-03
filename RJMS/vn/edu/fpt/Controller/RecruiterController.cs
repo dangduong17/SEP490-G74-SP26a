@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using PuppeteerSharp;
 using RJMS.vn.edu.fpt.Models;
 using RJMS.vn.edu.fpt.Models.DTOs;
 using System.Text.Json;
@@ -1650,6 +1651,38 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             }
 
             return File(fileUrl, "application/pdf");
+        }
+
+        // ──────────────────────────────────────────────────────────────────
+        // DOWNLOAD CV PDF (PuppeteerSharp HTML → PDF) – only for BUILDER CVs
+        // ──────────────────────────────────────────────────────────────────
+        [HttpGet]
+        public async Task<IActionResult> DownloadCvPdf(int id)
+        {
+            if (RequireRecruiter() is { } redirect) return redirect;
+
+            var html = await _cvService.RenderCvHtmlAsync(id);
+            if (string.IsNullOrWhiteSpace(html))
+            {
+                TempData["ErrorToast"] = "Không thể xuất PDF: không tìm thấy CV.";
+                return RedirectToAction(nameof(JobPostingList));
+            }
+
+            // Wrap HTML with proper styling for A4 PDF
+            var fullHtml = $"<!DOCTYPE html><html><head><meta charset='utf-8'><style>body{{margin:0;padding:0}}.cv-page{{width:794px;margin:0 auto}}</style></head><body>{html}</body></html>";
+
+            await using var browser = await Puppeteer.LaunchAsync(new LaunchOptions { Headless = true });
+            await using var page = await browser.NewPageAsync();
+            await page.SetContentAsync(fullHtml);
+            var pdfBytes = await page.PdfDataAsync(new PdfOptions
+            {
+                Format = PuppeteerSharp.Media.PaperFormat.A4,
+                PrintBackground = true,
+                MarginOptions = new PuppeteerSharp.Media.MarginOptions { Top = "0", Right = "0", Bottom = "0", Left = "0" }
+            });
+            await browser.CloseAsync();
+
+            return File(pdfBytes, "application/pdf", $"CV_{id}_{DateTime.Now:yyyyMMdd}.pdf");
         }
 
         // ---------- Quản lý Địa chỉ (Company Locations) ----------

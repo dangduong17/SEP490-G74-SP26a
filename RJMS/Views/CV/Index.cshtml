@@ -117,13 +117,13 @@
         }
         
         .cv-card-actions { 
-            display: flex; gap: 8px; flex-wrap: wrap; margin-top: auto; 
+            display: flex; gap: 6px; flex-wrap: nowrap; margin-top: auto; 
         }
 
         .btn-sm-action { 
-            padding: 6px 14px; 
+            padding: 6px 10px; 
             border-radius: 6px; 
-            font-size: 0.85rem; 
+            font-size: 0.82rem; 
             font-weight: 600; 
             text-decoration: none; 
             border: none; 
@@ -132,6 +132,8 @@
             align-items: center; 
             justify-content: center;
             flex: 1;
+            white-space: nowrap;
+            min-width: 0;
             transition: all 0.2s; 
         }
 
@@ -187,7 +189,8 @@
                             }
                         </div>
                         <div class="cv-card-actions">
-                            <a asp-action="Edit" asp-route-id="@cv.Id" class="btn-sm-action btn-primary-action" style="background:#e0f2fe; color:#2563eb; flex: 1; text-align: center; box-sizing:border-box;">Chỉnh sửa / Xem</a>
+                            <a asp-action="Edit" asp-route-id="@cv.Id" class="btn-sm-action btn-primary-action" style="background:#e0f2fe; color:#2563eb; flex:1; text-align:center; box-sizing:border-box;">Chỉnh sửa</a>
+                            <a asp-action="DownloadPdf" asp-route-id="@cv.Id" class="btn-sm-action btn-primary-action" style="flex:1; text-align:center; box-sizing:border-box;" title="Tải xuống PDF">⬇ PDF</a>
                             <form asp-action="Delete" method="post" style="display:flex; flex:1; margin:0; box-sizing:border-box;" onsubmit="return confirm('Xoá CV này?')">
                                 <input type="hidden" name="id" value="@cv.Id" />
                                 <button type="submit" class="btn-sm-action btn-danger-action" style="flex:1; box-sizing:border-box;">Xoá</button>

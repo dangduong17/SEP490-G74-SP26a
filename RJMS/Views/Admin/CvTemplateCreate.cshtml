@@ -3,203 +3,8 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 @section Styles {
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-<style>
-/* Hide global footer to make room for full-screen web app */
-footer, .footer { display: none !important; }
-body { overflow: hidden !important; background: #f0f2f5; }
-
-/* ══ SHELL ═══════════════════════════════════════════════════ */
-.shell{display:flex;flex-direction:column;height:calc(100vh - 74px);background:#f0f2f5}
-
-/* ══ TOP BAR ════════════════════════════════════════════════ */
-.topbar{
-  height:54px;background:#fff;border-bottom:1px solid #e5e7eb;
-  display:flex;align-items:center;padding:0 18px;gap:14px;flex-shrink:0;z-index:300;
-  box-shadow:0 1px 3px rgba(0,0,0,.06);
-}
-.logo{font-size:1rem;font-weight:800;color:#00b14f;white-space:nowrap;letter-spacing:-.02em}
-.sep{width:1px;height:24px;background:#e5e7eb;flex-shrink:0}
-.name-input{
-  flex:1;max-width:300px;border:1.5px solid #e5e7eb;border-radius:8px;
-  padding:7px 12px;font-size:.9rem;font-weight:600;color:#111;outline:none;font-family:inherit;
-}
-.name-input:focus{border-color:#00b14f}
-.topbar-r{display:flex;align-items:center;gap:10px;margin-left:auto}
-.btn-ghost{background:none;border:1.5px solid #e5e7eb;border-radius:8px;padding:7px 16px;font-size:.82rem;font-weight:600;color:#6b7280;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;font-family:inherit}
-.btn-ghost:hover{border-color:#9ca3af;color:#374151}
-.btn-green{background:#00b14f;border:none;border-radius:8px;padding:8px 20px;font-size:.875rem;font-weight:700;color:#fff;cursor:pointer;font-family:inherit}
-.btn-green:hover{background:#009744}
-
-/* ══ BODY ═══════════════════════════════════════════════════ */
-.body{display:flex;flex:1;overflow:hidden}
-
-/* ══ LEFT PALETTE ═══════════════════════════════════════════ */
-.palette{
-  width:220px;flex-shrink:0;background:#fff;border-right:1px solid #e5e7eb;
-  overflow-y:auto;display:flex;flex-direction:column;
-}
-.pal-head{padding:14px 16px 8px;font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8}
-.pal-list{padding:0 10px 10px;display:flex;flex-direction:column;gap:4px}
-.pal-chip{
-  display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;
-  cursor:grab;user-select:none;font-size:.83rem;font-weight:600;color:#374151;
-  background:#f9fafb;border:1.5px solid transparent;transition:.12s;
-}
-.pal-chip:hover{background:#f0fdf4;border-color:#86efac;color:#15803d}
-.pal-chip:active{cursor:grabbing;opacity:.7}
-.pal-chip.singleton-used{opacity:.3;cursor:not-allowed;pointer-events:none}
-.pal-ic{
-  width:30px;height:30px;border-radius:7px;background:#f0fdf4;color:#00b14f;
-  display:flex;align-items:center;justify-content:center;flex-shrink:0;
-  font-size:.7rem;font-weight:800;border:1px solid #bbf7d0;
-}
-.pal-div{border:none;border-top:1px solid #f1f5f9;margin:8px 14px}
-.pal-sect{padding:0 14px 14px;display:flex;flex-direction:column;gap:6px}
-.pal-lbl{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#94a3b8;display:block;margin-bottom:3px}
-.pal-sel{width:100%;border:1.5px solid #e5e7eb;border-radius:7px;padding:7px 9px;font-size:.82rem;font-weight:500;color:#374151;outline:none;font-family:inherit;background:#fff}
-.pal-sel:focus{border-color:#00b14f}
-
-/* ══ CANVAS ═════════════════════════════════════════════════ */
-.canvas{
-  flex:1;min-width:0;overflow:auto;background:#d8dce6;
-  display:flex;flex-direction:column;align-items:center;
-  padding:32px 24px 80px;gap:24px;
-}
-
-/* page container */
-.pgwrap{display:flex;flex-direction:column;gap:6px;align-items:center}
-.pg-bar{
-  width:794px;display:flex;align-items:center;gap:10px;
-  font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#6b7280;
-}
-.pg-rm-btn{margin-left:auto;background:none;border:none;font-size:.75rem;color:#ef4444;cursor:pointer;font-weight:700;opacity:.55;padding:0}
-.pg-rm-btn:hover{opacity:1}
-
-/* A4 full size (Freeform) */
-.a4{
-  width:794px;height:1123px;
-  background:#fff;box-shadow:0 6px 32px rgba(0,0,0,.18);
-  border-radius:2px;position:relative;
-  transition:outline .1s;
-}
-.a4.selected{outline:3px solid #00b14f}
-.a4.dragover{outline:3px dashed #00b14f; background: #f0fdf4}
-
-/* Freeform draggable/resizable elements */
-.cv-sec{
-  position:absolute;
-  overflow:hidden;
-  background:transparent;
-  z-index:10;
-  /* subtle border when idle to see bounds */
-  border: 1px dashed transparent;
-}
-.cv-sec:hover{border: 1px dashed #cbd5e1; z-index:15;}
-.cv-sec:active{z-index:20;}
-
-/* Handle area */
-.sec-bar{
-  position:absolute;top:0;left:0;right:0;
-  display:flex;align-items:center;gap:4px;
-  padding:3px 8px;
-  background:rgba(0,0,0,.08);border-bottom:1px solid #cbd5e1;
-  opacity:0;transition:opacity .15s;z-index:20;
-}
-.cv-sec:hover>.sec-bar{opacity:1}
-
-.drag-handle{
-  cursor:move;color:#111;font-size:.9rem;margin-right:4px;
-  padding:1px 4px;border-radius:3px;user-select:none;
-}
-.drag-handle:hover{background:#fff}
-.sec-rm{
-  margin-left:auto;background:none;border:none;
-  color:#ef4444;font-size:.78rem;font-weight:700;cursor:pointer;
-  opacity:.8;padding:1px 5px;border-radius:4px;
-}
-.sec-rm:hover{background:#fff;opacity:1}
-.sec-lbl{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#475569}
-
-/* Interact.js resize edge handlers */
-.cv-sec { touch-action: none; } /* for interact.js */
-
-/* CV HTML content resets for absolute block */
-.cv-content-wrap {
-  width:100%; height:100%; box-sizing:border-box;
-}
-
-/* ══ CV STYLES ═════════════════════════════════════════════ */
-.cv-header{
-  display:flex;gap:12px;padding:16px;
-  background:#f8fafc;border-bottom:3px solid var(--pc, #2563eb);
-  height:100%; width:100%;
-}
-.cv-avatar{
-  width:80px;height:80px;flex-shrink:0;border-radius:8px;
-  background:#dde3ed;display:flex;align-items:center;justify-content:center;overflow:hidden;
-}
-.cv-avatar svg{width:42px;height:42px;color:#9aa5be}
-.cv-name{font-size:1.4rem;font-weight:800;color:#111827;line-height:1.15;margin-bottom:4px}
-.cv-jobtitle{font-size:.9rem;color:#64748b;margin-bottom:8px}
-.cv-contacts{display:grid;grid-template-columns:1fr 1fr;gap:2px 10px}
-.cv-citem{font-size:.72rem;color:#475569;display:flex;align-items:center;gap:4px}
-.cv-dot{display:inline-block;width:4px;height:4px;border-radius:50%;background:#94a3b8;flex-shrink:0}
-
-/* Standard section */
-.cv-std{padding:16px; height:100%; width:100%; background:transparent;}
-.cv-sec-head{
-  font-size:.82rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;
-  color:#111827;border-bottom:2px solid var(--pc,#2563eb);
-  padding-bottom:6px;margin-bottom:12px;margin-top:20px;
-}
-/* hide spacing caused by absolute wrapper's padding if handled carefully */
-
-[contenteditable="true"]:hover{background:rgba(37,99,235,.04);border-radius:3px;cursor:text}
-[contenteditable="true"]:focus{outline:1.5px dashed #60a5fa;background:rgba(219,234,254,.25);border-radius:3px;box-shadow:none;}
-[contenteditable="true"][data-ph]:empty::before{content:attr(data-ph);color:#c4c9d4;font-style:italic}
-
-.cv-row{display:grid;grid-template-columns:80px 1fr;gap:8px;margin-bottom:8px}
-.cv-date{font-size:.72rem;color:#64748b;line-height:1.6}
-.cv-company{font-size:.82rem;font-weight:700;color:#111827;display:block;margin-bottom:2px}
-.cv-pos{font-size:.75rem;font-style:italic;color:var(--pc,#2563eb);font-weight:600;display:block;margin-bottom:4px}
-.cv-desc{font-size:.72rem;color:#6b7280;line-height:1.6}
-.cv-skills{display:flex;flex-wrap:wrap;gap:6px}
-.cv-tag{background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;border-radius:14px;padding:3px 10px;font-size:.7rem;font-weight:600}
-.cv-simple{font-size:.75rem;color:#475569;line-height:1.6}
-.cv-ph{font-size:.75rem;color:#aab0bc;font-style:italic;line-height:1.6}
-
-/* Add page */
-.add-pg-btn{
-  width:794px;padding:14px;border:2px dashed #b5bbc7;
-  border-radius:8px;background:#fff;color:#9ca3af;
-  font-size:.85rem;font-weight:600;cursor:pointer;font-family:inherit;
-}
-.add-pg-btn:hover{border-color:#00b14f;color:#00b14f}
-
-/* ══ RIGHT PANEL ════════════════════════════════════════════ */
-.right-panel{
-  width:230px;flex-shrink:0;background:#fff;border-left:1px solid #e5e7eb;
-  overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:0;
-}
-.rp-head{font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;margin-bottom:12px}
-.rp-lbl{font-size:.78rem;font-weight:700;color:#374151;display:block;margin-bottom:6px}
-.rp-sel{width:100%;border:1.5px solid #e5e7eb;border-radius:7px;padding:8px 10px;font-size:.83rem;font-weight:500;color:#374151;outline:none;font-family:inherit;background:#fff;margin-bottom:16px}
-.rp-sel:focus{border-color:#00b14f}
-.rp-div{border:none;border-top:1px solid #f1f5f9;margin:12px 0}
-.color-r{display:flex;align-items:center;gap:10px;margin-bottom:16px}
-.color-r input[type=color]{width:42px;height:36px;border:1.5px solid #e5e7eb;border-radius:7px;cursor:pointer;padding:2px}
-.color-h{font-size:.8rem;color:#64748b;font-family:monospace}
-.pg-info{font-size:.72rem;color:#9ca3af;text-align:center;margin-bottom:12px}
-
-/* Smart guides */
-.snap-guide {
-  position: absolute;
-  background: #3b82f6; /* Blue snap guide */
-  z-index: 100;
-  pointer-events: none;
-}
-</style>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Lora:wght@400;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="~/css/cv-editor.css?v=2" />
 }
 
 <form id="tplForm" method="post" action="@Url.Action("CvTemplateCreate","Admin")">
@@ -211,33 +16,44 @@ body { overflow: hidden !important; background: #f0f2f5; }
 <header class="topbar">
   <span class="logo">Finding Job</span>
   <span class="sep"></span>
-  <input class="name-input" id="tplName" type="text" placeholder="Tên template..." required/>
+  <input class="name-input" id="tplName" type="text" placeholder="Nhập tên template..." required style="border:1.5px solid #e5e7eb;background:#fff"/>
   <div class="topbar-r">
     <a href="@Url.Action("CvTemplates","Admin")" class="btn-ghost">← Quay lại</a>
-    <button type="button" class="btn-green" onclick="saveTemplate()">Lưu Template</button>
+    <button type="button" class="btn-green" onclick="saveTemplate()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      Lưu Template
+    </button>
   </div>
 </header>
 
 <div class="body">
 <aside class="palette">
-  <div class="pal-head">Kéo vào A4</div>
-  <div class="pal-list" id="palette">
-    <div class="pal-chip" draggable="true" data-type="header"><span class="pal-ic">H</span>Thông tin chính</div>
-    <div class="pal-chip" draggable="true" data-type="summary"><span class="pal-ic">MT</span>Mục tiêu NN</div>
-    <div class="pal-chip" draggable="true" data-type="experience"><span class="pal-ic">EX</span>Kinh nghiệm LV</div>
-    <div class="pal-chip" draggable="true" data-type="education"><span class="pal-ic">ED</span>Học vấn</div>
-    <div class="pal-chip" draggable="true" data-type="skills"><span class="pal-ic">SK</span>Kỹ năng</div>
-    <div class="pal-chip" draggable="true" data-type="awards"><span class="pal-ic">GI</span>Giải thưởng</div>
-    <div class="pal-chip" draggable="true" data-type="certs"><span class="pal-ic">CC</span>Chứng chỉ</div>
-    <div class="pal-chip" draggable="true" data-type="activities"><span class="pal-ic">HĐ</span>Hoạt động</div>
-    <div class="pal-chip" draggable="true" data-type="refs"><span class="pal-ic">GT</span>Người g.thiệu</div>
-    <div class="pal-chip" draggable="true" data-type="hobbies"><span class="pal-ic">SH</span>Sở thích</div>
+  <div class="pal-head">Các mục CV</div>
+  <div class="pal-section-head">Chưa dùng</div>
+  <div class="pal-list" id="palette-unused">
+    <div class="pal-chip" draggable="true" data-type="header">Thông tin chính</div>
+    <div class="pal-chip" draggable="true" data-type="vcard">Danh thiếp</div>
+    <div class="pal-chip" draggable="true" data-type="contact">Liên hệ</div>
+    <div class="pal-chip" draggable="true" data-type="summary">Mục tiêu NN</div>
+    <div class="pal-chip" draggable="true" data-type="experience">Kinh nghiệm LV</div>
+    <div class="pal-chip" draggable="true" data-type="education">Học vấn</div>
+    <div class="pal-chip" draggable="true" data-type="skills">Kỹ năng</div>
+    <div class="pal-chip" draggable="true" data-type="projects">Dự án</div>
+    <div class="pal-chip" draggable="true" data-type="awards">Giải thưởng</div>
+    <div class="pal-chip" draggable="true" data-type="certs">Chứng chỉ</div>
+    <div class="pal-chip" draggable="true" data-type="activities">Hoạt động</div>
+    <div class="pal-chip" draggable="true" data-type="refs">Người tham chiếu</div>
+    <div class="pal-chip" draggable="true" data-type="hobbies">Sở thích</div>
+    <div class="pal-chip" draggable="true" data-type="extra">Thông tin thêm</div>
   </div>
+  <div class="pal-div"></div>
+  <div class="pal-section-head" id="used-head" style="display:none">Đã dùng</div>
+  <div class="pal-list" id="palette-used"></div>
   <div class="pal-div"></div>
   <div class="pal-sect">
     <label class="pal-lbl">Danh mục template</label>
     <select class="pal-sel" id="tplCat">
-      <option value="">-- Chọn --</option>
+      <option value="">-- Chọn danh mục --</option>
       @if (ViewBag.Categories != null)
       {
           foreach (var c in (List<RJMS.vn.edu.fpt.Models.DTOs.TemplateCategoryViewModel>)ViewBag.Categories)
@@ -252,20 +68,17 @@ body { overflow: hidden !important; background: #f0f2f5; }
 <main class="canvas" id="canvas"></main>
 
 <aside class="right-panel">
-  <div class="rp-head">Cài đặt trang</div>
+  <div class="rp-head">Cài đặt & Giao diện</div>
   <div class="pg-info" id="pgInfo">Trang 1 đang chọn</div>
-
-  <p style="font-size:.7rem;font-weight:700;color:#15803d;background:#dcfce7;padding:8px;border-radius:6px;margin-bottom:16px;">
-    📐 Layout Tự do<br/><span style="font-weight:400;color:#166534">Kéo section đến bất kỳ vị trí và resize theo ý thích.</span>
-  </p>
+  <div class="rp-info-box">📐 Freeform Layout<br/><span style="font-weight:400">Kéo thả từ panel trái vào A4. Kéo cạnh/góc để resize.</span></div>
 
   <label class="rp-lbl">Font chữ</label>
   <select class="rp-sel" id="fontSel" onchange="applyTheme()">
-    <option value="Inter">Inter</option>
+    <option value="Inter">Inter (Modern)</option>
     <option value="Be Vietnam Pro">Be Vietnam Pro</option>
     <option value="Roboto">Roboto</option>
     <option value="Open Sans">Open Sans</option>
-    <option value="Lora">Lora</option>
+    <option value="Lora">Lora (Serif)</option>
   </select>
 
   <label class="rp-lbl">Màu chủ đạo</label>
@@ -275,439 +88,153 @@ body { overflow: hidden !important; background: #f0f2f5; }
   </div>
 
   <div class="rp-div"></div>
-  <p style="font-size:.7rem;color:#64748b;line-height:1.6;">
-    💡 Bạn hãy kéo các mục từ cột trái thả trực tiếp vào vùng không gian A4 giữa.<br/><br/>
-    🖱️ Kéo cạnh/góc để thay đổi kích thước từng section.
-  </p>
+  <p class="rp-hint">💡 Kéo từ panel trái thả vào vùng A4 giữa.<br/><br/>⠿ Kéo thanh đen để di chuyển section.<br/><br/>⧉ Nhân đôi section để tạo nhiều mục cùng loại.</p>
 </aside>
 </div>
-</div><!-- /shell -->
+</div>
 </form>
 
 @section Scripts {
-<script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/interactjs@1.10.27/dist/interact.min.js"></script>
+<script type="module">
+  import { Editor } from 'https://esm.sh/@@tiptap/core@2';
+  import StarterKit from 'https://esm.sh/@@tiptap/starter-kit@2';
+  import Underline from 'https://esm.sh/@@tiptap/extension-underline@2';
+  window.tiptap = { Editor, StarterKit, Underline };
+  document.dispatchEvent(new Event('tiptap-ready'));
+</script>
+<script src="~/js/cv-editor-shared.js"></script>
 <script>
-/* ══ SECTION DEFINITIONS ════════════════════════════════════ */
-const SEC = {
-  header: {
-    label: 'Thông tin chính', singleton: true, defaultW: 750, defaultH: 150,
-    build: () => {
-      const w = div('cv-content-wrap'); 
-      w.innerHTML = `
-      <div class="cv-header">
-        <div class="cv-avatar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></div>
-        <div style="flex:1;min-width:0">
-          <div class="cv-name" contenteditable="true" spellcheck="false" data-ph="Họ và Tên">Nguyễn Văn Dũng</div>
-          <div class="cv-jobtitle" contenteditable="true" spellcheck="false" data-ph="Vị trí ứng tuyển">Business Development Executive</div>
-          <div class="cv-contacts">
-            <span class="cv-citem"><span class="cv-dot"></span><span contenteditable="true" spellcheck="false" data-ph="Ngày sinh">Ngày sinh: 01/01/2000</span></span>
-            <span class="cv-citem"><span class="cv-dot"></span><span contenteditable="true" spellcheck="false" data-ph="Điện thoại">0123 456 789</span></span>
-            <span class="cv-citem"><span class="cv-dot"></span><span contenteditable="true" spellcheck="false" data-ph="Email">email@gmail.com</span></span>
-            <span class="cv-citem"><span class="cv-dot"></span><span contenteditable="true" spellcheck="false" data-ph="Địa chỉ">Quận 1, TP. Hồ Chí Minh</span></span>
-          </div>
-        </div>
-      </div>`;
-      return w;
-    }
-  },
-  summary: {
-    label: 'Mục tiêu NN', defaultW: 350, defaultH: 100,
-    build: () => {
-      const w = div('cv-content-wrap');
-      w.innerHTML = `
-      <div class="cv-std">
-        <div class="cv-sec-head" contenteditable="true" spellcheck="false">MỤC TIÊU NGHỀ NGHIỆP</div>
-        <div contenteditable="true" spellcheck="false" class="cv-simple" data-ph="Mục tiêu nghề nghiệp...">Mục tiêu nghề nghiệp của bạn, định hướng tương lai.</div>
-      </div>`;
-      return w;
-    }
-  },
-  experience: {
-    label: 'Kinh nghiệm LV', defaultW: 350, defaultH: 180,
-    build: () => {
-      const w = div('cv-content-wrap');
-      w.innerHTML = `
-      <div class="cv-std">
-        <div class="cv-sec-head" contenteditable="true" spellcheck="false">KINH NGHIỆM LÀM VIỆC</div>
-        <div class="cv-row">
-          <div class="cv-date" contenteditable="true" spellcheck="false">01/2022 – Hiện tại</div>
-          <div class="cv-main">
-            <span class="cv-company" contenteditable="true" spellcheck="false" data-ph="Tên công ty">Công ty ABC</span>
-            <span class="cv-pos" contenteditable="true" spellcheck="false" data-ph="Vị trí">Senior Developer</span>
-            <div class="cv-desc" contenteditable="true" spellcheck="false" data-ph="Mô tả công việc...">Mô tả công việc và thành tích nổi bật.</div>
-          </div>
-        </div>
-      </div>`;
-      return w;
-    }
-  },
-  education: {
-    label: 'Học vấn', defaultW: 350, defaultH: 140,
-    build: () => {
-      const w = div('cv-content-wrap');
-      w.innerHTML = `
-      <div class="cv-std">
-        <div class="cv-sec-head" contenteditable="true" spellcheck="false">HỌC VẤN</div>
-        <div class="cv-row">
-          <div class="cv-date" contenteditable="true" spellcheck="false">2018 – 2022</div>
-          <div class="cv-main">
-            <span class="cv-company" contenteditable="true" spellcheck="false" data-ph="Tên trường">Đại học Bách Khoa</span>
-            <span class="cv-pos" contenteditable="true" spellcheck="false" data-ph="Ngành học">Kỹ thuật Phần mềm</span>
-            <div class="cv-desc" contenteditable="true" spellcheck="false" data-ph="Thành tích...">GPA: 3.5 / 4.0</div>
-          </div>
-        </div>
-      </div>`;
-      return w;
-    }
-  },
-  skills: {
-    label: 'Kỹ năng', defaultW: 350, defaultH: 120,
-    build: () => {
-      const w = div('cv-content-wrap');
-      w.innerHTML = `
-      <div class="cv-std">
-        <div class="cv-sec-head" contenteditable="true" spellcheck="false">KỸ NĂNG</div>
-        <div class="cv-skills">
-          <span class="cv-tag" contenteditable="true" spellcheck="false">JavaScript</span>
-          <span class="cv-tag" contenteditable="true" spellcheck="false">Làm việc nhóm</span>
-          <span class="cv-tag" contenteditable="true" spellcheck="false">Tiếng Anh</span>
-        </div>
-      </div>`;
-      return w;
-    }
-  },
-  awards: {
-    label: 'Giải thưởng', defaultW: 350, defaultH: 120,
-    build: () => {
-      const w = div('cv-content-wrap');
-      w.innerHTML = `
-      <div class="cv-std">
-        <div class="cv-sec-head" contenteditable="true" spellcheck="false">DANH HIỆU & GIẢI THƯỞNG</div>
-        <div class="cv-row">
-          <div class="cv-date" contenteditable="true" spellcheck="false">2023</div>
-          <div class="cv-main"><span class="cv-company" contenteditable="true" spellcheck="false" data-ph="Tên giải thưởng">Nhân viên xuất sắc năm</span></div>
-        </div>
-      </div>`;
-      return w;
-    }
-  },
-  certs: {
-    label: 'Chứng chỉ', defaultW: 350, defaultH: 120,
-    build: () => {
-      const w = div('cv-content-wrap');
-      w.innerHTML = `
-      <div class="cv-std">
-        <div class="cv-sec-head" contenteditable="true" spellcheck="false">CHỨNG CHỈ</div>
-        <div class="cv-row">
-          <div class="cv-date" contenteditable="true" spellcheck="false">2022</div>
-          <div class="cv-main"><span class="cv-company" contenteditable="true" spellcheck="false" data-ph="Tên chứng chỉ">IELTS 7.0</span></div>
-        </div>
-      </div>`;
-      return w;
-    }
-  },
-  activities: {
-    label: 'Hoạt động', defaultW: 350, defaultH: 140,
-    build: () => {
-      const w = div('cv-content-wrap');
-      w.innerHTML = `
-      <div class="cv-std">
-        <div class="cv-sec-head" contenteditable="true" spellcheck="false">HOẠT ĐỘNG</div>
-        <div class="cv-row">
-          <div class="cv-date" contenteditable="true" spellcheck="false">2021 – 2022</div>
-          <div class="cv-main">
-            <span class="cv-company" contenteditable="true" spellcheck="false" data-ph="Tên tổ chức">CLB Tình nguyện</span>
-            <span class="cv-pos" contenteditable="true" spellcheck="false" data-ph="Vị trí">Thành viên</span>
-          </div>
-        </div>
-      </div>`;
-      return w;
-    }
-  },
-  refs: {
-    label: 'Người giới thiệu', defaultW: 350, defaultH: 120,
-    build: () => {
-      const w = div('cv-content-wrap');
-      w.innerHTML = `
-      <div class="cv-std">
-        <div class="cv-sec-head" contenteditable="true" spellcheck="false">NGƯỜI GIỚI THIỆU</div>
-        <div contenteditable="true" spellcheck="false" class="cv-ph" data-ph="Thông tin liên hệ...">Thông tin người tham chiếu...</div>
-      </div>`;
-      return w;
-    }
-  },
-  hobbies: {
-    label: 'Sở thích', defaultW: 350, defaultH: 100,
-    build: () => {
-      const w = div('cv-content-wrap');
-      w.innerHTML = `
-      <div class="cv-std">
-        <div class="cv-sec-head" contenteditable="true" spellcheck="false">SỞ THÍCH</div>
-        <div contenteditable="true" spellcheck="false" class="cv-simple" data-ph="Sở thích...">Đọc sách, nghe nhạc, thể thao.</div>
-      </div>`;
-      return w;
-    }
-  },
-};
-
-function div(cls){ const d=document.createElement('div'); if(cls) d.className=cls; return d; }
-
-/* ══ STATE ══════════════════════════════════════════════════ */
-let pages = [{ columns:0, sections:[] }];
+let pages = [{ columns: 0, sections: [] }];
 let activePg = 0;
 
-/* ══ INIT ═══════════════════════════════════════════════════ */
-document.addEventListener('DOMContentLoaded', ()=>{ 
-  setupNativeDrag();
+function _cvEditorInit() {
+  setupPaletteDrag();
   renderCanvas();
-  applyTheme(); 
-});
+  applyTheme();
+  initTiptapFloating();
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', _cvEditorInit);
+} else {
+  _cvEditorInit();
+}
 
-/* ══ THEME ══════════════════════════════════════════════════ */
-function applyTheme(){
+function applyTheme() {
   const c = document.getElementById('colorPick').value;
   document.getElementById('colorHex').textContent = c;
-  document.documentElement.style.setProperty('--pc', c);
   const font = document.getElementById('fontSel').value;
-  document.querySelectorAll('.a4').forEach(a=>{
-    a.style.fontFamily = `'${font}',sans-serif`;
-  });
-  document.querySelectorAll('.cv-sec-head').forEach(h=>h.style.borderBottomColor=c);
-  document.querySelectorAll('.cv-header').forEach(h=>h.style.borderBottomColor=c);
-  document.querySelectorAll('.cv-tag').forEach(t=>{ t.style.color=c; t.style.background=c+'15'; t.style.borderColor=c+'40'; });
-  document.querySelectorAll('.cv-pos').forEach(p=>p.style.color=c);
+  applyThemeToCanvas(c, font);
 }
 
-/* ══ PALETTE TO CANVAS ═══════════════════════════════════════ */
-function setupNativeDrag(){
-  document.querySelectorAll('.pal-chip[draggable]').forEach(chip=>{
-    chip.addEventListener('dragstart', e=>{
-      e.dataTransfer.setData('sectype', chip.dataset.type);
-    });
+function refreshPalette() {
+  const usedCounts = {};
+  pages.forEach(p => p.sections.forEach(s => { usedCounts[s.type] = (usedCounts[s.type] || 0) + 1; }));
+  const unusedList = document.getElementById('palette-unused');
+  const usedList = document.getElementById('palette-used');
+  const usedHead = document.getElementById('used-head');
+  if (!unusedList || !usedList) return;
+  const allChips = Array.from(document.querySelectorAll('#palette-unused .pal-chip, #palette-used .pal-chip'));
+  allChips.forEach(chip => {
+    const type = chip.dataset.type;
+    if (usedCounts[type] > 0) usedList.appendChild(chip);
+    else unusedList.appendChild(chip);
   });
+  if (usedHead) usedHead.style.display = usedList.children.length > 0 ? '' : 'none';
 }
-function refreshPalette(){
-  const used = new Set();
-  pages.forEach(p=>p.sections.forEach(s=>{ if(SEC[s.type]?.singleton) used.add(s.type); }));
-  document.querySelectorAll('.pal-chip').forEach(c=>{
-    if(SEC[c.dataset.type]?.singleton && used.has(c.dataset.type))
-      c.classList.add('singleton-used');
-    else c.classList.remove('singleton-used');
+
+function setupPaletteDrag() {
+  document.querySelectorAll('#palette-unused .pal-chip, #palette-used .pal-chip').forEach(chip => {
+    chip.addEventListener('dragstart', e => e.dataTransfer.setData('sectype', chip.dataset.type));
   });
 }
 
-function bindDroppable(){
-  document.querySelectorAll('.a4').forEach((a4, pi)=>{
+function bindDroppable() {
+  document.querySelectorAll('.a4').forEach((a4, pi) => {
     a4.ondragover = e => { e.preventDefault(); a4.classList.add('dragover'); };
-    a4.ondragleave = e => { a4.classList.remove('dragover'); };
+    a4.ondragleave = () => a4.classList.remove('dragover');
     a4.ondrop = e => {
-      e.preventDefault();
-      a4.classList.remove('dragover');
+      e.preventDefault(); a4.classList.remove('dragover');
       const type = e.dataTransfer.getData('sectype');
-      if(!type) return;
+      if (!type) return;
       const rect = a4.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      addSec(pi, type, x, y);
+      addSecAt(pi, type, e.clientX - rect.left, e.clientY - rect.top);
     };
   });
 }
 
-/* ══ INTERACT.JS DRAG & RESIZE ══════════════════════════════ */
-const A4_W = 794;
-const A4_H = 1123;
-const SNAP_DIST = 8;
-const GRID_SIZE = 10;
-
-function snapCoords(rawX, rawY, w, h, a4) {
-  let targetsX = [0, A4_W/2, A4_W];
-  let targetsY = [0, A4_H/2, A4_H];
-  
-  a4.querySelectorAll('.cv-sec:not(.is-dragging)').forEach(el => {
-    let elL = parseFloat(el.style.left)||0;
-    let elT = parseFloat(el.style.top)||0;
-    let elW = parseFloat(el.style.width)||el.offsetWidth;
-    let elH = parseFloat(el.style.height)||el.offsetHeight;
-    targetsX.push(elL, elL+elW/2, elL+elW);
-    targetsY.push(elT, elT+elH/2, elT+elH);
-  });
-
-  let myX = [rawX, rawX+w/2, rawX+w];
-  let bestX = rawX, guideX = -1, minDiffX = SNAP_DIST;
-  for(let mx of myX) {
-    for(let tx of targetsX) {
-      if(Math.abs(mx - tx) < minDiffX) {
-        minDiffX = Math.abs(mx - tx);
-        bestX = rawX + (tx - mx);
-        guideX = tx;
-      }
-    }
-  }
-
-  let myY = [rawY, rawY+h/2, rawY+h];
-  let bestY = rawY, guideY = -1, minDiffY = SNAP_DIST;
-  for(let my of myY) {
-    for(let ty of targetsY) {
-      if(Math.abs(my - ty) < minDiffY) {
-        minDiffY = Math.abs(my - ty);
-        bestY = rawY + (ty - my);
-        guideY = ty;
-      }
-    }
-  }
-
-  if (guideX === -1) bestX = Math.round(rawX / GRID_SIZE) * GRID_SIZE;
-  if (guideY === -1) bestY = Math.round(rawY / GRID_SIZE) * GRID_SIZE;
-
-  // Strict A4 bounds constraint
-  if (bestX < 0) bestX = 0;
-  if (bestY < 0) bestY = 0;
-  if (bestX + w > A4_W) bestX = A4_W - w;
-  if (bestY + h > A4_H) bestY = A4_H - h;
-
-  return { left: bestX, top: bestY, guideX, guideY };
-}
-
-function drawGuides(a4, gx, gy) {
-  a4.querySelectorAll('.snap-guide').forEach(g=>g.remove());
-  if (gx !== -1) {
-    let g = document.createElement('div'); g.className = 'snap-guide';
-    g.style.left = gx + 'px'; g.style.top = '0'; g.style.bottom = '0'; g.style.width = '1px';
-    a4.appendChild(g);
-  }
-  if (gy !== -1) {
-    let g = document.createElement('div'); g.className = 'snap-guide';
-    g.style.top = gy + 'px'; g.style.left = '0'; g.style.right = '0'; g.style.height = '1px';
-    a4.appendChild(g);
-  }
-}
-
-interact('.resize-drag')
-  .draggable({
-    allowFrom: '.drag-handle',
-    listeners: {
-      start(event){ event.target.classList.add('is-dragging'); },
-      move(event) {
-        let target = event.target;
-        let a4 = target.closest('.a4');
-        let rawX = (parseFloat(target.dataset.rawx) ?? parseFloat(target.style.left) ?? 0) + event.dx;
-        let rawY = (parseFloat(target.dataset.rawy) ?? parseFloat(target.style.top) ?? 0) + event.dy;
-        target.dataset.rawx = rawX;
-        target.dataset.rawy = rawY;
-
-        let w = parseFloat(target.style.width) || target.offsetWidth;
-        let h = parseFloat(target.style.height) || target.offsetHeight;
-
-        let snap = snapCoords(rawX, rawY, w, h, a4);
-        target.style.left = snap.left + 'px';
-        target.style.top = snap.top + 'px';
-        drawGuides(a4, snap.guideX, snap.guideY);
-      },
-      end(event) {
-        event.target.classList.remove('is-dragging');
-        delete event.target.dataset.rawx;
-        delete event.target.dataset.rawy;
-        document.querySelectorAll('.snap-guide').forEach(g=>g.remove());
-        syncPageDom(event.target.dataset.page); 
-      }
-    }
-  })
-  .resizable({
-    edges: { left: true, right: true, bottom: true, top: true },
-    modifiers: [
-      interact.modifiers.restrictEdges({ outer: 'parent' }),
-      interact.modifiers.restrictSize({ min: { width: 150, height: 60 } }),
-      interact.modifiers.snapSize({ targets: [ interact.createSnapGrid({ x: GRID_SIZE, y: GRID_SIZE }) ] }),
-      interact.modifiers.snapEdges({ targets: [ interact.createSnapGrid({ x: GRID_SIZE, y: GRID_SIZE }) ] })
-    ],
-    listeners: {
-      move: function (event) {
-        let x = (parseFloat(event.target.style.left) || 0) + event.deltaRect.left;
-        let y = (parseFloat(event.target.style.top) || 0) + event.deltaRect.top;
-
-        Object.assign(event.target.style, {
-          width: event.rect.width + 'px',
-          height: event.rect.height + 'px',
-          left: x + 'px',
-          top: y + 'px'
-        });
-      },
-      end(event) { syncPageDom(event.target.dataset.page); }
-    }
-  });
-
-function syncPageDom(pi){
+function syncPageDom(pi) {
   const a4 = document.querySelector(`.a4[data-page="${pi}"]`);
-  if(!a4) return;
-  const newSecs = [];
-  a4.querySelectorAll('.cv-sec').forEach(el=>{
-    newSecs.push({
-      type: el.dataset.type,
-      column: 1, // redundant but kept for model matching
-      order: 1, // redundant
-      top: parseFloat(el.style.top)||0,
-      left: parseFloat(el.style.left)||0,
-      width: parseFloat(el.style.width)||300,
-      height: parseFloat(el.style.height)||100
-    });
-  });
-  pages[pi].sections = newSecs;
+  if (!a4) return;
+  pages[pi].sections = Array.from(a4.querySelectorAll('.cv-sec')).map(el => ({
+    type: el.dataset.type,
+    top: parseFloat(el.style.top) || 0,
+    left: parseFloat(el.style.left) || 0,
+    width: parseFloat(el.style.width) || 300,
+    height: parseFloat(el.style.height) || 100
+  }));
   refreshPalette();
 }
 
-function removeSec(el){
+function removeSec(el) {
   const pi = el.dataset.page;
   el.remove();
   syncPageDom(pi);
 }
 
-/* ══ CANVAS RENDER ══════════════════════════════════════════ */
-function addSec(pi, type, x, y){
-  const allSecs = pages.flatMap(p=>p.sections);
-  if(SEC[type]?.singleton && allSecs.some(s=>s.type===type)) return;
-  const tpl = SEC[type];
-  pages[pi].sections.push({
-    type, column: 1, order: 1,
-    left: x, top: y, width: tpl.defaultW, height: tpl.defaultH
-  });
-  renderCanvas();
+function dupSec(el) {
+  const pi = parseInt(el.dataset.page);
+  const type = el.dataset.type;
+  const top = (parseFloat(el.style.top) || 0) + 20;
+  const left = (parseFloat(el.style.left) || 0) + 20;
+  const width = parseFloat(el.style.width) || SEC[type]?.defaultW || 350;
+  const height = parseFloat(el.style.height) || SEC[type]?.defaultH || 150;
+  const sec = { type, top, left, width, height };
+  pages[pi].sections.push(sec);
+  const newEl = buildSectionEl(sec, pi, 'admin');
+  if (!newEl) return;
+  document.querySelector(`.a4[data-page="${pi}"]`).appendChild(newEl);
+  applyTheme();
 }
 
-function renderCanvas(){
+function addSecAt(pi, type, x, y) {
+  if (SEC[type]?.singleton && pages.flatMap(p => p.sections).some(s => s.type === type)) return;
+  const def = SEC[type];
+  if (!def) return;
+  const sec = { type, top: Math.max(0, y - 20), left: Math.max(0, x - def.defaultW / 2), width: def.defaultW, height: def.defaultH };
+  pages[pi].sections.push(sec);
+  const el = buildSectionEl(sec, pi, 'admin');
+  if (!el) return;
+  const a4 = document.querySelector(`.a4[data-page="${pi}"]`);
+  a4.appendChild(el);
+  applyTheme();
+  refreshPalette();
+}
+
+initInteract(
+  (target) => syncPageDom(target.dataset.page),
+  (target) => syncPageDom(target.dataset.page)
+);
+
+function renderCanvas() {
   const cvs = document.getElementById('canvas');
   cvs.innerHTML = '';
-  const color = document.getElementById('colorPick').value;
-  const font  = document.getElementById('fontSel').value;
+  const font = document.getElementById('fontSel').value;
 
   pages.forEach((pg, pi) => {
-    const bar = document.createElement('div'); bar.className = 'pg-bar';
-    bar.innerHTML = `<span>Trang ${pi+1}</span>` +
-      (pages.length > 1 ? `<button type="button" class="pg-rm-btn" onclick="removePg(${pi})">Xoá trang</button>` : '');
+    const bar = div('pg-bar');
+    bar.innerHTML = `<span>Trang ${pi + 1}</span>` +
+      (pages.length > 1 ? `<button type="button" class="pg-rm-btn" onclick="removePg(${pi})">✕ Xoá trang</button>` : '');
 
-    const a4 = document.createElement('div');
-    a4.className = 'a4';
+    const a4 = div('a4');
+    a4.className = 'a4 selected';
     a4.dataset.page = pi;
-    a4.style.fontFamily = `'${font}',sans-serif`;
-    a4.addEventListener('click', ()=>selectPg(pi));
+    a4.style.fontFamily = `'${font}', sans-serif`;
+    a4.addEventListener('click', () => selectPg(pi));
 
-    pg.sections.forEach((s, idx) => {
-      const def = SEC[s.type];
-      if(!def) return;
-      
-      const el = document.createElement('div');
-      el.className = 'cv-sec resize-drag';
-      el.dataset.type = s.type;
-      el.dataset.page = pi;
-      el.style.top = (s.top || 10) + 'px';
-      el.style.left = (s.left || 10) + 'px';
-      if(s.width) el.style.width = s.width + 'px';
-      if(s.height) el.style.height = s.height + 'px';
-      
-      const barhtml = `<div class="sec-bar"><span class="drag-handle" title="Kéo để di chuyển">🕂 Kéo vị trí</span><span class="sec-lbl">${def.label}</span><button type="button" class="sec-rm" onclick="removeSec(this.parentElement.parentElement)">✕</button></div>`;
-      el.innerHTML = barhtml;
-      el.appendChild(def.build());
-
-      a4.appendChild(el);
+    pg.sections.forEach(s => {
+      const el = buildSectionEl(s, pi, 'admin');
+      if (el) a4.appendChild(el);
     });
 
     const wrap = div('pgwrap');
@@ -715,7 +242,7 @@ function renderCanvas(){
     cvs.appendChild(wrap);
   });
 
-  if(pages.length < 2){
+  if (pages.length < 2) {
     const ab = document.createElement('button');
     ab.type = 'button'; ab.className = 'add-pg-btn';
     ab.textContent = '+ Thêm trang 2'; ab.onclick = addPg;
@@ -728,35 +255,26 @@ function renderCanvas(){
   applyTheme();
 }
 
-function addPg(){
-  if(pages.length>=2) return;
-  pages.push({columns:0, sections:[]});
-  activePg=pages.length-1; renderCanvas();
-}
-function removePg(pi){
-  if(pages.length<=1) return;
-  pages.splice(pi,1); activePg=Math.min(activePg,pages.length-1); renderCanvas();
-}
-function selectPg(pi){
-  activePg=pi;
-  document.querySelectorAll('.a4').forEach((el,i)=>el.classList.toggle('selected',i===pi));
-  document.getElementById('pgInfo').textContent=`Trang ${pi+1} đang chọn`;
+function addPg() { if (pages.length >= 2) return; pages.push({ columns: 0, sections: [] }); activePg = pages.length - 1; renderCanvas(); }
+function removePg(pi) { if (pages.length <= 1) return; pages.splice(pi, 1); activePg = Math.min(activePg, pages.length - 1); renderCanvas(); }
+function selectPg(pi) {
+  activePg = pi;
+  document.querySelectorAll('.a4').forEach((el, i) => el.classList.toggle('selected', i === pi));
+  document.getElementById('pgInfo').textContent = `Trang ${pi + 1} đang chọn`;
 }
 
-/* ══ SAVE ═══════════════════════════════════════════════════ */
-function saveTemplate(){
-  const name=document.getElementById('tplName').value.trim();
-  if(!name){alert('Vui lòng nhập tên template!');document.getElementById('tplName').focus();return;}
-  pages.forEach((_,pi)=>syncPageDom(pi));
-  const config={
+function saveTemplate() {
+  const name = document.getElementById('tplName').value.trim();
+  if (!name) { document.getElementById('tplName').focus(); return; }
+  pages.forEach((_, pi) => syncPageDom(pi));
+  const config = {
     pages,
-    theme:{ primaryColor:document.getElementById('colorPick').value, font:document.getElementById('fontSel').value }
+    theme: { primaryColor: document.getElementById('colorPick').value, font: document.getElementById('fontSel').value }
   };
-  document.getElementById('nameOut').value=name;
-  document.getElementById('catOut').value=document.getElementById('tplCat').value;
-  document.getElementById('cfgOut').value=JSON.stringify(config);
+  document.getElementById('nameOut').value = name;
+  document.getElementById('catOut').value = document.getElementById('tplCat').value;
+  document.getElementById('cfgOut').value = JSON.stringify(config);
   document.getElementById('tplForm').submit();
 }
 </script>
-}
 }

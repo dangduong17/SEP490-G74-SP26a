@@ -173,12 +173,26 @@ function filterCat(btn, id){
     });
 }
 
+function showToast(msg, isOk) {
+    let t = document.getElementById('createToast');
+    if (!t) {
+        t = document.createElement('div');
+        t.id = 'createToast';
+        t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);color:#fff;padding:10px 22px;border-radius:10px;font-size:.88rem;font-weight:600;z-index:9999;opacity:0;transition:opacity .3s;max-width:360px;text-align:center';
+        document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.style.background = isOk ? '#059669' : '#dc2626';
+    t.style.opacity = '1';
+    setTimeout(() => { t.style.opacity = '0'; }, 3500);
+}
+
 function selectAndSubmit(id){
     if (!canCreate) {
         if (!isLoggedIn) {
             window.location.href = '/Auth/Login';
-        } else if (!isCandidate) {
-            alert('Chức năng này chỉ dành cho ứng viên.');
+        } else {
+            showToast('Chức năng này chỉ dành cho ứng viên đã đăng ký.', false);
         }
         return;
     }
