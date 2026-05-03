@@ -8,7 +8,6 @@ using RJMS.vn.edu.fpt.Jobs;
 using Hangfire;
 using Hangfire.SqlServer;
 
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Configure to run on port 5000 (HTTP) and 5001 (HTTPS)

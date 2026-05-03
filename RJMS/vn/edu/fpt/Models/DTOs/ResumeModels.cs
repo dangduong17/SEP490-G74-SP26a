@@ -152,23 +152,38 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
 
     public class CvDataModel
     {
+        // ── Personal info ──
         public string FullName { get; set; } = string.Empty;
         public string Position { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string Phone { get; set; } = string.Empty;
         public string Address { get; set; } = string.Empty;
+        public string DateOfBirth { get; set; } = string.Empty;
+        public string LinkedIn { get; set; } = string.Empty;
+        public string Website { get; set; } = string.Empty;
+        /// <summary>Base64 encoded avatar image (data URI)</summary>
+        public string? AvatarBase64 { get; set; }
+
+        // ── Sections ──
         public string Summary { get; set; } = string.Empty;
         public string Skills { get; set; } = string.Empty;
+        public string Hobbies { get; set; } = string.Empty;
+        public string Extra { get; set; } = string.Empty;
         public List<ExperienceModel> Experiences { get; set; } = new List<ExperienceModel>();
         public List<EducationModel> Educations { get; set; } = new List<EducationModel>();
-        
-        // Allows candidates to override template's layout and customize section positions/pages
+        public List<ProjectModel> Projects { get; set; } = new List<ProjectModel>();
+        public List<AwardModel> Awards { get; set; } = new List<AwardModel>();
+        public List<CertModel> Certs { get; set; } = new List<CertModel>();
+        public List<ActivityModel> Activities { get; set; } = new List<ActivityModel>();
+        public List<ReferenceModel> References { get; set; } = new List<ReferenceModel>();
+
+        // ── Layout override (candidate's custom freeform layout) ──
         public TemplateConfig? CustomLayout { get; set; }
 
-        // Extra section content that does not map to the structured AI fields above
+        // ── Legacy extra section content ──
         public List<CvSectionContentModel> AdditionalSections { get; set; } = new List<CvSectionContentModel>();
-        
-        // Extracted generic text buffer from uploaded PDF
+
+        // ── Raw text from uploaded PDF ──
         public string RawText { get; set; } = string.Empty;
     }
 
@@ -195,5 +210,49 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
         public string School { get; set; } = string.Empty;
         public string Degree { get; set; } = string.Empty;
         public string Period { get; set; } = string.Empty;
+        public string Achievement { get; set; } = string.Empty;
+    }
+
+    public class ProjectModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Role { get; set; } = string.Empty;
+        public string Period { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+    }
+
+    public class AwardModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Period { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+    }
+
+    public class CertModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Period { get; set; } = string.Empty;
+        public string Issuer { get; set; } = string.Empty;
+    }
+
+    public class ActivityModel
+    {
+        public string Organization { get; set; } = string.Empty;
+        public string Role { get; set; } = string.Empty;
+        public string Period { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+    }
+
+    public class ReferenceModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Phone { get; set; } = string.Empty;
+    }
+
+    public class AvatarUploadDto
+    {
+        public string? Base64 { get; set; }
     }
 }

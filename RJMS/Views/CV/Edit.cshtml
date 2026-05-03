@@ -1,145 +1,15 @@
 @using System.Text.Json
 @model RJMS.vn.edu.fpt.Models.DTOs.CvEditorViewModel
 @{
-    ViewData["Title"] = "Chỉnh sửa CV (Freeform)";
+    ViewData["Title"] = "Chỉnh sửa CV";
     Layout = "~/Views/Shared/_Layout.cshtml";
     var baseConfigStr = string.IsNullOrWhiteSpace(Model.ConfigJson) ? "null" : Model.ConfigJson;
     var dataStr = string.IsNullOrWhiteSpace(Model.JsonData) ? "{}" : Model.JsonData;
 }
 @section Styles {
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-<style>
-/* Hide global footer to make room for full-screen web app */
-footer, .footer { display: none !important; }
-body { overflow: hidden !important; background: #f0f2f5; }
-
-/* ══ SHELL ═══════════════════════════════════════════════════ */
-.shell{display:flex;flex-direction:column;height:calc(100vh - 74px);background:#f0f2f5;}
-
-/* ══ TOP BAR ════════════════════════════════════════════════ */
-.topbar{
-  height:54px;background:#fff;border-bottom:1px solid #e5e7eb;
-  display:flex;align-items:center;padding:0 18px;gap:14px;flex-shrink:0;z-index:300;
-  box-shadow:0 1px 3px rgba(0,0,0,.06);
-}
-.logo{font-size:1rem;font-weight:800;color:#00b14f;white-space:nowrap;letter-spacing:-.02em}
-.sep{width:1px;height:24px;background:#e5e7eb;flex-shrink:0}
-.name-input{
-  flex:1;max-width:300px;border:1.5px solid transparent;border-radius:8px;background:transparent;
-  padding:7px 12px;font-size:1rem;font-weight:600;color:#111;outline:none;font-family:inherit;
-}
-.name-input:hover,.name-input:focus{border-color:#e5e7eb;background:#fff}
-.name-input:focus{border-color:#00b14f}
-
-.topbar-r{display:flex;align-items:center;gap:10px;margin-left:auto}
-.btn-ghost{background:none;border:1.5px solid #e5e7eb;border-radius:8px;padding:7px 16px;font-size:.82rem;font-weight:600;color:#6b7280;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;font-family:inherit}
-.btn-ghost:hover{border-color:#9ca3af;color:#374151}
-.btn-green{background:#00b14f;border:none;border-radius:8px;padding:8px 20px;font-size:.875rem;font-weight:700;color:#fff;cursor:pointer;font-family:inherit}
-.btn-green:hover{background:#009744}
-
-/* ══ BODY ═══════════════════════════════════════════════════ */
-.body{display:flex;flex:1;overflow:hidden}
-
-/* ══ LEFT PALETTE ═══════════════════════════════════════════ */
-.palette{
-  width:220px;flex-shrink:0;background:#fff;border-right:1px solid #e5e7eb;
-  overflow-y:auto;display:flex;flex-direction:column;
-}
-.pal-head{padding:14px 16px 8px;font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8}
-.pal-list{padding:0 10px 10px;display:flex;flex-direction:column;gap:4px}
-.pal-chip{
-  display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;
-  cursor:grab;user-select:none;font-size:.83rem;font-weight:600;color:#374151;
-  background:#f9fafb;border:1.5px solid transparent;transition:.12s;
-}
-.pal-chip:hover{background:#f0fdf4;border-color:#86efac;color:#15803d}
-.pal-chip:active{cursor:grabbing;opacity:.7}
-.pal-chip.singleton-used{opacity:.3;cursor:not-allowed;pointer-events:none}
-.pal-ic{
-  width:30px;height:30px;border-radius:7px;background:#f0fdf4;color:#00b14f;
-  display:flex;align-items:center;justify-content:center;flex-shrink:0;
-  font-size:.7rem;font-weight:800;border:1px solid #bbf7d0;
-}
-.pal-div{border:none;border-top:1px solid #f1f5f9;margin:8px 14px}
-.pal-lbl{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#94a3b8;display:block;margin-bottom:3px;margin-left:14px;}
-
-/* ══ CANVAS ═════════════════════════════════════════════════ */
-.canvas{
-  flex:1;min-width:0;overflow:auto;background:#d8dce6;
-  display:flex;flex-direction:column;align-items:center;
-  padding:32px 24px 80px;gap:24px;
-}
-
-.pgwrap{display:flex;flex-direction:column;gap:6px;align-items:center}
-.pg-bar{
-  width:794px;display:flex;align-items:center;gap:10px;
-  font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#6b7280;
-}
-
-/* A4 full size (Freeform) */
-.a4{
-  width:794px;height:1123px;
-  background:#fff;box-shadow:0 6px 32px rgba(0,0,0,.18);
-  border-radius:2px;position:relative;
-  transition:outline .1s;
-}
-.a4.dragover{outline:3px dashed #00b14f; background: #f0fdf4}
-
-/* Freeform elements */
-.cv-sec{
-  position:absolute;overflow:hidden;background:transparent;z-index:10;
-  border: 1px dashed transparent;
-}
-.cv-sec:hover{border: 1px dashed #cbd5e1; z-index:15;}
-.cv-sec:active{z-index:20;}
-
-.sec-bar{
-  position:absolute;top:0;left:0;right:0;display:flex;align-items:center;gap:4px;
-  padding:3px 8px;background:rgba(0,0,0,.08);border-bottom:1px solid #cbd5e1;
-  opacity:0;transition:opacity .15s;z-index:20;
-}
-.cv-sec:hover>.sec-bar{opacity:1}
-.drag-handle{cursor:move;color:#111;font-size:.9rem;margin-right:4px;padding:1px 4px;border-radius:3px;user-select:none;}
-.drag-handle:hover{background:#fff}
-.sec-rm{margin-left:auto;background:none;border:none;color:#ef4444;font-size:.78rem;font-weight:700;cursor:pointer;opacity:.8;padding:1px 5px;border-radius:4px;}
-.sec-rm:hover{background:#fff;opacity:1}
-.sec-lbl{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#475569}
-.cv-sec { touch-action: none; }
-.cv-content-wrap { width:100%; height:100%; box-sizing:border-box; }
-
-/* ══ CV STYLES ═════════════════════════════════════════════ */
-.cv-header{display:flex;gap:12px;padding:16px;background:#f8fafc;border-bottom:3px solid var(--pc, #2563eb);height:100%;width:100%;}
-.cv-avatar{width:80px;height:80px;flex-shrink:0;border-radius:8px;background:#dde3ed;display:flex;align-items:center;justify-content:center;overflow:hidden;}
-.cv-avatar svg{width:42px;height:42px;color:#9aa5be}
-.cv-name{font-size:1.4rem;font-weight:800;color:#111827;line-height:1.15;margin-bottom:4px}
-.cv-jobtitle{font-size:.9rem;color:#64748b;margin-bottom:8px}
-.cv-contacts{display:grid;grid-template-columns:1fr 1fr;gap:2px 10px}
-.cv-citem{font-size:.72rem;color:#475569;display:flex;align-items:center;gap:4px}
-.cv-dot{display:inline-block;width:4px;height:4px;border-radius:50%;background:#94a3b8;flex-shrink:0}
-
-.cv-std{padding:16px; height:100%; width:100%; background:transparent;}
-.cv-sec-head{
-  font-size:.82rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;
-  color:#111827;border-bottom:2px solid var(--pc,#2563eb);
-  padding-bottom:6px;margin-bottom:12px;margin-top:20px;
-}
-[contenteditable="true"]:hover{background:rgba(37,99,235,.04);border-radius:3px;cursor:text}
-[contenteditable="true"]:focus{outline:1.5px dashed #60a5fa;background:rgba(219,234,254,.25);border-radius:3px;box-shadow:none;}
-[contenteditable="true"][data-ph]:empty::before{content:attr(data-ph);color:#c4c9d4;font-style:italic}
-
-.cv-row{display:grid;grid-template-columns:80px 1fr;gap:8px;margin-bottom:8px}
-.cv-date{font-size:.72rem;color:#64748b;line-height:1.6}
-.cv-company{font-size:.82rem;font-weight:700;color:#111827;display:block;margin-bottom:2px}
-.cv-pos{font-size:.75rem;font-style:italic;color:var(--pc,#2563eb);font-weight:600;display:block;margin-bottom:4px}
-.cv-desc{font-size:.72rem;color:#6b7280;line-height:1.6}
-.cv-skills{display:flex;flex-wrap:wrap;gap:6px}
-.cv-tag{background:#eff6ff;color:var(--pc);border:1px solid #bfdbfe;border-radius:14px;padding:3px 10px;font-size:.7rem;font-weight:600}
-.cv-simple{font-size:.75rem;color:#475569;line-height:1.6}
-.cv-ph{font-size:.75rem;color:#aab0bc;font-style:italic;line-height:1.6}
-
-/* Smart guides */
-.snap-guide { position: absolute; background: #3b82f6; z-index: 100; pointer-events: none; }
-</style>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Lora:wght@400;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="~/css/cv-editor.css?v=4" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css"/>
 }
 
 <form id="cvForm" method="post" action="@Url.Action("Save","CV")">
@@ -147,37 +17,80 @@ body { overflow: hidden !important; background: #f0f2f5; }
   <input type="hidden" name="templateId" value="@Model.TemplateId"/>
   <input type="hidden" name="jsonData" id="cvDataOutput"/>
 
+<!-- Cropper Modal -->
+<div id="cropper-modal">
+  <div class="cropper-box">
+    <div class="cropper-header">
+      <span class="cropper-title">✂️ Cắt ảnh đại diện</span>
+      <button type="button" class="cropper-close" onclick="closeCropperModal()">✕</button>
+    </div>
+    <div class="cropper-body">
+      <img id="cropper-img" src="" alt="crop"/>
+    </div>
+    <div class="cropper-footer">
+      <span class="cropper-hint">Kéo để chọn vùng · Cuộn để zoom</span>
+      <div class="cropper-actions">
+        <button type="button" class="cropper-cancel" onclick="closeCropperModal()">Huỷ</button>
+        <button type="button" class="cropper-confirm" onclick="confirmCrop()">✓ Xác nhận</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="cvToast" style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:10px 22px;border-radius:10px;font-size:.85rem;font-weight:600;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;max-width:380px;text-align:center"></div>
+
 <div class="shell">
 <header class="topbar">
   <span class="logo">Finding Job</span>
   <span class="sep"></span>
-  <input class="name-input" name="title" id="cvTitle" type="text" value="@Model.Title" required placeholder="Tên tệp CV (vd: CV Phát Triển Mobile)"/>
+  <input class="name-input" name="title" id="cvTitle" type="text" value="@Model.Title" required placeholder="Tên CV của bạn..."/>
   <div class="topbar-r">
     <a href="@Url.Action("Index","CV")" class="btn-ghost">← Thoát</a>
-    <button type="button" class="btn-green" onclick="saveCv()">Lưu CV</button>
+    <button type="button" id="saveBtn" class="btn-green" onclick="saveCv()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      Lưu CV
+    </button>
   </div>
 </header>
 
 <div class="body">
 <aside class="palette">
-  <div class="pal-head">Kéo thêm mục</div>
-  <div class="pal-list" id="palette">
-    <div class="pal-chip" draggable="true" data-type="header"><span class="pal-ic">H</span>Thông tin chính</div>
-    <div class="pal-chip" draggable="true" data-type="summary"><span class="pal-ic">MT</span>Mục tiêu NN</div>
-    <div class="pal-chip" draggable="true" data-type="experience"><span class="pal-ic">EX</span>Kinh nghiệm LV</div>
-    <div class="pal-chip" draggable="true" data-type="education"><span class="pal-ic">ED</span>Học vấn</div>
-    <div class="pal-chip" draggable="true" data-type="skills"><span class="pal-ic">SK</span>Kỹ năng</div>
-    <div class="pal-chip" draggable="true" data-type="awards"><span class="pal-ic">GI</span>Giải thưởng</div>
-    <div class="pal-chip" draggable="true" data-type="certs"><span class="pal-ic">CC</span>Chứng chỉ</div>
-    <div class="pal-chip" draggable="true" data-type="activities"><span class="pal-ic">HĐ</span>Hoạt động</div>
-    <div class="pal-chip" draggable="true" data-type="refs"><span class="pal-ic">GT</span>Người giới thiệu</div>
-    <div class="pal-chip" draggable="true" data-type="hobbies"><span class="pal-ic">SH</span>Sở thích</div>
+  <div class="pal-head">Thêm mục vào CV</div>
+  <div class="pal-section-head">Chưa dùng</div>
+  <div class="pal-list" id="palette-unused">
+    <div class="pal-chip" draggable="true" data-type="vcard">Danh thiếp</div>
+    <div class="pal-chip" draggable="true" data-type="contact">Liên hệ</div>
+    <div class="pal-chip" draggable="true" data-type="summary">Mục tiêu NN</div>
+    <div class="pal-chip" draggable="true" data-type="experience">Kinh nghiệm LV</div>
+    <div class="pal-chip" draggable="true" data-type="education">Học vấn</div>
+    <div class="pal-chip" draggable="true" data-type="skills">Kỹ năng</div>
+    <div class="pal-chip" draggable="true" data-type="projects">Dự án</div>
+    <div class="pal-chip" draggable="true" data-type="awards">Giải thưởng</div>
+    <div class="pal-chip" draggable="true" data-type="certs">Chứng chỉ</div>
+    <div class="pal-chip" draggable="true" data-type="activities">Hoạt động</div>
+    <div class="pal-chip" draggable="true" data-type="refs">Người tham chiếu</div>
+    <div class="pal-chip" draggable="true" data-type="hobbies">Sở thích</div>
+    <div class="pal-chip" draggable="true" data-type="extra">Thông tin thêm</div>
   </div>
   <div class="pal-div"></div>
-  <span class="pal-lbl">Hướng dẫn</span>
-  <p style="font-size:.7rem;color:#64748b;margin:0 14px;line-height:1.6;">
-    Bấm trực tiếp vào các đoạn văn bản (có nét đứt khi hover) để chỉnh sửa nội dung thông tin nhé. Kéo thả vào giữa mép hoặc thanh viền trên cùng của 1 section để dời đi!
-  </p>
+  <div class="pal-section-head" id="used-head" style="display:none">Đã dùng</div>
+  <div class="pal-list" id="palette-used"></div>
+  <div class="pal-div"></div>
+  <div style="padding:0 12px 14px;display:flex;flex-direction:column;gap:6px">
+    <label class="pal-lbl" style="margin-left:0">Màu chủ đạo</label>
+    <div style="display:flex;align-items:center;gap:8px">
+      <input type="color" id="colorPick" value="#2563eb" oninput="applyTheme()" style="width:38px;height:32px;border:1.5px solid #e5e7eb;border-radius:6px;cursor:pointer;padding:2px"/>
+      <span id="colorHex" style="font-size:.78rem;color:#64748b;font-family:monospace">#2563eb</span>
+    </div>
+    <label class="pal-lbl" style="margin-left:0;margin-top:6px">Font chữ</label>
+    <select id="fontSel" onchange="applyTheme()" style="border:1.5px solid #e5e7eb;border-radius:7px;padding:6px 8px;font-size:.82rem;color:#374151;outline:none;font-family:inherit;background:#fff">
+      <option value="Inter">Inter</option>
+      <option value="Be Vietnam Pro">Be Vietnam Pro</option>
+      <option value="Roboto">Roboto</option>
+      <option value="Open Sans">Open Sans</option>
+      <option value="Lora">Lora</option>
+    </select>
+  </div>
 </aside>
 
 <main class="canvas" id="canvas"></main>
@@ -186,310 +99,260 @@ body { overflow: hidden !important; background: #f0f2f5; }
 </form>
 
 @section Scripts {
-<script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/interactjs@1.10.27/dist/interact.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
+<script type="module">
+  import { Editor } from 'https://esm.sh/@@tiptap/core@2';
+  import StarterKit from 'https://esm.sh/@@tiptap/starter-kit@2';
+  import Underline from 'https://esm.sh/@@tiptap/extension-underline@2';
+  import TextStyle from 'https://esm.sh/@@tiptap/extension-text-style@2';
+  import Color from 'https://esm.sh/@@tiptap/extension-color@2';
+  import TextAlign from 'https://esm.sh/@@tiptap/extension-text-align@2';
+  import FontFamily from 'https://esm.sh/@@tiptap/extension-font-family@2';
+  window.tiptap = { Editor, StarterKit, Underline, TextStyle, Color, TextAlign, FontFamily };
+  document.dispatchEvent(new Event('tiptap-ready'));
+</script>
+<script src="~/js/cv-editor-shared.js?v=6"></script>
 <script>
-const SEC = {
-  header: {
-    label: 'Thông tin chính', singleton: true, defaultW: 750, defaultH: 150,
-    build: () => {
-      const w = div('cv-content-wrap'); 
-      w.innerHTML = `
-      <div class="cv-header">
-        <div class="cv-avatar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></div>
-        <div style="flex:1;min-width:0">
-          <div class="cv-name" contenteditable="true" spellcheck="false" data-ph="Họ Tên">Tên Của Bạn</div>
-          <div class="cv-jobtitle" contenteditable="true" spellcheck="false" data-ph="Vị trí ứng tuyển">Vị trí ứng tuyển</div>
-          <div class="cv-contacts">
-            <span class="cv-citem"><span class="cv-dot"></span><span contenteditable="true" spellcheck="false" data-ph="Ngày sinh">01/01/2000</span></span>
-            <span class="cv-citem"><span class="cv-dot"></span><span contenteditable="true" spellcheck="false" data-ph="Điện thoại">0123 456 789</span></span>
-            <span class="cv-citem"><span class="cv-dot"></span><span contenteditable="true" spellcheck="false" data-ph="Email">email@gmail.com</span></span>
-            <span class="cv-citem"><span class="cv-dot"></span><span contenteditable="true" spellcheck="false" data-ph="Địa chỉ">Quận 1, HCM</span></span>
-          </div>
-        </div>
-      </div>`;
-      return w;
-    }
-  },
-  summary: {
-    label: 'Mục tiêu NN', defaultW: 350, defaultH: 100,
-    build: () => {
-      const w = div('cv-content-wrap');
-      w.innerHTML = `<div class="cv-std"><div class="cv-sec-head" contenteditable="true" spellcheck="false">MỤC TIÊU NGHỀ NGHIỆP</div><div contenteditable="true" spellcheck="false" class="cv-simple" data-ph="Mục tiêu nghề nghiệp...">Mục tiêu công việc ngắn hạn và dài hạn của bạn là gì?</div></div>`;
-      return w;
-    }
-  },
-  experience: {
-    label: 'Kinh nghiệm LV', defaultW: 350, defaultH: 180,
-    build: () => {
-      const w = div('cv-content-wrap');
-      w.innerHTML = `<div class="cv-std"><div class="cv-sec-head" contenteditable="true" spellcheck="false">KINH NGHIỆM LÀM VIỆC</div><div class="cv-row"><div class="cv-date" contenteditable="true" spellcheck="false">01/2022 – Hiện tại</div><div class="cv-main"><span class="cv-company" contenteditable="true" spellcheck="false" data-ph="Tên công ty">Tên công ty ABC</span><span class="cv-pos" contenteditable="true" spellcheck="false" data-ph="Vị trí">Vị trí làm việc</span><div class="cv-desc" contenteditable="true" spellcheck="false" data-ph="Mô tả công việc...">Mô tả chi tiết những công việc, trách nhiệm và thành tựu của bạn ở đây...</div></div></div></div>`;
-      return w;
-    }
-  },
-  education: {
-    label: 'Học vấn', defaultW: 350, defaultH: 140,
-    build: () => {
-      const w = div('cv-content-wrap');
-      w.innerHTML = `<div class="cv-std"><div class="cv-sec-head" contenteditable="true" spellcheck="false">HỌC VẤN</div><div class="cv-row"><div class="cv-date" contenteditable="true" spellcheck="false">2018 – 2022</div><div class="cv-main"><span class="cv-company" contenteditable="true" spellcheck="false" data-ph="Tên trường">Đại học của bạn</span><span class="cv-pos" contenteditable="true" spellcheck="false" data-ph="Ngành học">Ngành học chuyên môn</span><div class="cv-desc" contenteditable="true" spellcheck="false" data-ph="Thành tích...">GPA: x.y / 4.0 - Danh hiệu Sinh viên giỏi</div></div></div></div>`;
-      return w;
-    }
-  },
-  skills: {
-    label: 'Kỹ năng', defaultW: 350, defaultH: 120,
-    build: () => {
-      const w = div('cv-content-wrap');
-      w.innerHTML = `<div class="cv-std"><div class="cv-sec-head" contenteditable="true" spellcheck="false">KỸ NĂNG</div><div class="cv-skills"><span class="cv-tag" contenteditable="true" spellcheck="false">Kỹ năng mềm</span><span class="cv-tag" contenteditable="true" spellcheck="false">Tiếng Anh Cần Thiết</span><span class="cv-tag" contenteditable="true" spellcheck="false">Tin học VP</span></div></div>`;
-      return w;
-    }
-  },
-  awards: {
-    label: 'Giải thưởng', defaultW: 350, defaultH: 120,
-    build: () => {
-      const w = div('cv-content-wrap');
-      w.innerHTML = `<div class="cv-std"><div class="cv-sec-head" contenteditable="true" spellcheck="false">DANH HIỆU & GIẢI THƯỞNG</div><div class="cv-row"><div class="cv-date" contenteditable="true" spellcheck="false">2023</div><div class="cv-main"><span class="cv-company" contenteditable="true" spellcheck="false" data-ph="Tên giải thưởng">Tên Giải Thưởng Của Bạn</span></div></div></div>`;
-      return w;
-    }
-  },
-  certs: {
-    label: 'Chứng chỉ', defaultW: 350, defaultH: 120,
-    build: () => {
-      const w = div('cv-content-wrap');
-      w.innerHTML = `<div class="cv-std"><div class="cv-sec-head" contenteditable="true" spellcheck="false">CHỨNG CHỈ</div><div class="cv-row"><div class="cv-date" contenteditable="true" spellcheck="false">2022</div><div class="cv-main"><span class="cv-company" contenteditable="true" spellcheck="false" data-ph="Tên chứng chỉ">Chứng Chỉ Nghề / Ngoại Ngữ ABC</span></div></div></div>`;
-      return w;
-    }
-  },
-  activities: {
-    label: 'Hoạt động', defaultW: 350, defaultH: 140,
-    build: () => {
-      const w = div('cv-content-wrap');
-      w.innerHTML = `<div class="cv-std"><div class="cv-sec-head" contenteditable="true" spellcheck="false">HOẠT ĐỘNG</div><div class="cv-row"><div class="cv-date" contenteditable="true" spellcheck="false">2021 – 2022</div><div class="cv-main"><span class="cv-company" contenteditable="true" spellcheck="false" data-ph="Tên tổ chức">Tổ chức Hoạt động ABC</span><span class="cv-pos" contenteditable="true" spellcheck="false" data-ph="Vị trí">Thành viên Ban Truyền Thông</span></div></div></div>`;
-      return w;
-    }
-  },
-  refs: {
-    label: 'Người giới thiệu', defaultW: 350, defaultH: 120,
-    build: () => {
-      const w = div('cv-content-wrap');
-      w.innerHTML = `<div class="cv-std"><div class="cv-sec-head" contenteditable="true" spellcheck="false">NGƯỜI GIỚI THIỆU</div><div contenteditable="true" spellcheck="false" class="cv-ph" data-ph="Thông tin liên hệ...">Ghi chi tiết Anh/Chị cấp trên tham chiếu thông tin...</div></div>`;
-      return w;
-    }
-  },
-  hobbies: {
-    label: 'Sở thích', defaultW: 350, defaultH: 100,
-    build: () => {
-      const w = div('cv-content-wrap');
-      w.innerHTML = `<div class="cv-std"><div class="cv-sec-head" contenteditable="true" spellcheck="false">SỞ THÍCH</div><div contenteditable="true" spellcheck="false" class="cv-simple" data-ph="Sở thích...">Cầu lông, Yoga, Nấu ăn...</div></div>`;
-      return w;
-    }
-  },
-};
-
-function div(cls){ const d=document.createElement('div'); if(cls) d.className=cls; return d; }
-
 let cvDataObj = @Html.Raw(dataStr);
-let baseConfig = @Html.Raw(baseConfigStr);
+const baseConfig = @Html.Raw(baseConfigStr);
 let activeTheme = { primaryColor: '#2563eb', font: 'Inter' };
-
-// Initialize pages from CustomLayout if candidate has saved, otherwise hydrate from baseConfig
 let pages = [];
 let isCvDirty = false;
 
-document.addEventListener('input', (e) => {
-  if (e.target.hasAttribute('contenteditable') || e.target.tagName.toLowerCase() === 'input') {
-    isCvDirty = true;
-  }
-});
-
-window.addEventListener('beforeunload', function (e) {
-  if (isCvDirty) {
-    e.preventDefault();
-    e.returnValue = '';
-  }
-});
-
+// ── Initialize pages from saved CustomLayout, or hydrate from template ──
 if (cvDataObj.CustomLayout && cvDataObj.CustomLayout.pages && cvDataObj.CustomLayout.pages.length > 0) {
   pages = cvDataObj.CustomLayout.pages;
-  if(cvDataObj.CustomLayout.theme) activeTheme = cvDataObj.CustomLayout.theme;
-} else if (baseConfig && baseConfig.pages && baseConfig.pages.length > 0) {
-  // Candidate hasn't saved CustomLayout yet, read template Config
-  pages = baseConfig.pages.map(p => {
-    // Migration helper matching Admin page (grid -> absolute translation)
-    if(p.columns > 0) {
-      let y1 = 20, y2 = 20;
-      const newSecs = p.sections.map((s) => {
-        let top = s.top, left = s.left, w = s.width, h = s.height;
-        if(top == null) {
-          const def = SEC[s.type] || {defaultW: 350, defaultH: 150};
-          if (p.columns===2 && s.column===2) { left = 400; top = y2; y2 += def.defaultH + 20; w = 350; h = def.defaultH; }
-          else { left = 20; top = y1; y1 += def.defaultH + 20; w = p.columns===2 ? 350 : 750; h = def.defaultH; }
-        }
-        return { type: s.type, top, left, width: w, height: h };
-      });
-      return { columns: 0, sections: newSecs };
-    }
-    return p;
-  });
-  if(baseConfig.theme) activeTheme = baseConfig.theme;
-} else if (baseConfig && baseConfig.sections) {
-  let y = 20;
-  pages = [{ columns: 0, sections: baseConfig.sections.map((s) => {
-    const def = SEC[s.type] || {defaultW: 750, defaultH: 150};
-    const r = { type: s.type, top: y, left: 20, width: def.defaultW, height: def.defaultH };
-    y += def.defaultH + 20;
-    return r;
-  })}];
+  if (cvDataObj.CustomLayout.theme) activeTheme = cvDataObj.CustomLayout.theme;
+} else {
+  pages = migrateLegacyConfig(baseConfig);
+  if (baseConfig && baseConfig.theme) activeTheme = baseConfig.theme;
 }
 
-document.addEventListener('DOMContentLoaded', ()=>{ 
-  setupNativeDrag();
-  renderCanvas();
-  applyTheme(); 
+// Sync theme UI controls
+document.getElementById('colorPick').value = activeTheme.primaryColor;
+document.getElementById('colorHex').textContent = activeTheme.primaryColor;
+const fontSel = document.getElementById('fontSel');
+for (let o of fontSel.options) { if (o.value === activeTheme.font) { fontSel.value = activeTheme.font; break; } }
+
+document.addEventListener('input', (e) => {
+  if (e.target.hasAttribute('contenteditable') || e.target.tagName.toLowerCase() === 'input') isCvDirty = true;
 });
+window.addEventListener('beforeunload', e => { if (isCvDirty) { e.preventDefault(); e.returnValue = ''; } });
 
-function applyTheme(){
-  document.documentElement.style.setProperty('--pc', activeTheme.primaryColor);
-  document.querySelectorAll('.a4').forEach(a=>a.style.fontFamily = `'${activeTheme.font}',sans-serif`);
-  document.querySelectorAll('.cv-sec-head').forEach(h=>h.style.borderBottomColor=activeTheme.primaryColor);
-  document.querySelectorAll('.cv-header').forEach(h=>h.style.borderBottomColor=activeTheme.primaryColor);
-  document.querySelectorAll('.cv-tag').forEach(t=>{ t.style.color=activeTheme.primaryColor; t.style.background=activeTheme.primaryColor+'15'; t.style.borderColor=activeTheme.primaryColor+'40'; });
-  document.querySelectorAll('.cv-pos').forEach(p=>p.style.color=activeTheme.primaryColor);
+function _cvEditorInit() {
+  setupPaletteDrag();
+  renderCanvas();
+  applyTheme();
+  initTiptapFloating();
+  initContextualToolbar();
+  initZoomControl();
+  // Auto fit zoom after render
+  requestAnimationFrame(() => zoomFit());
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', _cvEditorInit);
+} else {
+  _cvEditorInit();
 }
 
-function setupNativeDrag(){
-  document.querySelectorAll('.pal-chip[draggable]').forEach(chip=>{
-    chip.addEventListener('dragstart', e=>e.dataTransfer.setData('sectype', chip.dataset.type));
+function applyTheme() {
+  activeTheme.primaryColor = document.getElementById('colorPick').value;
+  activeTheme.font = document.getElementById('fontSel').value;
+  document.getElementById('colorHex').textContent = activeTheme.primaryColor;
+  applyThemeToCanvas(activeTheme.primaryColor, activeTheme.font);
+}
+
+function setupPaletteDrag() {
+  document.querySelectorAll('#palette-unused .pal-chip, #palette-used .pal-chip').forEach(chip => {
+    chip.addEventListener('dragstart', e => e.dataTransfer.setData('sectype', chip.dataset.type));
   });
 }
 
-function bindDroppable(){
-  document.querySelectorAll('.a4').forEach((a4, pi)=>{
+function refreshPalette() {
+  const usedCounts = {};
+  pages.forEach(p => p.sections.forEach(s => { usedCounts[s.type] = (usedCounts[s.type] || 0) + 1; }));
+  const unusedList = document.getElementById('palette-unused');
+  const usedList = document.getElementById('palette-used');
+  const usedHead = document.getElementById('used-head');
+  if (!unusedList || !usedList) return;
+  // Collect all chips from both lists
+  const allChips = Array.from(document.querySelectorAll('#palette-unused .pal-chip, #palette-used .pal-chip'));
+  allChips.forEach(chip => {
+    const type = chip.dataset.type;
+    if (usedCounts[type] > 0) {
+      usedList.appendChild(chip);
+    } else {
+      unusedList.appendChild(chip);
+    }
+  });
+  if (usedHead) usedHead.style.display = usedList.children.length > 0 ? '' : 'none';
+}
+
+function bindDroppable() {
+  document.querySelectorAll('.a4').forEach((a4, pi) => {
     a4.ondragover = e => { e.preventDefault(); a4.classList.add('dragover'); };
-    a4.ondragleave = e => { a4.classList.remove('dragover'); };
+    a4.ondragleave = () => a4.classList.remove('dragover');
     a4.ondrop = e => {
-      e.preventDefault();
-      a4.classList.remove('dragover');
+      e.preventDefault(); a4.classList.remove('dragover');
       const type = e.dataTransfer.getData('sectype');
-      if(!type) return;
+      if (!type) return;
       const rect = a4.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      addSec(pi, type, x, y);
+      addSecAt(pi, type, e.clientX - rect.left, e.clientY - rect.top);
     };
   });
 }
 
-/* ══ INTERACT.JS CONFIG ═════════════════════════════════ */
-const A4_W = 794, A4_H = 1123, SNAP_DIST = 8, GRID_SIZE = 10;
-function snapCoords(rX, rY, w, h, a4) {
-  let tX = [0, A4_W/2, A4_W], tY = [0, A4_H/2, A4_H];
-  a4.querySelectorAll('.cv-sec:not(.is-dragging)').forEach(el => {
-    let l = parseFloat(el.style.left)||0, t = parseFloat(el.style.top)||0;
-    let ew = parseFloat(el.style.width)||el.offsetWidth, eh = parseFloat(el.style.height)||el.offsetHeight;
-    tX.push(l, l+ew/2, l+ew); tY.push(t, t+eh/2, t+eh);
-  });
-
-  let bX=rX, gX=-1, minD=SNAP_DIST;
-  for(let m of [rX, rX+w/2, rX+w]) for(let t of tX) if(Math.abs(m-t)<minD) { minD=Math.abs(m-t); bX=rX+(t-m); gX=t; }
-  
-  let bY=rY, gY=-1; minD=SNAP_DIST;
-  for(let m of [rY, rY+h/2, rY+h]) for(let t of tY) if(Math.abs(m-t)<minD) { minD=Math.abs(m-t); bY=rY+(t-m); gY=t; }
-
-  if(gX===-1)bX=Math.round(rX/GRID_SIZE)*GRID_SIZE;
-  if(gY===-1)bY=Math.round(rY/GRID_SIZE)*GRID_SIZE;
-  bX=Math.max(0,Math.min(A4_W-w, bX)); bY=Math.max(0,Math.min(A4_H-h, bY));
-  return { l:bX, t:bY, gx:gX, gy:gY };
-}
-
-function drawGuides(a4, gx, gy) {
-  a4.querySelectorAll('.snap-guide').forEach(g=>g.remove());
-  if(gx!==-1) { let d=div('snap-guide'); d.style.left=gx+'px'; d.style.top='0'; d.style.bottom='0'; d.style.width='1px'; a4.appendChild(d); }
-  if(gy!==-1) { let d=div('snap-guide'); d.style.top=gy+'px'; d.style.left='0'; d.style.right='0'; d.style.height='1px'; a4.appendChild(d); }
-}
-
-interact('.resize-drag').draggable({
-  allowFrom: '.drag-handle',
-  listeners: {
-    start(e){ e.target.classList.add('is-dragging'); },
-    move(e){
-      let t=e.target, a4=t.closest('.a4');
-      let rx = (parseFloat(t.dataset.rx) ?? parseFloat(t.style.left) ?? 0) + e.dx;
-      let ry = (parseFloat(t.dataset.ry) ?? parseFloat(t.style.top) ?? 0) + e.dy;
-      t.dataset.rx=rx; t.dataset.ry=ry;
-      let w=parseFloat(t.style.width)||t.offsetWidth, h=parseFloat(t.style.height)||t.offsetHeight;
-      let s = snapCoords(rx, ry, w, h, a4);
-      t.style.left = s.l+'px'; t.style.top = s.t+'px';
-      drawGuides(a4, s.gx, s.gy);
-    },
-    end(e){ 
-      e.target.classList.remove('is-dragging');
-      delete e.target.dataset.rx; delete e.target.dataset.ry;
-      document.querySelectorAll('.snap-guide').forEach(g=>g.remove()); 
-      isCvDirty = true;
-    }
-  }
-}).resizable({
-  edges: { left:true, right:true, bottom:true, top:true },
-  modifiers: [
-    interact.modifiers.restrictEdges({ outer: 'parent' }),
-    interact.modifiers.restrictSize({ min: { width: 150, height: 60 } }),
-    interact.modifiers.snapSize({ targets: [ interact.createSnapGrid({ x: GRID_SIZE, y: GRID_SIZE }) ] }),
-    interact.modifiers.snapEdges({ targets: [ interact.createSnapGrid({ x: GRID_SIZE, y: GRID_SIZE }) ] })
-  ],
-  listeners: { move(e){
-      let r=e.rect; e.target.style.width=r.width+'px'; e.target.style.height=r.height+'px';
-      let l=(parseFloat(e.target.style.left)||0)+e.deltaRect.left, t=(parseFloat(e.target.style.top)||0)+e.deltaRect.top;
-      e.target.style.left=l+'px'; e.target.style.top=t+'px';
-  }, end(e){ isCvDirty = true; } }
-});
-
-function removeSec(el){ el.remove(); isCvDirty = true; }
-
-function addSec(pi, type, x, y){
-  const tpl = SEC[type];
-  if(!tpl) return;
+function addSecAt(pi, type, x, y) {
+  const def = SEC[type]; if (!def) return;
+  const sec = { type, top: Math.max(0, y - 20), left: Math.max(0, x - def.defaultW / 2), width: def.defaultW, height: def.defaultH, html: null };
+  const el = buildSectionEl(sec, pi, 'candidate');
+  if (!el) return;
   const a4 = document.querySelector(`.a4[data-page="${pi}"]`);
-  
-  const el = document.createElement('div');
-  el.className = 'cv-sec resize-drag';
-  el.dataset.type = type;
-  el.style.top = y + 'px'; el.style.left = x + 'px';
-  el.style.width = tpl.defaultW + 'px'; el.style.height = tpl.defaultH + 'px';
-  el.innerHTML = `<div class="sec-bar"><span class="drag-handle" title="Kéo ngang dọc">🕂 Kéo vị trí</span><span class="sec-lbl">${tpl.label}</span><button type="button" class="sec-rm" onclick="removeSec(this.parentElement.parentElement)">✕</button></div>`;
-  el.appendChild(tpl.build());
+  hydrateSection(el, type);
   a4.appendChild(el);
+  if (typeof resolveAllOverlaps === 'function') resolveAllOverlaps(a4);
+  applyTheme();
+  isCvDirty = true;
+  refreshPalette();
+}
+
+function removeSec(el) { el.remove(); isCvDirty = true; refreshPalette(); }
+
+function dupSec(el) {
+  const pi = parseInt(el.dataset.page), type = el.dataset.type;
+  const cw = el.querySelector('.cv-content-wrap');
+  const sec = {
+    type,
+    top: (parseFloat(el.style.top) || 0) + 20,
+    left: (parseFloat(el.style.left) || 0) + 20,
+    width: parseFloat(el.style.width) || SEC[type]?.defaultW || 350,
+    height: parseFloat(el.style.height) || SEC[type]?.defaultH || 150,
+    html: cw ? cw.innerHTML : null
+  };
+  const newEl = buildSectionEl(sec, pi, 'candidate');
+  if (!newEl) return;
+  const a4 = document.querySelector(`.a4[data-page="${pi}"]`);
+  a4.appendChild(newEl);
+  if (typeof resolveAllOverlaps === 'function') resolveAllOverlaps(a4);
   applyTheme();
   isCvDirty = true;
 }
 
-function renderCanvas(){
+function moveSecUp(el) {
+  const a4 = el.closest('.a4');
+  if (!a4) return;
+  const siblings = Array.from(a4.querySelectorAll('.cv-sec')).filter(e => e !== el);
+  let closest = null;
+  let minDiff = Infinity;
+  const myTop = parseFloat(el.style.top) || 0;
+  for (let s of siblings) {
+    const sTop = parseFloat(s.style.top) || 0;
+    if (sTop < myTop && myTop - sTop < minDiff) {
+      minDiff = myTop - sTop;
+      closest = s;
+    }
+  }
+  if (closest) {
+    const tmp = el.style.top;
+    el.style.top = closest.style.top;
+    closest.style.top = tmp;
+    if (typeof resolveAllOverlaps === 'function') resolveAllOverlaps(a4);
+    isCvDirty = true;
+  }
+}
+
+function moveSecDown(el) {
+  const a4 = el.closest('.a4');
+  if (!a4) return;
+  const siblings = Array.from(a4.querySelectorAll('.cv-sec')).filter(e => e !== el);
+  let closest = null;
+  let minDiff = Infinity;
+  const myTop = parseFloat(el.style.top) || 0;
+  for (let s of siblings) {
+    const sTop = parseFloat(s.style.top) || 0;
+    if (sTop > myTop && sTop - myTop < minDiff) {
+      minDiff = sTop - myTop;
+      closest = s;
+    }
+  }
+  if (closest) {
+    const tmp = el.style.top;
+    el.style.top = closest.style.top;
+    closest.style.top = tmp;
+    if (typeof resolveAllOverlaps === 'function') resolveAllOverlaps(a4);
+    isCvDirty = true;
+  }
+}
+
+initInteract(
+  (target) => { isCvDirty = true; },
+  (target) => { isCvDirty = true; }
+);
+
+// ── Hydrate section with existing cvDataObj ──
+const _counters = {};
+function hydrateSection(sectionEl, type) {
+  const data = cvDataObj || {};
+  const idx = (_counters[type] = (_counters[type] || 0));
+  _counters[type]++;
+  const set = (sel, val) => { const e = sectionEl.querySelector(sel); if (e && val) e.textContent = val; };
+
+  if (type === 'header') {
+    set('.cv-name', data.FullName);
+    set('.cv-jobtitle', data.Position);
+    const nodes = sectionEl.querySelectorAll('.cv-contacts [contenteditable="true"]');
+    if (nodes[0]) nodes[0].textContent = data.DateOfBirth || nodes[0].textContent;
+    if (nodes[1]) nodes[1].textContent = data.Phone || nodes[1].textContent;
+    if (nodes[2]) nodes[2].textContent = data.Email || nodes[2].textContent;
+    if (nodes[3]) nodes[3].textContent = data.Address || nodes[3].textContent;
+    if (nodes[4]) nodes[4].textContent = data.LinkedIn || nodes[4].textContent;
+    const avatarEl = sectionEl.querySelector('.cv-avatar');
+    if (avatarEl && data.AvatarBase64) avatarEl.innerHTML = `<img src="${data.AvatarBase64}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" alt="avatar"/>`;
+    return;
+  }
+  if (type === 'summary') { set('.cv-simple', data.Summary); return; }
+  if (type === 'skills') {
+    const skills = (data.Skills || '').split(',').map(s => s.trim()).filter(Boolean);
+    const wrap = sectionEl.querySelector('.cv-skills');
+    if (wrap && skills.length) wrap.innerHTML = skills.map(s => `<span class="cv-tag" contenteditable="true" spellcheck="false">${s}</span>`).join('');
+    return;
+  }
+  if (type === 'experience') {
+    const item = (data.Experiences || [])[idx] || {};
+    set('.cv-company', item.Company); set('.cv-pos', item.Role);
+    set('.cv-date', item.Period); set('.cv-desc', item.Description);
+    return;
+  }
+  if (type === 'education') {
+    const item = (data.Educations || [])[idx] || {};
+    set('.cv-company', item.School); set('.cv-pos', item.Degree);
+    set('.cv-date', item.Period); set('.cv-desc', item.Achievement);
+    return;
+  }
+  if (type === 'projects') {
+    const item = (data.Projects || [])[idx] || {};
+    set('.cv-company', item.Name); set('.cv-pos', item.Role);
+    set('.cv-date', item.Period); set('.cv-desc', item.Description);
+    return;
+  }
+  if (type === 'hobbies') { set('.cv-simple', data.Hobbies); return; }
+  if (type === 'extra') { set('.cv-simple', data.Extra); return; }
+}
+
+function renderCanvas() {
   const cvs = document.getElementById('canvas');
   cvs.innerHTML = '';
-  const sectionCounters = { header: 0, summary: 0, experience: 0, education: 0, skills: 0, awards: 0, certs: 0, activities: 0, refs: 0, hobbies: 0 };
+  Object.keys(_counters).forEach(k => _counters[k] = 0);
 
   pages.forEach((pg, pi) => {
-    const bar = div('pg-bar'); bar.innerHTML = `<span>Trang ${pi+1}</span>`;
-    const a4 = div('a4'); a4.dataset.page = pi; a4.style.fontFamily = `'${activeTheme.font}',sans-serif`;
+    const bar = div('pg-bar'); bar.innerHTML = `<span>Trang ${pi + 1}</span>`;
+    const a4 = div('a4'); a4.dataset.page = pi; a4.style.fontFamily = `'${activeTheme.font}', sans-serif`;
 
-    pg.sections.forEach((s) => {
-      const def = SEC[s.type];
-      if(!def) return;
-      const el = div('cv-sec resize-drag');
-      el.dataset.type = s.type;
-      el.style.top = (s.top || 10) + 'px'; el.style.left = (s.left || 10) + 'px';
-      if(s.width) el.style.width = s.width + 'px';
-      if(s.height) el.style.height = s.height + 'px';
-      
-      const ctrlBar = `<div class="sec-bar"><span class="drag-handle">🕂 Kéo dời</span><span class="sec-lbl">${def.label}</span><button type="button" class="sec-rm" onclick="removeSec(this.parentElement.parentElement)">✕</button></div>`;
-      
-      if(s.html) {
-         // Re-inject custom HTML made by Candidate (the content-wrap wrapper)
-         el.innerHTML = ctrlBar + s.html;
-      } else {
-         el.innerHTML = ctrlBar;
-         el.appendChild(def.build());
-        hydrateSection(el, s.type, sectionCounters);
-      }
-      
+    pg.sections.forEach(s => {
+      const el = buildSectionEl(s, pi, 'candidate');
+      if (!el) return;
+      if (!s.html) hydrateSection(el, s.type);
       a4.appendChild(el);
     });
 
@@ -497,195 +360,133 @@ function renderCanvas(){
   });
 
   bindDroppable();
+  refreshPalette();
+  applyTheme();
 }
 
-function getSectionText(root, selector) {
-  const el = root.querySelector(selector);
-  return el ? (el.innerText || el.textContent || '').trim() : '';
+function showToast(msg, isOk) {
+  const t = document.getElementById('cvToast');
+  t.textContent = msg;
+  t.style.background = isOk ? '#059669' : '#dc2626';
+  t.style.opacity = '1';
+  setTimeout(() => { t.style.opacity = '0'; }, 3000);
 }
 
-function setSectionText(root, selector, value) {
-  const el = root.querySelector(selector);
-  if (el) {
-    el.textContent = value || '';
-  }
-}
+async function saveCv() {
+  const btn = document.getElementById('saveBtn');
+  const originalHtml = btn.innerHTML;
+  btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Đang lưu...';
+  btn.disabled = true;
 
-function hydrateSection(sectionEl, type, counters) {
-  const data = cvDataObj || {};
-  const nextIndex = (key) => {
-    const current = counters[key] || 0;
-    counters[key] = current + 1;
-    return current;
-  };
+  // ── Collect current canvas data ──
+  const newPages = [];
+  const experiences = [], educations = [], projects = [];
 
-  if (type === 'header') {
-    setSectionText(sectionEl, '.cv-name', data.FullName || '');
-    setSectionText(sectionEl, '.cv-jobtitle', data.Position || '');
-    const contactValues = ['', data.Phone || '', data.Email || '', data.Address || ''];
-    const contactNodes = sectionEl.querySelectorAll('.cv-contacts [contenteditable="true"]');
-    contactNodes.forEach((node, idx) => {
-      node.textContent = contactValues[idx] || node.textContent || '';
-    });
-    return;
+  const headerEl = document.querySelector('.cv-sec[data-type="header"]');
+  if (headerEl) {
+    const nodes = headerEl.querySelectorAll('.cv-contacts [contenteditable="true"]');
+    cvDataObj.FullName = (headerEl.querySelector('.cv-name')?.innerText || '').trim();
+    cvDataObj.Position = (headerEl.querySelector('.cv-jobtitle')?.innerText || '').trim();
+    if (nodes[0]) cvDataObj.DateOfBirth = nodes[0].textContent.trim();
+    if (nodes[1]) cvDataObj.Phone = nodes[1].textContent.trim();
+    if (nodes[2]) cvDataObj.Email = nodes[2].textContent.trim();
+    if (nodes[3]) cvDataObj.Address = nodes[3].textContent.trim();
+    if (nodes[4]) cvDataObj.LinkedIn = nodes[4].textContent.trim();
+    const avatarImg = headerEl.querySelector('.cv-avatar img, .cv-avatar-sm img');
+    if (avatarImg) cvDataObj.AvatarBase64 = avatarImg.src;
   }
 
-  if (type === 'summary') {
-    setSectionText(sectionEl, '.cv-simple', data.Summary || '');
-    return;
-  }
-
-  if (type === 'experience') {
-    const item = (data.Experiences || [])[nextIndex('experience')] || {};
-    setSectionText(sectionEl, '.cv-date', item.Period || '');
-    setSectionText(sectionEl, '.cv-company', item.Company || '');
-    setSectionText(sectionEl, '.cv-pos', item.Role || '');
-    setSectionText(sectionEl, '.cv-desc', item.Description || '');
-    return;
-  }
-
-  if (type === 'education') {
-    const item = (data.Educations || [])[nextIndex('education')] || {};
-    setSectionText(sectionEl, '.cv-date', item.Period || '');
-    setSectionText(sectionEl, '.cv-company', item.School || '');
-    setSectionText(sectionEl, '.cv-pos', item.Degree || '');
-    return;
-  }
-
-  if (type === 'skills') {
-    const skills = (data.Skills || '').split(',').map(s => s.trim()).filter(Boolean);
-    const skillsWrap = sectionEl.querySelector('.cv-skills');
-    if (skillsWrap && skills.length > 0) {
-      skillsWrap.innerHTML = skills.map(skill => `<span class="cv-tag" contenteditable="true" spellcheck="false">${skill}</span>`).join('');
-    }
-    return;
-  }
-
-  const extra = (data.AdditionalSections || []).filter(s => s.Type === type)[nextIndex(type)] || null;
-  if (!extra) {
-    return;
-  }
-
-  const content = extra.Content || '';
-  const target = sectionEl.querySelector('.cv-simple, .cv-ph, .cv-desc, .cv-company');
-  if (target) {
-    target.textContent = content;
-  } else {
-    const wrap = sectionEl.querySelector('.cv-content-wrap');
-    if (wrap) {
-      wrap.textContent = content;
-    }
-  }
-}
-
-/* ══ SAVE CV TO backend ════════════════════════════════════ */
-async function saveCv(){
-  let newPages = [];
-  let experiences = [];
-  let educations = [];
-  let additionalSections = [];
-
-  const headerSection = document.querySelector('.cv-sec[data-type="header"]');
-  if (headerSection) {
-    cvDataObj.FullName = getSectionText(headerSection, '.cv-name');
-    cvDataObj.Position = getSectionText(headerSection, '.cv-jobtitle');
-    const contactNodes = headerSection.querySelectorAll('.cv-contacts [contenteditable="true"]');
-    cvDataObj.Phone = contactNodes[1] ? contactNodes[1].textContent.trim() : (cvDataObj.Phone || '');
-    cvDataObj.Email = contactNodes[2] ? contactNodes[2].textContent.trim() : (cvDataObj.Email || '');
-    cvDataObj.Address = contactNodes[3] ? contactNodes[3].textContent.trim() : (cvDataObj.Address || '');
-  }
-
-  document.querySelectorAll('.a4').forEach((a4) => {
-    let secs = [];
+  document.querySelectorAll('.a4').forEach(a4 => {
+    const secs = [];
     a4.querySelectorAll('.cv-sec').forEach(el => {
       const type = el.dataset.type;
-      const top = parseFloat(el.style.top)||0;
-      const left = parseFloat(el.style.left)||0;
-      const width = parseFloat(el.style.width)||300;
-      const height = parseFloat(el.style.height)||100;
+      const top = parseFloat(el.style.top) || 0, left = parseFloat(el.style.left) || 0;
+      const width = parseFloat(el.style.width) || 300, height = parseFloat(el.style.height) || 100;
+      const cw = el.querySelector('.cv-content-wrap');
 
       if (type === 'summary') {
-        cvDataObj.Summary = getSectionText(el, '.cv-simple');
+        const sumEl = el.querySelector('.cv-simple');
+        cvDataObj.Summary = getRichHtml(sumEl) || sumEl?.innerText?.trim() || '';
+      } else if (type === 'skills') {
+        cvDataObj.Skills = Array.from(el.querySelectorAll('.cv-tag')).map(t => (t.innerText || '').trim()).filter(Boolean).join(', ');
+      } else if (type === 'hobbies') {
+        cvDataObj.Hobbies = Array.from(el.querySelectorAll('.cv-tag')).map(t => (t.innerText || '').trim()).filter(Boolean).join(', ') || (el.querySelector('.cv-simple')?.innerText || '').trim();
+      } else if (type === 'extra') {
+        cvDataObj.Extra = (el.querySelector('.cv-simple')?.innerText || '').trim();
       } else if (type === 'experience') {
-        experiences.push({
-          Company: getSectionText(el, '.cv-company'),
-          Role: getSectionText(el, '.cv-pos'),
-          Period: getSectionText(el, '.cv-date'),
-          Description: getSectionText(el, '.cv-desc')
+        el.querySelectorAll('.cv-exp-item').forEach(item => {
+          const descEl = item.querySelector('.cv-desc');
+          experiences.push({ Company: (item.querySelector('.cv-company')?.innerText || '').trim(), Role: (item.querySelector('.cv-pos')?.innerText || '').trim(), Period: (item.querySelector('.cv-date')?.innerText || '').trim(), Description: getRichHtml(descEl) });
         });
       } else if (type === 'education') {
-        educations.push({
-          School: getSectionText(el, '.cv-company'),
-          Degree: getSectionText(el, '.cv-pos'),
-          Period: getSectionText(el, '.cv-date')
+        el.querySelectorAll('.cv-exp-item').forEach(item => {
+          const descEl = item.querySelector('.cv-desc');
+          educations.push({ School: (item.querySelector('.cv-company')?.innerText || '').trim(), Degree: (item.querySelector('.cv-pos')?.innerText || '').trim(), Period: (item.querySelector('.cv-date')?.innerText || '').trim(), Achievement: getRichHtml(descEl) });
         });
-      } else if (type === 'skills') {
-        const tags = Array.from(el.querySelectorAll('.cv-tag')).map(t => (t.innerText || t.textContent || '').trim()).filter(Boolean);
-        cvDataObj.Skills = tags.join(', ');
-      } else if (type !== 'header') {
-        const cw = el.querySelector('.cv-content-wrap');
-        additionalSections.push({
-          Type: type,
-          Content: cw ? (cw.innerText || cw.textContent || '').trim() : '',
-          Top: top,
-          Left: left,
-          Width: width,
-          Height: height
+      } else if (type === 'projects') {
+        el.querySelectorAll('.cv-exp-item').forEach(item => {
+          const descEl = item.querySelector('.cv-desc');
+          projects.push({ Name: (item.querySelector('.cv-company')?.innerText || '').trim(), Role: (item.querySelector('.cv-pos')?.innerText || '').trim(), Period: (item.querySelector('.cv-date')?.innerText || '').trim(), Description: getRichHtml(descEl) });
         });
       }
-      
-      secs.push({
-        type,
-        top,
-        left,
-        width,
-        height
-      });
+
+      // Build section HTML — strip candidate helper buttons before saving
+      let secHtml = null;
+      if (cw) {
+        const clone = cw.cloneNode(true);
+        const allOrigRich = Array.from(cw.querySelectorAll('.cv-desc,.cv-simple'));
+        const allCloneRich = Array.from(clone.querySelectorAll('.cv-desc,.cv-simple'));
+        allCloneRich.forEach((f, i) => {
+          const orig = allOrigRich[i];
+          if (orig && orig._tiptapEditor) f.innerHTML = orig._tiptapEditor.getHTML();
+        });
+        clone.querySelectorAll('.cv-item-del, .cv-add-item-btn').forEach(b => b.remove());
+        clone.querySelectorAll('.cv-items-wrap').forEach(w => w.replaceWith(...Array.from(w.childNodes)));
+        secHtml = clone.innerHTML;
+      }
+      secs.push({ type, top, left, width, height, html: secHtml });
     });
-    newPages.push({ columns:0, sections: secs });
+    newPages.push({ columns: 0, sections: secs });
   });
 
   cvDataObj.Experiences = experiences;
   cvDataObj.Educations = educations;
-  cvDataObj.AdditionalSections = additionalSections;
+  cvDataObj.Projects = projects;
   cvDataObj.CustomLayout = { pages: newPages, theme: activeTheme };
+
+  // ── Upload pending avatar to Cloudinary ──
+  const pendingLabel = document.querySelector('.cv-avatar-wrap[data-pending-avatar], .cv-vcard-avatar[data-pending-avatar]');
+  if (pendingLabel) {
+    try {
+      const b64 = pendingLabel.dataset.pendingAvatar;
+      const uploadRes = await fetch('/CV/UploadAvatar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ base64: b64 })
+      });
+      if (uploadRes.ok) {
+        const { url } = await uploadRes.json();
+        if (url) { cvDataObj.AvatarBase64 = url; delete pendingLabel.dataset.pendingAvatar; }
+      }
+    } catch (_) { /* keep base64 locally on failure */ }
+  }
+
   document.getElementById('cvDataOutput').value = JSON.stringify(cvDataObj);
-  
-  let btn = document.querySelector('.btn-green');
-  let originalText = btn.innerHTML;
-  btn.innerHTML = '⏳ Đang lưu...';
-  btn.disabled = true;
 
   try {
     const form = document.getElementById('cvForm');
-    const formData = new FormData(form);
-    
-    // AJAX submit to perfectly silence the navigation and provide a robust notification
-    const res = await fetch(form.action, {
-      method: 'POST',
-      body: formData
-    });
-    
+    const res = await fetch(form.action, { method: 'POST', body: new FormData(form) });
     if (res.ok) {
       isCvDirty = false;
-      btn.innerHTML = '✓ Đã lưu thành công';
-      btn.style.background = '#059669'; // darker success green
-      // Chuyển hướng lên đúng route (nếu đây là lần tạo mới, sv sẽ redirect về id mới)
-      if (res.redirected) {
-          window.location.href = res.url;
-      }
+      showToast('✓ Lưu CV thành công!', true);
+      if (res.redirected) window.location.href = res.url;
     } else {
-      alert("Lỗi khi lưu CV!");
+      showToast('Lỗi khi lưu CV. Vui lòng thử lại.', false);
     }
   } catch (err) {
-    alert("Lỗi mạng: " + err.message);
+    showToast('Lỗi mạng: ' + err.message, false);
   } finally {
-    // Rever button back to original state after 2 seconds
-    setTimeout(() => {
-       btn.innerHTML = originalText;
-       btn.style.background = '';
-       btn.disabled = false;
-    }, 2500);
+    setTimeout(() => { btn.innerHTML = originalHtml; btn.disabled = false; }, 2000);
   }
 }
 </script>

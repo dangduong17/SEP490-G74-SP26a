@@ -320,6 +320,7 @@
                                 <td>
                                     <div class="action-btns">
                                         <a href="/Recruiter/ViewCV/@app.CvId" target="_blank" class="action-btn action-btn-cv"><i class="fas fa-file-pdf me-1"></i> Xem CV</a>
+                                        <a href="/Recruiter/DownloadCvPdf/@app.CvId" class="action-btn action-btn-cv" title="Tải xuống PDF" style="background:#e0f2fe;color:#2563eb"><i class="fas fa-download me-1"></i> PDF</a>
                                         
                                         @if (Context.Request.Cookies["UserRole"] == "Employee")
                                         {

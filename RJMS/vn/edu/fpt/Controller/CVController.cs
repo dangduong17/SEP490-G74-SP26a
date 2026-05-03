@@ -1,18 +1,21 @@
 using Microsoft.AspNetCore.Mvc;
+using PuppeteerSharp;
 using RJMS.vn.edu.fpt.Models.DTOs;
 using RJMS.Vn.Edu.Fpt.Service;
-using System.Threading.Tasks;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace RJMS.Vn.Edu.Fpt.Controllers
 {
     public class CVController : Controller
     {
         private readonly ICVService _cvService;
+        private readonly ICloudinaryService _cloudinaryService;
 
-        public CVController(ICVService cvService)
+        public CVController(ICVService cvService, ICloudinaryService cloudinaryService)
         {
             _cvService = cvService;
+            _cloudinaryService = cloudinaryService;
         }
 
         private int? GetCurrentUserId()
@@ -187,6 +190,75 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
 
             var html = await _cvService.RenderCvHtmlAsync(cvId, jsonData.GetRawText());
             return Content(html, "text/html");
+        }
+
+        // ──────────────────────────────────────────────────────────────────
+        // UPLOAD AVATAR (base64 → Cloudinary)
+        // ──────────────────────────────────────────────────────────────────
+        [HttpPost]
+        public async Task<IActionResult> UploadAvatar([FromBody] AvatarUploadDto dto)
+        {
+            if (EnsureCandidateRole() is { } redirect) return redirect;
+            if (string.IsNullOrWhiteSpace(dto?.Base64)) return BadRequest();
+
+            try
+            {
+                // Strip data URI prefix (data:image/png;base64,...)
+                var comma = dto.Base64.IndexOf(',');
+                var b64 = comma >= 0 ? dto.Base64[(comma + 1)..] : dto.Base64;
+                var bytes = Convert.FromBase64String(b64);
+
+                // Detect extension from data URI
+                var ext = dto.Base64.StartsWith("data:image/png") ? "png"
+                         : dto.Base64.StartsWith("data:image/webp") ? "webp"
+                         : "jpg";
+
+                using var ms = new System.IO.MemoryStream(bytes);
+                var formFile = new FormFile(ms, 0, bytes.Length, "avatar", $"avatar.{ext}")
+                {
+                    Headers = new HeaderDictionary(),
+                    ContentType = $"image/{ext}"
+                };
+
+                var url = await _cloudinaryService.UploadImageAsync(formFile, "cv-avatars");
+                if (string.IsNullOrEmpty(url)) return StatusCode(500);
+                return Ok(new { url });
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+
+        // ──────────────────────────────────────────────────────────────────
+        // DOWNLOAD PDF (PuppeteerSharp HTML → PDF)
+        // ──────────────────────────────────────────────────────────────────
+        [HttpGet]
+        public async Task<IActionResult> DownloadPdf(int id)
+        {
+            if (EnsureCandidateRole() is { } redirect) return redirect;
+            var userId = GetCurrentUserId();
+            if (!userId.HasValue) return RedirectToLogin();
+
+            var html = await _cvService.RenderCvHtmlAsync(id);
+            if (string.IsNullOrWhiteSpace(html)) return NotFound();
+
+            // Wrap HTML with proper styling for A4 PDF
+            var fullHtml = $"<!DOCTYPE html><html><head><meta charset='utf-8'><style>body{{margin:0;padding:0}}.cv-page{{width:794px;margin:0 auto}}</style></head><body>{html}</body></html>";
+
+            await using var browser = await Puppeteer.LaunchAsync(new LaunchOptions { Headless = true });
+            await using var page = await browser.NewPageAsync();
+            await page.SetContentAsync(fullHtml);
+            var pdfBytes = await page.PdfDataAsync(new PdfOptions
+            {
+                Format = PuppeteerSharp.Media.PaperFormat.A4,
+                PrintBackground = true,
+                MarginOptions = new PuppeteerSharp.Media.MarginOptions { Top = "0", Right = "0", Bottom = "0", Left = "0" }
+            });
+            await browser.CloseAsync();
+
+            var title = $"CV_{id}_{DateTime.Now:yyyyMMdd}.pdf";
+            return File(pdfBytes, "application/pdf", title);
         }
 
         // ──────────────────────────────────────────────────────────────────
