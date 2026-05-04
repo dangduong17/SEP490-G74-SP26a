@@ -442,15 +442,6 @@
                                 </button>
                             </form>
 
-                            <!-- Delete -->
-                            <form asp-controller="Subscription" asp-action="DeletePlan"
-                                  asp-route-id="@p.Id" method="post" style="display:inline;" class="confirm-delete"
-                                  data-name="@p.Name">
-                                @Html.AntiForgeryToken()
-                                <button type="submit" class="act-btn act-delete" title="Xóa">
-                                    Xóa
-                                </button>
-                            </form>
                         </div>
                     </td>
                 </tr>

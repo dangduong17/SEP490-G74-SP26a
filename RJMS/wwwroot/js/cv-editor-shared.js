@@ -438,60 +438,119 @@ function drawGuides(a4, gx, gy) {
   }
 }
 
-/* ══ INTERACT.JS SETUP ══════════════════════════════════════════════════ */
+/* ══ INTERACT.JS SETUP (resize only) ═════════════════════════════════════ */
 function initInteract(onDragEnd, onResizeEnd) {
+  // Store callbacks for custom drag
+  initInteract._onDragEnd = onDragEnd;
+  initInteract._onResizeEnd = onResizeEnd;
+
   interact('.resize-drag')
-    .draggable({
-      allowFrom: '.drag-handle',
-      listeners: {
-        start(e) {
-          e.target.classList.add('is-dragging');
-        },
-        move(e) {
-          let t = e.target, a4 = t.closest('.a4');
-          let rx = (parseFloat(t.dataset.rx) || parseFloat(t.style.left) || 0) + e.dx;
-          let ry = (parseFloat(t.dataset.ry) || parseFloat(t.style.top) || 0) + e.dy;
-          t.dataset.rx = rx; t.dataset.ry = ry;
-
-          let w = parseFloat(t.style.width) || t.offsetWidth;
-          let h = parseFloat(t.style.height) || t.offsetHeight;
-          let s = snapCoords(rx, ry, w, h, a4);
-
-          t.style.left = s.l + 'px';
-          t.style.top  = s.t + 'px';
-          drawGuides(a4, s.gx, s.gy);
-        },
-        end(e) {
-          e.target.classList.remove('is-dragging');
-          delete e.target.dataset.rx;
-          delete e.target.dataset.ry;
-          document.querySelectorAll('.snap-guide,.snap-label').forEach(g => g.remove());
-          resolveAllOverlaps(e.target.closest('.a4'));
-          if (onDragEnd) onDragEnd(e.target);
-        }
-      }
-    })
     .resizable({
+      ignoreFrom: '.sec-bar', // Prevent resizing when clicking toolbar
       edges: { left: true, right: true, bottom: true, top: true },
+      margin: 5,
       modifiers: [
         interact.modifiers.restrictEdges({ outer: 'parent' }),
         interact.modifiers.restrictSize({ min: { width: 120, height: 50 } }),
         interact.modifiers.snapSize({ targets: [interact.createSnapGrid({ x: GRID_SIZE, y: GRID_SIZE })] }),
-        interact.modifiers.snapEdges({ targets: [interact.createSnapGrid({ x: GRID_SIZE, y: GRID_SIZE })] })
       ],
       listeners: {
+        start(e) { 
+          e.target.classList.add('is-resizing'); 
+          document.body.classList.add('is-interacting');
+          window.getSelection().removeAllRanges();
+        },
         move(e) {
           let r = e.rect;
-          e.target.style.width = r.width + 'px'; e.target.style.height = r.height + 'px';
-          let l = (parseFloat(e.target.style.left) || 0) + e.deltaRect.left;
-          let t = (parseFloat(e.target.style.top) || 0) + e.deltaRect.top;
-          e.target.style.left = l + 'px'; e.target.style.top = t + 'px';
+          e.target.style.width  = r.width  + 'px';
+          e.target.style.height = r.height + 'px';
+          
+          let scale = (typeof _currentZoom !== 'undefined') ? _currentZoom : 1;
+          // deltaRect is already scaled if we zoom via CSS transform, but interactjs might need division
+          let dx = e.deltaRect.left / scale;
+          let dy = e.deltaRect.top / scale;
+          
+          let l = (parseFloat(e.target.style.left) || 0) + dx;
+          let t = (parseFloat(e.target.style.top)  || 0) + dy;
+          e.target.style.left = l + 'px';
+          e.target.style.top  = t + 'px';
         },
         end(e) {
-          if (onResizeEnd) onResizeEnd(e.target);
+          e.target.classList.remove('is-resizing');
+          document.body.classList.remove('is-interacting');
+          resolveAllOverlaps(e.target.closest('.a4'));
+          if (initInteract._onResizeEnd) initInteract._onResizeEnd(e.target);
         }
       }
     });
+}
+
+/* ══ CUSTOM DRAG (Works flawlessly outside interact.js bounding rect) ════ */
+function _initCustomDrag(el) {
+  const handle = el.querySelector('.drag-handle');
+  const secBar = el.querySelector('.sec-bar');
+  if (!handle || handle._dragBound) return;
+  handle._dragBound = true;
+
+  // Prevent interact.js from triggering resize when clicking ANYWHERE on the sec-bar
+  if (secBar) {
+    secBar.addEventListener('mousedown', e => e.stopPropagation());
+  }
+
+  handle.addEventListener('mousedown', function(e) {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    const a4    = el.closest('.a4');
+    const scale = (typeof _currentZoom !== 'undefined') ? _currentZoom : 1;
+
+    let startX = e.clientX;
+    let startY = e.clientY;
+    let startL = parseFloat(el.style.left) || 0;
+    let startT = parseFloat(el.style.top)  || 0;
+    let w = parseFloat(el.style.width)  || el.offsetWidth;
+    let h = parseFloat(el.style.height) || el.offsetHeight;
+
+    el.classList.add('is-dragging');
+    document.body.classList.add('is-interacting');
+    window.getSelection().removeAllRanges();
+
+    function onMove(e) {
+      const dx = (e.clientX - startX) / scale;
+      const dy = (e.clientY - startY) / scale;
+      
+      let newL = startL + dx;
+      let newT = startT + dy;
+
+      const s = snapCoords(newL, newT, w, h, a4);
+      
+      newL = Math.max(0, Math.min(A4_W - w, s.l));
+      newT = Math.max(0, Math.min(A4_H - h, s.t));
+      
+      el.style.left = newL + 'px';
+      el.style.top  = newT + 'px';
+      
+      drawGuides(a4, s.gx, s.gy);
+    }
+
+    function onUp(e) {
+      el.classList.remove('is-dragging');
+      document.body.classList.remove('is-interacting');
+      document.querySelectorAll('.snap-guide,.snap-label').forEach(g => g.remove());
+      
+      resolveAllOverlaps(a4);
+      
+      if (typeof isCvDirty !== 'undefined') isCvDirty = true;
+      if (initInteract._onDragEnd) initInteract._onDragEnd(el);
+      
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup',   onUp);
+    }
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup',   onUp);
+  });
 }
 
 /* ══ BUILD SECTION DOM ELEMENT ══════════════════════════════════════════ */
@@ -513,9 +572,12 @@ function buildSectionEl(s, pi, mode) {
     <button type="button" class="sec-btn" title="Di chuyển lên" onclick="moveSecUp(this.closest('.cv-sec'))">↑</button>
     <button type="button" class="sec-btn" title="Di chuyển xuống" onclick="moveSecDown(this.closest('.cv-sec'))">↓</button>
     <div class="sec-bar-sep"></div>
-    <button type="button" class="sec-btn danger" title="Xoá khối" onclick="removeSec(this.closest('.cv-sec'))">Xoá</button>
+    <button type="button" class="sec-btn danger" title="Xoá khối" onclick="removeSec(this.closest('.cv-sec'))">Xóa</button>
   </div>`;
   el.innerHTML = barHtml;
+
+  // Initialize custom drag for the drag-handle
+  _initCustomDrag(el);
 
   if (s.html && mode === 'candidate') {
     const cw = div('cv-content-wrap');
@@ -559,7 +621,7 @@ function _injectTiptapToolbar() {
       <option>12</option><option>13</option><option>14</option><option>16</option>
       <option>18</option><option>20</option><option>24</option><option>28</option><option>32</option>
     </select>
-    <select class="tt-sel tt-font-sel" id="tt-font" title="Font chữ" style="max-width:120px">
+    <select class="tt-sel tt-font-sel" id="tt-font" title="Font chữ" style="max-width:110px">
       <option value="Inter">Inter</option>
       <option value="Be Vietnam Pro">Be Vietnam Pro</option>
       <option value="Roboto">Roboto</option>
@@ -571,17 +633,17 @@ function _injectTiptapToolbar() {
       <input type="color" id="tt-color-input" value="#111827"/>
     </label>
     <div class="tt-sep"></div>
-    <button data-cmd="bold"><b>B</b></button>
-    <button data-cmd="italic"><i>I</i></button>
-    <button data-cmd="underline"><u>U</u></button>
+    <button data-cmd="bold" title="Đậm"><b>B</b></button>
+    <button data-cmd="italic" title="Nghiêng"><i>I</i></button>
+    <button data-cmd="underline" title="Gạch chân"><u>U</u></button>
     <div class="tt-sep"></div>
-    <button data-cmd="orderedList" class="tt-tiptap-only" title="Danh sách số">1≡</button>
-    <button data-cmd="bulletList"  class="tt-tiptap-only" title="Danh sách chấm">•≡</button>
+    <button data-cmd="orderedList" class="tt-tiptap-only" title="Danh sách số" style="font-size:.75rem">1≡</button>
+    <button data-cmd="bulletList"  class="tt-tiptap-only" title="Danh sách chấm" style="font-size:.75rem">•≡</button>
     <div class="tt-sep tt-tiptap-only"></div>
-    <button data-cmd="alignLeft"   class="tt-tiptap-only" title="Căn trái">≡</button>
-    <button data-cmd="alignCenter" class="tt-tiptap-only" title="Căn giữa">≡</button>
-    <button data-cmd="alignRight"  class="tt-tiptap-only" title="Căn phải">≡</button>
-    <button data-cmd="alignJustify" class="tt-tiptap-only" title="Căn đều">≡</button>
+    <button data-cmd="alignLeft"   class="tt-tiptap-only" title="Căn trái"   style="font-size:.85rem">&#8676;</button>
+    <button data-cmd="alignCenter" class="tt-tiptap-only" title="Căn giữa"  style="font-size:.85rem">&#8596;</button>
+    <button data-cmd="alignRight"  class="tt-tiptap-only" title="Căn phải"  style="font-size:.85rem">&#8677;</button>
+    <button data-cmd="alignJustify" class="tt-tiptap-only" title="Căn đều"  style="font-size:.7rem">&#9776;</button>
     <div class="tt-sep"></div>
     <button data-cmd="uppercase" title="CHỮ HOA" style="font-size:.62rem;letter-spacing:.03em">AA</button>
     <button data-cmd="lowercase" title="chữ thường" style="font-size:.62rem">aa</button>
@@ -736,8 +798,12 @@ function _startTiptap() {
     const ce = e.target.closest('[contenteditable="true"]');
     if (!ce || ce.classList.contains('tiptap-rich') || ce.closest('.cv-sec') === null) return;
     if (ce._tiptapEditor) return; // handled by Tiptap
-    // Hide tiptap-only controls
-    document.querySelectorAll('.tt-tiptap-only').forEach(el => el.style.display = 'none');
+    // For plain CE: show all buttons but mark tiptap-only as dimmed
+    document.querySelectorAll('.tt-tiptap-only').forEach(el => {
+      el.style.display = '';
+      el.style.opacity = '0.35';
+      el.style.pointerEvents = 'none';
+    });
     _ttActiveEditor = null;
     _ttPositionToolbar(ce);
   });
@@ -752,7 +818,11 @@ function _startTiptap() {
   });
   // Show tiptap-only when Tiptap is active
   function _showTiptapControls(show) {
-    document.querySelectorAll('.tt-tiptap-only').forEach(el => el.style.display = show ? '' : 'none');
+    document.querySelectorAll('.tt-tiptap-only').forEach(el => {
+      el.style.display = '';
+      el.style.opacity = show ? '' : '0.35';
+      el.style.pointerEvents = show ? '' : 'none';
+    });
   }
 
   function mountTiptap(el) {
@@ -1135,10 +1205,10 @@ function resolveAllOverlaps(a4) {
       const nh = parseFloat(next.style.height) || next.offsetHeight;
 
       // Check horizontal intersection
-      if (cl < nl + nw + 4 && cl + cw + 4 > nl) {
+      if (cl < nl + nw && cl + cw > nl) {
         // If vertically overlapping, push the next element down
-        if (nt < ct + ch + 12) {
-          next.style.top = (ct + ch + 12) + 'px';
+        if (nt < ct + ch) {
+          next.style.top = (ct + ch) + 'px';
           // Re-sort the remaining array since we modified `next.style.top`
           secs.sort((a, b) => (parseFloat(a.style.top) || 0) - (parseFloat(b.style.top) || 0));
         }

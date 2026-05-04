@@ -1,258 +1,142 @@
 @model RJMS.vn.edu.fpt.Models.DTOs.AdminCompanyDetailViewModel
 @{
     ViewData["Title"] = $"Chi tiết công ty - {Model.Name}";
+    ViewData["HidePageTitle"] = true;
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
 }
 
+@section Styles {
 <style>
-    .detail-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 2rem;
-    }
-    .detail-title { font-size: 1.75rem; font-weight: 700; color: #1f2937; }
-    .detail-card {
-        background: white;
-        border-radius: 8px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        padding: 2rem;
-        margin-bottom: 1.5rem;
-    }
-    .section-title { font-size: 1.25rem; font-weight: 600; color: #374151; margin-bottom: 1rem; border-bottom: 2px solid #e5e7eb; padding-bottom: 0.5rem; }
-    .info-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 1.5rem;
-    }
-    .info-item label {
-        display: block;
-        font-weight: 600;
-        color: #6b7280;
-        font-size: 0.85rem;
-        margin-bottom: 0.5rem;
-    }
-    .info-item .value {
-        font-size: 1rem;
-        color: #1f2937;
-    }
-    .verified-badge {
-        padding: 0.5rem 1rem;
-        background: #d1fae5;
-        color: #065f46;
-        border-radius: 6px;
-        font-weight: 600;
-        display: inline-block;
-    }
-    .unverified-badge {
-        padding: 0.5rem 1rem;
-        background: #fee2e2;
-        color: #991b1b;
-        border-radius: 6px;
-        font-weight: 600;
-        display: inline-block;
-    }
-    .btn-verify {
-        padding: 0.75rem 1.5rem;
-        background: #10b981;
-        color: white;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        font-weight: 600;
-        font-size: 1rem;
-    }
-    .btn-verify:hover { background: #059669; }
-    .btn-unverify {
-        padding: 0.75rem 1.5rem;
-        background: #ef4444;
-        color: white;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        font-weight: 600;
-        font-size: 1rem;
-    }
-    .btn-unverify:hover { background: #dc2626; }
-    .btn-back {
-        padding: 0.75rem 1.5rem;
-        background: #6b7280;
-        color: white;
-        border-radius: 6px;
-        text-decoration: none;
-        font-weight: 600;
-        font-size: 1rem;
-    }
-    .btn-back:hover { background: #4b5563; color: white; }
-    .list-item {
-        padding: 0.75rem;
-        border-bottom: 1px solid #f3f4f6;
-    }
-    .list-item:last-child { border-bottom: none; }
+    .info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.25rem; }
+    .info-item label { display: block; font-weight: 600; color: #6b7280; font-size: 0.82rem; margin-bottom: 4px; }
+    .info-item .val { font-size: 0.95rem; color: #111827; }
+    .section-label { font-size: 0.9rem; font-weight: 700; color: #374151; padding-bottom: 8px; border-bottom: 1px solid #e5e7eb; margin-bottom: 16px; }
+    .badge-verified   { display:inline-block; padding:3px 12px; border-radius:20px; background:#dcfce7; color:#16a34a; font-size:0.78rem; font-weight:600; }
+    .badge-unverified { display:inline-block; padding:3px 12px; border-radius:20px; background:#fee2e2; color:#991b1b; font-size:0.78rem; font-weight:600; }
+    .list-row { padding: 10px 0; border-bottom: 1px solid #f3f4f6; font-size: 0.85rem; }
+    .list-row:last-child { border-bottom: none; }
 </style>
+}
 
-<div class="detail-header">
-    <h1 class="detail-title">Chi tiết công ty</h1>
-    <a asp-action="CompanyList" class="btn-back">
-        Quay lại
-    </a>
+<div class="d-flex align-items-center gap-3 mb-4">
+    <a asp-action="CompanyList" class="btn btn-sm btn-outline-secondary">← Quay lại danh sách</a>
+    <h2 class="mb-0 fw-bold" style="font-size:1.4rem; color:#111827;">Chi tiết công ty</h2>
 </div>
 
-<div class="detail-card">
-    <div class="section-title">Thông tin công ty</div>
-    <div class="info-grid">
-        <div class="info-item">
-            <label>Tên công ty</label>
-            <div class="value"><strong>@Model.Name</strong></div>
-        </div>
-        <div class="info-item">
-            <label>Mã số thuế</label>
-            <div class="value">@(Model.TaxCode ?? "—")</div>
-        </div>
-        <div class="info-item">
-            <label>Ngành nghề</label>
-            <div class="value">@(Model.Industry ?? "—")</div>
-        </div>
-        <div class="info-item">
-            <label>Quy mô</label>
-            <div class="value">@(Model.CompanySize ?? "—")</div>
-        </div>
-        <div class="info-item">
-            <label>Website</label>
-            <div class="value">
-                @if (!string.IsNullOrEmpty(Model.Website))
-                {
-                    <a href="@Model.Website" target="_blank" style="color:#3b82f6;">@Model.Website</a>
-                }
-                else
-                {
-                    <span>—</span>
-                }
+<div class="row g-3">
+    <div class="col-12">
+        <div class="admin-card">
+            <div class="section-label">Thông tin công ty</div>
+            <div class="info-grid">
+                <div class="info-item"><label>Tên công ty</label><div class="val"><strong>@Model.Name</strong></div></div>
+                <div class="info-item"><label>Mã số thuế</label><div class="val">@(Model.TaxCode ?? "—")</div></div>
+                <div class="info-item"><label>Ngành nghề</label><div class="val">@(Model.Industry ?? "—")</div></div>
+                <div class="info-item"><label>Quy mô</label><div class="val">@(Model.CompanySize ?? "—")</div></div>
+                <div class="info-item">
+                    <label>Website</label>
+                    <div class="val">
+                        @if (!string.IsNullOrEmpty(Model.Website)) { <a href="@Model.Website" target="_blank" style="color:#3b82f6;">@Model.Website</a> }
+                        else { <span>—</span> }
+                    </div>
+                </div>
+                <div class="info-item"><label>Email</label><div class="val">@(Model.Email ?? "—")</div></div>
+                <div class="info-item"><label>Số điện thoại</label><div class="val">@(Model.Phone ?? "—")</div></div>
+                <div class="info-item">
+                    <label>Địa chỉ</label>
+                    <div class="val">
+                        @if (!string.IsNullOrEmpty(Model.Address))
+                        {
+                            @Model.Address
+                            @if (!string.IsNullOrEmpty(Model.WardName)) { <text>, @Model.WardName</text> }
+                            @if (!string.IsNullOrEmpty(Model.ProvinceName)) { <text>, @Model.ProvinceName</text> }
+                        }
+                        else { <span>—</span> }
+                    </div>
+                </div>
+                <div class="info-item">
+                    <label>Trạng thái xác minh</label>
+                    <div class="val">
+                        @if (Model.IsVerified)
+                        {
+                            <span class="badge-verified"><i class="fas fa-check-circle me-1"></i>Đã xác minh@(Model.VerifiedAt != null ? $" ({Model.VerifiedAt?.ToString("dd/MM/yyyy")})" : "")</span>
+                        }
+                        else
+                        {
+                            <span class="badge-unverified">Chưa xác minh</span>
+                        }
+                    </div>
+                </div>
+                <div class="info-item"><label>Ngày tạo</label><div class="val">@(Model.CreatedAt?.ToString("dd/MM/yyyy HH:mm") ?? "—")</div></div>
             </div>
-        </div>
-        <div class="info-item">
-            <label>Email</label>
-            <div class="value">@(Model.Email ?? "—")</div>
-        </div>
-        <div class="info-item">
-            <label>Số điện thoại</label>
-            <div class="value">@(Model.Phone ?? "—")</div>
-        </div>
-        <div class="info-item">
-            <label>Địa chỉ</label>
-            <div class="value">
-                @if (!string.IsNullOrEmpty(Model.Address))
-                {
-                    @Model.Address
-                    @if (!string.IsNullOrEmpty(Model.WardName)) { <text>, @Model.WardName</text> }
-                    @if (!string.IsNullOrEmpty(Model.ProvinceName)) { <text>, @Model.ProvinceName</text> }
-                }
-                else
-                {
-                    <span>—</span>
-                }
-            </div>
-        </div>
-        <div class="info-item">
-            <label>Trạng thái xác minh</label>
-            <div class="value">
+
+            @if (!string.IsNullOrEmpty(Model.Description))
+            {
+                <div class="mt-3">
+                    <label class="fw-bold" style="font-size:0.82rem;color:#6b7280;">Mô tả công ty</label>
+                    <div class="mt-1" style="color:#374151;font-size:0.9rem;">@Model.Description</div>
+                </div>
+            }
+
+            <div class="mt-3 d-flex gap-2">
                 @if (Model.IsVerified)
                 {
-                    <span class="verified-badge">
-                        <i class="fas fa-check-circle"></i> Đã xác minh
-                        @if (Model.VerifiedAt != null)
-                        {
-                            <text> (@Model.VerifiedAt?.ToString("dd/MM/yyyy HH:mm"))</text>
-                        }
-                    </span>
+                    <form method="post" asp-action="UnverifyCompany" asp-route-id="@Model.Id" onsubmit="return confirm('Bạn có chắc muốn hủy xác minh công ty này?')">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-danger btn-sm px-4">Hủy xác minh</button>
+                    </form>
                 }
                 else
                 {
-                    <span class="unverified-badge">Chưa xác minh</span>
+                    <form method="post" asp-action="VerifyCompany" asp-route-id="@Model.Id">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-success btn-sm px-4">Xác minh công ty</button>
+                    </form>
                 }
             </div>
         </div>
-        <div class="info-item">
-            <label>Ngày tạo</label>
-            <div class="value">@(Model.CreatedAt?.ToString("dd/MM/yyyy HH:mm") ?? "—")</div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="admin-card">
+            <div class="section-label">Nhà tuyển dụng (@Model.Recruiters.Count)</div>
+            @if (Model.Recruiters.Any())
+            {
+                @foreach (var rec in Model.Recruiters)
+                {
+                    <div class="list-row">
+                        <div class="fw-bold">@rec.FullName <span class="text-muted fw-normal">— @(rec.Position ?? "N/A")</span></div>
+                        <div class="text-muted mt-1">
+                            @rec.Email · @(rec.Phone ?? "N/A") ·
+                            @if (rec.IsVerified) { <span style="color:#16a34a;">Đã xác minh</span> }
+                            else { <span style="color:#ef4444;">Chưa xác minh</span> }
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="text-center py-4 text-muted small">Chưa có nhà tuyển dụng nào</div>
+            }
         </div>
     </div>
 
-    @if (!string.IsNullOrEmpty(Model.Description))
-    {
-        <div style="margin-top:1.5rem;">
-            <label style="display:block;font-weight:600;color:#6b7280;font-size:0.85rem;margin-bottom:0.5rem;">Mô tả công ty</label>
-            <div style="color:#374151;">@Model.Description</div>
+    <div class="col-md-6">
+        <div class="admin-card">
+            <div class="section-label">Tin tuyển dụng (@Model.Jobs.Count)</div>
+            @if (Model.Jobs.Any())
+            {
+                @foreach (var job in Model.Jobs)
+                {
+                    <div class="list-row">
+                        <div class="fw-bold">@job.Title</div>
+                        <div class="text-muted mt-1">Lương: @(job.Salary ?? "Thỏa thuận") · Ngày đăng: @(job.CreatedAt?.ToString("dd/MM/yyyy") ?? "—")</div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="text-center py-4 text-muted small">Chưa có tin tuyển dụng nào</div>
+            }
         </div>
-    }
-
-    <div style="margin-top:1.5rem; display:flex; gap:1rem;">
-        @if (Model.IsVerified)
-        {
-            <form method="post" asp-action="UnverifyCompany" asp-route-id="@Model.Id" onsubmit="return confirm('Bạn có chắc muốn hủy xác minh công ty này?')">
-                @Html.AntiForgeryToken()
-                <button type="submit" class="btn-unverify">
-                    Hủy xác minh
-                </button>
-            </form>
-        }
-        else
-        {
-            <form method="post" asp-action="VerifyCompany" asp-route-id="@Model.Id">
-                @Html.AntiForgeryToken()
-                <button type="submit" class="btn-verify">
-                    Xác minh công ty
-                </button>
-            </form>
-        }
     </div>
-</div>
-
-<div class="detail-card">
-    <div class="section-title">Danh sách nhà tuyển dụng (@Model.Recruiters.Count)</div>
-    @if (Model.Recruiters.Any())
-    {
-        @foreach (var rec in Model.Recruiters)
-        {
-            <div class="list-item">
-                <div><strong>@rec.FullName</strong> - @(rec.Position ?? "N/A")</div>
-                <div style="font-size:0.875rem; color:#6b7280;">
-                    Email: @rec.Email | Phone: @(rec.Phone ?? "N/A") | 
-                    @if (rec.IsVerified)
-                    {
-                        <span style="color:#10b981;">Đã xác minh</span>
-                    }
-                    else
-                    {
-                        <span style="color:#ef4444;">Chưa xác minh</span>
-                    }
-                </div>
-            </div>
-        }
-    }
-    else
-    {
-        <div style="text-align:center; padding:2rem; color:#9ca3af;">Chưa có nhà tuyển dụng nào</div>
-    }
-</div>
-
-<div class="detail-card">
-    <div class="section-title">Công việc đã đăng (@Model.Jobs.Count)</div>
-    @if (Model.Jobs.Any())
-    {
-        @foreach (var job in Model.Jobs)
-        {
-            <div class="list-item">
-                <div><strong>@job.Title</strong></div>
-                <div style="font-size:0.875rem; color:#6b7280;">
-                    Lương: @(job.Salary ?? "Thỏa thuận") | 
-                    Ngày đăng: @(job.CreatedAt?.ToString("dd/MM/yyyy") ?? "—")
-                </div>
-            </div>
-        }
-    }
-    else
-    {
-        <div style="text-align:center; padding:2rem; color:#9ca3af;">Chưa có công việc nào</div>
-    }
 </div>

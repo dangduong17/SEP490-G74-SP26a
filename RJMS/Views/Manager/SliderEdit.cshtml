@@ -2,99 +2,85 @@
 @{
     bool isEdit = Model.Id > 0;
     ViewData["Title"] = "Chỉnh sửa Slider";
+    ViewData["HidePageTitle"] = true;
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
 }
 
-<div class="sub-toolbar">
+<div class="d-flex align-items-center gap-3 mb-4">
     <a asp-action="SliderList" class="btn btn-sm btn-outline-secondary">← Quay lại danh sách</a>
-    <h2 class="page-title">@ViewData["Title"]</h2>
+    <h2 class="mb-0 fw-bold" style="font-size:1.4rem; color:#111827;">@ViewData["Title"]</h2>
 </div>
 
-<div class="row">
-    <div class="col-lg-8">
-        <div class="table-card p-4">
-            <form asp-action="SliderEdit" method="post" enctype="multipart/form-data">
-                @Html.AntiForgeryToken()
-                <input type="hidden" asp-for="Id" />
-                <input type="hidden" asp-for="ExistingImageUrl" />
-                
-                <div class="mb-3">
-                    <label asp-for="Title" class="form-label fw-bold">Tiêu đề <span class="text-danger">*</span></label>
-                    <input asp-for="Title" class="form-control" placeholder="Nhập tiêu đề banner..." />
-                    <span asp-validation-for="Title" class="text-danger small"></span>
-                </div>
+<div class="admin-card">
+    <form asp-action="SliderEdit" method="post" enctype="multipart/form-data">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="ExistingImageUrl" />
 
-                <div class="mb-3">
-                    <label asp-for="Subtitle" class="form-label fw-bold">Phụ đề</label>
-                    <textarea asp-for="Subtitle" class="form-control" rows="2" placeholder="Mô tả ngắn gọn hiển thị trên banner..."></textarea>
-                    <span asp-validation-for="Subtitle" class="text-danger small"></span>
-                </div>
-
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label asp-for="ButtonText" class="form-label fw-bold">Text trên nút</label>
-                        <input asp-for="ButtonText" class="form-control" placeholder="Ví dụ: Xem ngay, Khám phá..." />
-                    </div>
-                    <div class="col-md-6">
-                        <label asp-for="LinkUrl" class="form-label fw-bold">Link liên kết</label>
-                        <input asp-for="LinkUrl" class="form-control" placeholder="URL khi click vào slider..." />
-                    </div>
-                </div>
-
-                <div class="mb-4">
-                    <label class="form-label fw-bold">Thay đổi hình ảnh</label>
-                    <div class="input-group mb-2">
-                        <input type="file" asp-for="ImageFile" class="form-control" accept="image/*" onchange="previewImage(this)" />
-                    </div>
-                    <div class="form-text">Để trống nếu không muốn thay đổi ảnh cũ.</div>
-                    
-                    <div id="imagePreviewContainer" class="mt-3">
-                        <p class="small text-muted mb-1">Hình ảnh hiện tại / Xem trước:</p>
-                        <img id="imagePreview" src="@Model.ExistingImageUrl" class="rounded border shadow-sm" style="max-width: 100%; height: 200px; object-fit: cover;" />
-                    </div>
-                </div>
-
-                <hr/>
-
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label asp-for="DisplayOrder" class="form-label fw-bold">Thứ tự hiển thị</label>
-                        <input asp-for="DisplayOrder" type="number" class="form-control" />
-                    </div>
-                    <div class="col-md-6 d-flex align-items-end">
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" asp-for="IsActive">
-                            <label class="form-check-label fw-bold" asp-for="IsActive">Đang hiển thị</label>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <label asp-for="StartDate" class="form-label fw-bold">Ngày bắt đầu</label>
-                        <input asp-for="StartDate" type="date" class="form-control" />
-                    </div>
-                    <div class="col-md-6">
-                        <label asp-for="EndDate" class="form-label fw-bold">Ngày kết thúc</label>
-                        <input asp-for="EndDate" type="date" class="form-control" />
-                    </div>
-                </div>
-
-                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                    <button type="submit" class="btn btn-primary px-5">
-                        <i class="fas fa-save me-1"></i> Cập nhật Slider
-                    </button>
-                </div>
-            </form>
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label asp-for="Title" class="form-label fw-bold">Tiêu đề <span class="text-danger">*</span></label>
+                <input asp-for="Title" class="form-control" placeholder="Nhập tiêu đề banner..." />
+                <span asp-validation-for="Title" class="text-danger small"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="Subtitle" class="form-label fw-bold">Phụ đề</label>
+                <textarea asp-for="Subtitle" class="form-control" rows="1" placeholder="Mô tả ngắn gọn hiển thị trên banner..."></textarea>
+                <span asp-validation-for="Subtitle" class="text-danger small"></span>
+            </div>
         </div>
-    </div>
-    
-    <div class="col-lg-4">
-        <div class="table-card p-4 bg-light border-0">
-            <h5 class="fw-bold mb-3"><i class="fas fa-info-circle text-primary me-2"></i>Hướng dẫn</h5>
-            <p class="small text-muted">Bạn đang chỉnh sửa slider này. Mọi thay đổi sẽ có hiệu lực ngay lập tức nếu slider đang ở trạng thái hiển thị.</p>
+
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label asp-for="ButtonText" class="form-label fw-bold">Text trên nút</label>
+                <input asp-for="ButtonText" class="form-control" placeholder="Ví dụ: Xem ngay, Khám phá..." />
+            </div>
+            <div class="col-md-6">
+                <label asp-for="LinkUrl" class="form-label fw-bold">Link liên kết</label>
+                <input asp-for="LinkUrl" class="form-control" placeholder="URL khi click vào slider..." />
+            </div>
         </div>
-    </div>
+
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <label asp-for="DisplayOrder" class="form-label fw-bold">Thứ tự hiển thị</label>
+                <input asp-for="DisplayOrder" type="number" class="form-control" />
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <div class="form-check form-switch mb-2">
+                    <input class="form-check-input" type="checkbox" asp-for="IsActive">
+                    <label class="form-check-label fw-bold" asp-for="IsActive">Đang hiển thị</label>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label asp-for="StartDate" class="form-label fw-bold">Ngày bắt đầu</label>
+                <input asp-for="StartDate" type="date" class="form-control" />
+            </div>
+            <div class="col-md-3">
+                <label asp-for="EndDate" class="form-label fw-bold">Ngày kết thúc</label>
+                <input asp-for="EndDate" type="date" class="form-control" />
+            </div>
+        </div>
+
+        <hr />
+
+        <div class="mb-3">
+            <label class="form-label fw-bold">Thay đổi hình ảnh</label>
+            <input type="file" asp-for="ImageFile" class="form-control mb-2" accept="image/*" onchange="previewImage(this)" />
+            <div class="form-text">Để trống nếu không muốn thay đổi ảnh cũ.</div>
+            <div id="imagePreviewContainer" class="mt-3">
+                <p class="small text-muted mb-1">Hình ảnh hiện tại / Xem trước:</p>
+                <img id="imagePreview" src="@Model.ExistingImageUrl" class="rounded border shadow-sm" style="max-width: 100%; height: 220px; object-fit: cover;" />
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end mt-4">
+            <a asp-action="SliderList" class="btn btn-outline-secondary me-2">Huỷ</a>
+            <button type="submit" class="btn btn-primary px-5">
+                <i class="fas fa-save me-1"></i> Cập nhật Slider
+            </button>
+        </div>
+    </form>
 </div>
 
 @section Scripts {

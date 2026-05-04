@@ -39,8 +39,8 @@
         </div>
         
         <span class="filter-label">Trạng thái:</span>
-        <select name="verificationStatus" class="form-select">
-            <option value="">-- Trạng thái xác minh --</option>
+        <select name="verificationStatus" class="form-select" style="width:auto;font-size:0.85rem;">
+            <option value=""> Trạng thái xác minh </option>
             <option value="verified" selected="@(Model.VerificationStatus == "verified")">Đã xác minh</option>
             <option value="unverified" selected="@(Model.VerificationStatus == "unverified")">Chưa xác minh</option>
         </select>

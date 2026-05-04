@@ -3,6 +3,7 @@
 @model ManagerDashboardViewModel
 @{
     ViewData["Title"] = "Bảng điều khiển quản lý";
+    ViewData["HidePageTitle"] = true;
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     var defaultPeriod = 7;
     var defaultData = Model.Periods.ContainsKey(defaultPeriod)
@@ -62,6 +63,47 @@
             background: #00b14f;
             color: #fff;
             border-color: #00b14f;
+        }
+
+        .dash-filter-bar {
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 14px 18px;
+        }
+
+        .dash-filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .dash-filter-group label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #6b7280;
+        }
+
+        .dash-filter-group select,
+        .dash-filter-group input[type=month] {
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 5px 10px;
+            font-size: 0.83rem;
+            color: #374151;
+            background: #fff;
+            height: 34px;
+        }
+
+        .dash-filter-sep {
+            font-size: 0.82rem;
+            color: #9ca3af;
+            padding-bottom: 6px;
         }
 
         .stat-grid {
@@ -201,12 +243,49 @@
 
 <div class="dash-toolbar">
     <div class="dash-toolbar-title">
-        <h2>Manager Dashboard</h2>
+        <h2>Bảng điều khiển quản lý</h2>
         <p>Tổng quan hoạt động hệ thống và doanh thu.</p>
     </div>
     <button class="dash-period-btn active" onclick="setPeriod(this,7)">7 ngày</button>
     <button class="dash-period-btn" onclick="setPeriod(this,30)">30 ngày</button>
     <button class="dash-period-btn" onclick="setPeriod(this,90)">90 ngày</button>
+</div>
+
+<div class="dash-filter-bar">
+    <div class="dash-filter-group">
+        <label>Tháng</label>
+        <select id="filterMonth">
+            <option value="">-- Tháng --</option>
+            @for (int m = 1; m <= 12; m++)
+            {
+                <option value="@m">Tháng @m</option>
+            }
+        </select>
+    </div>
+    <div class="dash-filter-group">
+        <label>Năm</label>
+        <select id="filterYear">
+            @for (int y = DateTime.Now.Year; y >= DateTime.Now.Year - 4; y--)
+            {
+                <option value="@y">@y</option>
+            }
+        </select>
+    </div>
+    <button class="dash-period-btn" onclick="applyMonthFilter()" style="align-self:flex-end;">Xem theo tháng</button>
+
+    <div class="dash-filter-sep" style="margin: 0 6px;">|</div>
+
+    <div class="dash-filter-group">
+        <label>Từ tháng</label>
+        <input type="month" id="filterFrom" />
+    </div>
+    <div class="dash-filter-sep" style="align-self:flex-end;padding-bottom:8px;">→</div>
+    <div class="dash-filter-group">
+        <label>Đến tháng</label>
+        <input type="month" id="filterTo" />
+    </div>
+    <button class="dash-period-btn" onclick="applyRangeFilter()" style="align-self:flex-end;">Xem khoảng</button>
+    <span id="filterLabel" style="align-self:flex-end;font-size:0.78rem;color:#6b7280;padding-bottom:6px;"></span>
 </div>
 
 <div class="stat-grid">
@@ -446,7 +525,11 @@
             const data = getPeriod(days);
             document.querySelectorAll('.dash-period-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
+            document.getElementById('filterLabel').textContent = '';
+            applyData(data);
+        }
 
+        function applyData(data) {
             const jobSeries = normalizeSeries(data.labels, data.jobPostCounts || []);
 
             revenueChart.data.labels = data.labels || jobSeries.labels;
@@ -465,6 +548,41 @@
 
             document.getElementById('statRevenue').textContent = formatCurrency(data.totalRevenue ?? 0);
             document.getElementById('statJobPosts').textContent = data.totalJobPosts ?? 0;
+        }
+
+        async function fetchRange(from, to, label) {
+            document.querySelectorAll('.dash-period-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('filterLabel').textContent = label ? `Đang xem: ${label}` : '';
+            try {
+                const res = await fetch(`/Manager/DashboardData?from=${from}&to=${to}`);
+                if (!res.ok) { alert('Lỗi khi tải dữ liệu'); return; }
+                const data = await res.json();
+                applyData(data);
+            } catch (e) {
+                alert('Không thể tải dữ liệu');
+            }
+        }
+
+        function applyMonthFilter() {
+            const month = document.getElementById('filterMonth').value;
+            const year = document.getElementById('filterYear').value;
+            if (!month) { alert('Vui lòng chọn tháng'); return; }
+            const from = `${year}-${String(month).padStart(2,'0')}-01`;
+            const lastDay = new Date(year, month, 0).getDate();
+            const to = `${year}-${String(month).padStart(2,'0')}-${lastDay}`;
+            fetchRange(from, to, `Tháng ${month}/${year}`);
+        }
+
+        function applyRangeFilter() {
+            const from = document.getElementById('filterFrom').value;
+            const to = document.getElementById('filterTo').value;
+            if (!from || !to) { alert('Vui lòng chọn cả từ tháng và đến tháng'); return; }
+            const fromDate = from + '-01';
+            const toParts = to.split('-');
+            const lastDay = new Date(toParts[0], toParts[1], 0).getDate();
+            const toDate = `${to}-${lastDay}`;
+            if (fromDate > toDate) { alert('Từ tháng phải nhỏ hơn hoặc bằng đến tháng'); return; }
+            fetchRange(fromDate, toDate, `${from.replace('-','/')} → ${to.replace('-','/')}`);
         }
     </script>
 }

@@ -8,10 +8,6 @@
 
 @section Styles {
     <style>
-        body {
-            background-color: #f4f5f5;
-        }
-
         .chat-container {
             max-width: 1300px;
             margin: 24px auto 30px;
@@ -21,6 +17,14 @@
             gap: 20px;
             height: calc(100vh - 180px);
             min-height: 700px;
+        }
+
+        /* Recruiter layout: fill content area, no extra margin/padding */
+        .chat-container.chat-recruiter {
+            max-width: 100%;
+            margin: 0;
+            padding: 0;
+            height: calc(100vh - 100px);
         }
 
         @@media (max-width: 991px) {
@@ -183,8 +187,10 @@
             width: 44px;
             height: 44px;
             border-radius: 50%;
-            object-fit: cover;
-            margin-right: 12px;
+            object-fit: contain;
+            background-color: #fff;
+            padding: 7px;
+            box-sizing: border-box;
         }
 
         .chat-item-content {
@@ -265,7 +271,10 @@
         .chat-avatar-wrapper img, .chat-avatar-wrapper-header img {
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            object-fit: contain;
+            background-color: #fff;
+            padding: 7px;
+            box-sizing: border-box;
         }
 
         .chat-avatar-initials, .chat-avatar-initials-header {
@@ -321,7 +330,10 @@
             width: 44px;
             height: 44px;
             border-radius: 50%;
-            object-fit: cover;
+            object-fit: contain;
+            background-color: #fff;
+            padding: 7px;
+            box-sizing: border-box;
         }
 
         .chat-header-text h3 {
@@ -421,7 +433,10 @@
             width: 32px;
             height: 32px;
             border-radius: 50%;
-            object-fit: cover;
+            object-fit: contain;
+            background-color: #fff;
+            padding: 5px; /* Radius 16 -> Side 22.6 -> Padding (32-22.6)/2 = 4.7 */
+            box-sizing: border-box;
         }
 
         .msg-bubble {
@@ -699,6 +714,10 @@
             width: 36px;
             height: 36px;
             border-radius: 50%;
+            object-fit: contain;
+            background-color: #fff;
+            padding: 6px; /* Radius 18 -> Side 25.4 -> Padding (36-25.4)/2 = 5.3 */
+            box-sizing: border-box;
         }
 
         .hr-info-text h5 {
@@ -794,7 +813,7 @@
     </style>
 }
 
-<div class="chat-container">
+<div class="chat-container @(role == "Employee" ? "chat-recruiter" : "")">
     
     <!-- LEFT SIDEBAR -->
     <div class="chat-sidebar">

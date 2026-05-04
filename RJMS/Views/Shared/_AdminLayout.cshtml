@@ -473,7 +473,7 @@
                     </a>
                     <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() is "SubscriptionList" or "SubscriptionDetail" ? "active" : "")"
                        asp-controller="Manager" asp-action="SubscriptionList">
-                        Gói dịch vụ (Recruiter)
+                        Gói dịch vụ
                     </a>
                     <a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Subscription" ? "active" : "")"
                        asp-controller="Subscription" asp-action="ManageSubscription">
