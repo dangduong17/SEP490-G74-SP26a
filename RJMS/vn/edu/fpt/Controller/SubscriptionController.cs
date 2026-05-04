@@ -170,9 +170,9 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             bool result = await _subscriptionService.DeletePlanAsync(id);
             
             if (result)
-                TempData["SuccessToast"] = "Đã xóa gói đăng ký.";
+                TempData["SuccessToast"] = "Đã vô hiệu hóa gói đăng ký.";
             else
-                TempData["ErrorToast"] = "Không thể xóa gói đang có người dùng hoặc không tồn tại.";
+                TempData["ErrorToast"] = "Không tìm thấy gói đăng ký.";
 
             return RedirectToAction(nameof(ManageSubscription));
         }
