@@ -66,26 +66,47 @@ body{overflow:hidden!important;background:#f0f2f5}
 .add-pg-btn:hover{border-color:#00b14f;color:#00b14f}
 
 /* ── CV SECTION BLOCKS ───────────────────────────────────────────────── */
-.cv-sec{position:absolute;overflow:hidden;background:transparent;z-index:10;border:1px dashed transparent;border-radius:2px;touch-action:none;transition:border-color .12s}
-.cv-sec:hover{border-color:#cbd5e1;z-index:15}
-.cv-sec:active,.cv-sec.is-dragging{z-index:20}
+.cv-sec{
+  position:absolute;overflow:visible;
+  background:transparent;z-index:10;
+  border:1.5px dashed transparent;border-radius:3px;
+  touch-action:none;transition:border-color .12s;
+  cursor:default;
+}
+.cv-sec:hover{border-color:#94a3b8;z-index:15}
+.cv-sec:active, .cv-sec.is-dragging, .cv-sec.is-resizing { z-index: 20; }
+body.is-interacting, body.is-interacting * { user-select: none !important; -webkit-user-select: none !important; }
+body.is-interacting .cv-sec:not(.is-dragging):not(.is-resizing) { pointer-events: none !important; }
 .cv-sec.ctx-selected{border-color:#00b14f!important;border-style:solid;z-index:16}
+/* Inner content fills section and clips overflow */
+.cv-sec .cv-content-wrap{position:absolute;inset:0;overflow:hidden;}
 
-/* sec-bar: compact floating pill — appears on hover, top-left of section */
+/* Resize cursors on edges (interact.js adds resize zone ~8px) */
+.cv-sec:hover{cursor:default}
+
+/* sec-bar: floats ABOVE the component, appears on hover */
 .sec-bar{
-  position:absolute;top:6px;left:6px;
+  position:absolute;
+  bottom:100%;          /* no gap — bar touches top of component */
+  left:0;
   height:30px;
-  display:inline-flex;align-items:center;gap:3px;padding:3px 5px;
-  background:#1e293b;border-radius:8px;
-  opacity:0;pointer-events:none;
-  transition:opacity .18s,transform .18s;
-  transform:translateY(-4px);
-  z-index:21;box-sizing:border-box;
-  box-shadow:0 4px 14px rgba(0,0,0,.35);
+  display:inline-flex;align-items:center;gap:3px;padding:3px 6px;
+  background:#1e293b;border-radius:7px 7px 4px 4px;
+  opacity:0;
+  pointer-events:none;
+  /* Hide: 350ms delay so mouse can travel from component → bar */
+  transition:opacity .15s 0.35s, transform .15s 0.35s, pointer-events 0s 0.5s;
+  transform:translateY(2px);
+  z-index:50;box-sizing:border-box;
+  box-shadow:0 -2px 12px rgba(0,0,0,.3);
   white-space:nowrap;
 }
+/* Show: immediate, no delay */
 .cv-sec:hover .sec-bar{
-  opacity:1;pointer-events:auto;transform:translateY(0);
+  opacity:1;
+  pointer-events:auto;
+  transform:translateY(0);
+  transition:opacity .12s 0s, transform .12s 0s, pointer-events 0s 0s;
 }
 .drag-handle{
   cursor:move;color:#94a3b8;font-size:1rem;
@@ -170,8 +191,10 @@ body{overflow:hidden!important;background:#f0f2f5}
 .cv-avatar-wrap{position:relative;flex-shrink:0;cursor:pointer}
 .cv-avatar{width:80px;height:80px;border-radius:8px;background:#dde3ed;display:flex;align-items:center;justify-content:center;overflow:hidden}
 .cv-avatar svg{width:42px;height:42px;color:#9aa5be}
+.cv-avatar img{width:100%;height:100%;object-fit:cover}
 .cv-avatar-sm{width:64px;height:64px;border-radius:50%;background:#dde3ed;display:flex;align-items:center;justify-content:center;overflow:hidden;margin:0 auto 8px}
 .cv-avatar-sm svg{width:34px;height:34px;color:#9aa5be}
+.cv-avatar-sm img{width:100%;height:100%;object-fit:cover}
 .cv-avatar-overlay{position:absolute;inset:0;background:rgba(0,0,0,.38);border-radius:inherit;display:flex;align-items:center;justify-content:center;font-size:1.1rem;opacity:0;transition:opacity .18s;pointer-events:none}
 .cv-avatar-wrap:hover .cv-avatar-overlay,.cv-vcard-avatar:hover .cv-avatar-overlay{opacity:1}
 .cv-vcard-avatar{position:relative;cursor:pointer;display:inline-block}

@@ -71,6 +71,62 @@ namespace RJMS.Vn.Edu.Fpt.Repository
             return data;
         }
 
+        public async Task<ManagerPeriodData> GetDashboardRangeDataAsync(DateTime from, DateTime to)
+        {
+            var startDate = from.Date;
+            var endExclusive = to.Date.AddDays(1);
+
+            var paymentEvents = await _db.Payments
+                .AsNoTracking()
+                .Where(p => p.Status == "SUCCESS" && p.PaymentDate != null && p.PaymentDate >= startDate && p.PaymentDate < endExclusive)
+                .Select(p => new PaymentEvent(
+                    p.PaymentDate!.Value,
+                    p.Amount ?? 0,
+                    p.Subscription.SubscribedPlanName ?? p.Subscription.Plan.Name ?? "Gói khác"))
+                .ToListAsync();
+
+            var jobEvents = await _db.Jobs
+                .AsNoTracking()
+                .Where(j => j.CreatedAt != null && j.CreatedAt >= startDate && j.CreatedAt < endExclusive)
+                .Select(j => j.CreatedAt!.Value)
+                .ToListAsync();
+
+            var revenueByPlan = paymentEvents
+                .GroupBy(p => p.PlanName)
+                .Select(g => new ManagerCategoryAmount { Label = g.Key, Value = g.Sum(x => x.Amount) })
+                .OrderByDescending(x => x.Value)
+                .ToList();
+
+            if (revenueByPlan.Count == 0)
+                revenueByPlan.Add(new ManagerCategoryAmount { Label = "Chưa có dữ liệu", Value = 0 });
+
+            var data = new ManagerPeriodData
+            {
+                TotalRevenue = paymentEvents.Sum(p => p.Amount),
+                TotalJobPosts = jobEvents.Count,
+                RevenueByPlan = revenueByPlan
+            };
+
+            var totalDays = (to.Date - from.Date).Days + 1;
+            var totalMonths = (to.Year - from.Year) * 12 + to.Month - from.Month + 1;
+
+            if (totalDays <= 31)
+            {
+                BuildDailySeries(data, startDate, totalDays, paymentEvents, jobEvents);
+            }
+            else if (totalMonths <= 3)
+            {
+                var weeks = (int)Math.Ceiling(totalDays / 7.0);
+                BuildWeeklySeries(data, startDate, weeks, paymentEvents, jobEvents);
+            }
+            else
+            {
+                BuildMonthlySeries(data, startDate, totalMonths, paymentEvents, jobEvents);
+            }
+
+            return data;
+        }
+
         public async Task<List<ManagerActivityItem>> GetRecentActivitiesAsync(int take)
         {
             var jobActivities = await _db.Jobs

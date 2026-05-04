@@ -44,6 +44,17 @@ namespace RJMS.Vn.Edu.Fpt.Controllers
             return View("ManagerDashboard", model);
         }
 
+        [HttpGet]
+        public async Task<IActionResult> DashboardData(string from, string to)
+        {
+            if (RequireManagerRole() is { } redirect) return redirect;
+            if (!DateTime.TryParse(from, out var fromDate) || !DateTime.TryParse(to, out var toDate))
+                return BadRequest("Invalid date range");
+            if (fromDate > toDate) return BadRequest("from > to");
+            var data = await _managerDashboardService.GetDashboardRangeAsync(fromDate, toDate);
+            return Json(data);
+        }
+
 // ========== SKILLS MANAGEMENT ==========
 
         [HttpGet]

@@ -780,24 +780,12 @@ namespace RJMS.Vn.Edu.Fpt.Repository
         public async Task<bool> DeletePlanAsync(int id)
         {
             var plan = await _context.SubscriptionPlans
-                .Include(p => p.PlanOptions)
-                .Include(p => p.Subscriptions)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (plan == null) return false;
 
-            // Check if plan has active subscriptions
-            if (plan.Subscriptions.Any(s => s.Status == "Active"))
-            {
-                return false; // Cannot delete plan with active subscriptions
-            }
-
-            if (plan.PlanOptions.Any())
-            {
-                _context.SubscriptionPlanOptions.RemoveRange(plan.PlanOptions);
-            }
-
-            _context.SubscriptionPlans.Remove(plan);
+            plan.IsArchived = true;
+            plan.IsActive = false;
             await _context.SaveChangesAsync();
             return true;
         }

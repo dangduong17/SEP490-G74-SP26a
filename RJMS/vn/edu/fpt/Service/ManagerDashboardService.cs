@@ -30,5 +30,9 @@ namespace RJMS.Vn.Edu.Fpt.Service
                 Alerts = await _repo.GetAlertItemsAsync()
             };
         }
+        public async Task<ManagerPeriodData> GetDashboardRangeAsync(DateTime from, DateTime to)
+        {
+            return await _repo.GetDashboardRangeDataAsync(from, to);
+        }
     }
 }
