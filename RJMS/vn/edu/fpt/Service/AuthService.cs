@@ -76,6 +76,7 @@ namespace RJMS.Vn.Edu.Fpt.Service
                         {
                             Console.WriteLine($"[LOGIN] Gửi email xác nhận thất bại: {exMail.Message}");
                         }
+                        return (false, "Email chưa được xác nhận. Vui lòng kiểm tra hộp thư và click vào link xác nhận để kích hoạt tài khoản.");
                     }
 
                     // Manual Cookie Authentication
