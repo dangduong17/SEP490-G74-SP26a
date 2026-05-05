@@ -402,20 +402,21 @@
                         var feature = group.MonthlyPlan?.Features?.FirstOrDefault(f => f.FeatureCode == "JOB_POSTING")
                             ?? group.YearlyPlan?.Features?.FirstOrDefault(f => f.FeatureCode == "JOB_POSTING");
                         <td class="text-center @(group.HasYearly ? "featured-col" : "")">
-                            @if (feature?.FeatureLimit.HasValue == true)
+                            @if (feature == null)
                             {
-                                @if (feature.FeatureLimit.Value <= 0)
-                                {
-                                    <span>Không giới hạn</span>
-                                }
-                                else
-                                {
-                                    <span>@feature.FeatureLimit.Value tin</span>
-                                }
+                                <span class="text-muted">—</span>
+                            }
+                            else if (!feature.FeatureLimit.HasValue)
+                            {
+                                <span>Không giới hạn</span>
+                            }
+                            else if (feature.FeatureLimit.Value <= 0)
+                            {
+                                <span>0 tin</span>
                             }
                             else
                             {
-                                <span>—</span>
+                                <span>@feature.FeatureLimit.Value tin</span>
                             }
                         </td>
                     }
@@ -427,20 +428,21 @@
                         var feature = group.MonthlyPlan?.Features?.FirstOrDefault(f => f.FeatureCode == "CV_AI_FILTER")
                             ?? group.YearlyPlan?.Features?.FirstOrDefault(f => f.FeatureCode == "CV_AI_FILTER");
                         <td class="text-center @(group.HasYearly ? "featured-col" : "")">
-                            @if (feature?.FeatureLimit.HasValue == true)
+                            @if (feature == null)
                             {
-                                @if (feature.FeatureLimit.Value <= 0)
-                                {
-                                    <span>Không giới hạn</span>
-                                }
-                                else
-                                {
-                                    <span>@feature.FeatureLimit.Value lượt</span>
-                                }
+                                <span class="text-muted">—</span>
+                            }
+                            else if (!feature.FeatureLimit.HasValue)
+                            {
+                                <span>Không giới hạn</span>
+                            }
+                            else if (feature.FeatureLimit.Value <= 0)
+                            {
+                                <span>0 lượt</span>
                             }
                             else
                             {
-                                <span>—</span>
+                                <span>@feature.FeatureLimit.Value lượt</span>
                             }
                         </td>
                     }
