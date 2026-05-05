@@ -23,6 +23,9 @@ public class HomeController : Controller
     public async Task<IActionResult> Index()
     {
         var now = DateTime.Now;
+        int? currentUserId = null;
+        if (Request.Cookies["UserRole"] == "Candidate" && int.TryParse(Request.Cookies["UserId"], out var uid))
+            currentUserId = uid;
 
         var activeJobQuery = _context.Jobs
             .AsNoTracking()
@@ -60,6 +63,27 @@ public class HomeController : Controller
                 PublishDate = j.PublishDate
             })
             .ToListAsync();
+
+        if (currentUserId.HasValue && latestJobs.Any())
+        {
+            var candidateId = await _context.Candidates
+                .AsNoTracking()
+                .Where(c => c.UserId == currentUserId.Value)
+                .Select(c => c.Id)
+                .FirstOrDefaultAsync();
+            if (candidateId > 0)
+            {
+                var jobIds = latestJobs.Select(j => j.Id).ToList();
+                var savedIdsList = await _context.SavedJobs
+                    .AsNoTracking()
+                    .Where(s => s.CandidateId == candidateId && jobIds.Contains(s.JobId))
+                    .Select(s => s.JobId)
+                    .ToListAsync();
+                var savedIds = savedIdsList.ToHashSet();
+                foreach (var j in latestJobs)
+                    j.IsSaved = savedIds.Contains(j.Id);
+            }
+        }
 
         var topCompanies = await _context.Companies
             .AsNoTracking()

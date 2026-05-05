@@ -17,7 +17,7 @@ namespace RJMS.Vn.Edu.Fpt.Service
 
         public async Task<PublicJobListViewModel> GetPublicJobListAsync(string? keyword, int? categoryId, int? locationId, int page, int? currentUserId = null)
         {
-            const int pageSize = 10;
+            const int pageSize = 16;
             var (jobs, totalCount) = await _jobRepository.GetPublicJobListAsync(keyword, categoryId, locationId, page, pageSize);
             var (categories, locations) = await _jobRepository.GetFilterDataAsync();
 
