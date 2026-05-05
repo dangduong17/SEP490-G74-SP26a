@@ -22,6 +22,7 @@ public partial class Cv
     public int? TemplateId { get; set; }
 
     public bool IsDefault { get; set; } = false;
+    public bool IsDelete { get; set; } = false;
     public int? ViewCount { get; set; } = 0;
     public DateTime? CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
