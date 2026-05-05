@@ -1,7 +1,12 @@
 @model RJMS.vn.edu.fpt.Models.DTOs.HomeIndexViewModel
 @{
     ViewData["Title"] = "Finding Jobs - Tìm việc làm, Tuyển dụng hiệu quả";
+    var isCandidate = (Context.Request.Cookies["UserRole"] == "Candidate");
 }
+
+<form id="saveJobTokenForm" style="display:none;">
+    @Html.AntiForgeryToken()
+</form>
 
 @section Styles {
 <style>
@@ -360,6 +365,10 @@
     .loc-opt.active { color: #00b14f; font-weight: 700; }
 
     @@media (max-width: 768px) { .cat-modal-body { grid-template-columns: 1fr; } }
+
+    .btn-heart { width: 32px; height: 32px; border-radius: 50%; border: 1px solid #e5e7eb; background: transparent; display: flex; align-items: center; justify-content: center; color: #9ca3af; cursor: pointer; flex-shrink: 0; transition: all 0.2s; }
+    .btn-heart:hover { background: #fff1f2; color: #f43f5e; border-color: #f43f5e; }
+    .btn-heart.saved { background: #fff1f2; color: #f43f5e; border-color: #f43f5e; }
 </style>
 }
 
@@ -600,7 +609,14 @@
                                     }
                                 </div>
                                 <div class="job-actions">
-                                    <button class="btn-save"><i class="far fa-heart"></i></button>
+                                    @if (isCandidate)
+                                    {
+                                        <button class="btn-heart @(job.IsSaved ? "saved" : "")"
+                                                onclick="toggleSaveJob(event, @job.Id, this)"
+                                                title="Lưu">
+                                            <i class="@(job.IsSaved ? "fas" : "far") fa-heart"></i>
+                                        </button>
+                                    }
                                 </div>
                             </div>
                             <div class="job-card-body">
@@ -862,5 +878,38 @@
             el.style.display = !kw || name.includes(kw) ? '' : 'none';
         });
     });
+
+    async function toggleSaveJob(e, jobId, buttonEl) {
+        e.preventDefault();
+        e.stopPropagation();
+        const token = document.querySelector('#saveJobTokenForm input[name="__RequestVerificationToken"]')?.value;
+        try {
+            const res = await fetch('/Job/ToggleSave', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                    'RequestVerificationToken': token || ''
+                },
+                body: `jobId=${encodeURIComponent(jobId)}&__RequestVerificationToken=${encodeURIComponent(token || '')}`
+            });
+            const data = await res.json();
+            if (!data.success) {
+                if (typeof toastr !== 'undefined') toastr.warning(data.message || 'Không thể lưu công việc này.');
+                return;
+            }
+            const icon = buttonEl.querySelector('i');
+            if (data.isSaved) {
+                buttonEl.classList.add('saved');
+                icon?.classList.remove('far'); icon?.classList.add('fas');
+                if (typeof toastr !== 'undefined') toastr.success('Đã lưu công việc.');
+            } else {
+                buttonEl.classList.remove('saved');
+                icon?.classList.remove('fas'); icon?.classList.add('far');
+                if (typeof toastr !== 'undefined') toastr.info('Đã bỏ lưu công việc.');
+            }
+        } catch {
+            if (typeof toastr !== 'undefined') toastr.error('Có lỗi xảy ra khi lưu công việc.');
+        }
+    }
 </script>
 }

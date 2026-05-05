@@ -1,3 +1,4 @@
+using System;
 using Microsoft.EntityFrameworkCore;
 using RJMS.vn.edu.fpt.Models;
 using System.Collections.Generic;
@@ -22,7 +23,7 @@ namespace RJMS.Vn.Edu.Fpt.Repository
         public async Task<List<Cv>> GetCvsByCandidateIdAsync(int candidateId)
             => await _context.Cvs
                 .Include(c => c.Template)
-                .Where(c => c.CandidateId == candidateId)
+                .Where(c => c.CandidateId == candidateId && !c.IsDelete)
                 .OrderByDescending(c => c.CreatedAt)
                 .ToListAsync();
 
@@ -47,7 +48,9 @@ namespace RJMS.Vn.Edu.Fpt.Repository
 
         public async Task DeleteCvAsync(Cv cv)
         {
-            _context.Cvs.Remove(cv);
+            cv.IsDelete = true;
+            cv.UpdatedAt = DateTime.Now;
+            _context.Cvs.Update(cv);
             await _context.SaveChangesAsync();
         }
 

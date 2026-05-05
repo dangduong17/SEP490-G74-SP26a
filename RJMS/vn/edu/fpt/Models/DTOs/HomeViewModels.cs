@@ -34,6 +34,7 @@ namespace RJMS.vn.edu.fpt.Models.DTOs
         public string? JobType { get; set; }
         public DateTime? CreatedAt { get; set; }
         public DateTime? PublishDate { get; set; }
+        public bool IsSaved { get; set; }
     }
 
     public class HomeCompanyCardDTO
