@@ -297,6 +297,7 @@ function hydrateSection(sectionEl, type) {
   const idx = (_counters[type] = (_counters[type] || 0));
   _counters[type]++;
   const set = (sel, val) => { const e = sectionEl.querySelector(sel); if (e && val) e.textContent = val; };
+  const setHtml = (sel, val) => { const e = sectionEl.querySelector(sel); if (e && val) e.innerHTML = val; };
 
   if (type === 'header') {
     set('.cv-name', data.FullName);
@@ -311,7 +312,7 @@ function hydrateSection(sectionEl, type) {
     if (avatarEl && data.AvatarBase64) avatarEl.innerHTML = `<img src="${data.AvatarBase64}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" alt="avatar"/>`;
     return;
   }
-  if (type === 'summary') { set('.cv-simple', data.Summary); return; }
+  if (type === 'summary') { setHtml('.cv-simple', data.Summary); return; }
   if (type === 'skills') {
     const skills = (data.Skills || '').split(',').map(s => s.trim()).filter(Boolean);
     const wrap = sectionEl.querySelector('.cv-skills');
@@ -321,19 +322,19 @@ function hydrateSection(sectionEl, type) {
   if (type === 'experience') {
     const item = (data.Experiences || [])[idx] || {};
     set('.cv-company', item.Company); set('.cv-pos', item.Role);
-    set('.cv-date', item.Period); set('.cv-desc', item.Description);
+    set('.cv-date', item.Period); setHtml('.cv-desc', item.Description);
     return;
   }
   if (type === 'education') {
     const item = (data.Educations || [])[idx] || {};
     set('.cv-company', item.School); set('.cv-pos', item.Degree);
-    set('.cv-date', item.Period); set('.cv-desc', item.Achievement);
+    set('.cv-date', item.Period); setHtml('.cv-desc', item.Achievement);
     return;
   }
   if (type === 'projects') {
     const item = (data.Projects || [])[idx] || {};
     set('.cv-company', item.Name); set('.cv-pos', item.Role);
-    set('.cv-date', item.Period); set('.cv-desc', item.Description);
+    set('.cv-date', item.Period); setHtml('.cv-desc', item.Description);
     return;
   }
   if (type === 'hobbies') { set('.cv-simple', data.Hobbies); return; }
