@@ -89,6 +89,8 @@ namespace RJMS.Vn.Edu.Fpt.Service
                     if (!string.IsNullOrWhiteSpace(sec.Html))
                     {
                         var content = sec.Html.Replace("contenteditable=\"true\"", "");
+                        // Decode HTML entities to fix double-encoded HTML
+                        content = System.Web.HttpUtility.HtmlDecode(content);
                         pageHtml.Append(content);
                     }
                     else
